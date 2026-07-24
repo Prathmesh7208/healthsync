@@ -19,7 +19,7 @@ const sqlite3  = require('sqlite3').verbose();
 
 // ─── Database ───────────────────────────────────────────────────────────────
 // DB file lives next to server.js  (c:\HealthSync\webapp\healthsync.db)
-const DB_PATH      = path.join(__dirname, 'healthsync.db');
+const DB_PATH      = process.env.DB_PATH || path.join(__dirname, 'healthsync.db');
 const FRONTEND_DIR = path.join(__dirname, 'frontend');
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
@@ -203,6 +203,14 @@ db.serialize(() => {
   // ── Seed only when DB is fresh ──────────────────────────────────────────
   db.get('SELECT COUNT(*) AS c FROM doctors', (err, row) => {
     if (row && row.c === 0) {
+      // Doctor profiles reference user accounts; create those accounts first.
+      const userStmt = db.prepare('INSERT OR IGNORE INTO users (id, mobile_number, role) VALUES (?, ?, ?)', () => {});
+      userStmt.run('u-doc1', '9000000001', 'DOCTOR');
+      userStmt.run('u-doc2', '9000000002', 'DOCTOR');
+      userStmt.run('u-doc3', '9000000003', 'DOCTOR');
+      userStmt.run('u-doc4', '9000000004', 'DOCTOR');
+      userStmt.run('u-doc5', '9000000005', 'DOCTOR');
+      userStmt.finalize();
       const stmt = db.prepare(`
         INSERT INTO doctors
           (id, user_id, full_name, specialization, qualification, clinic_name,
