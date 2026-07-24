@@ -6,7 +6,9 @@
 
 'use strict';
 
-const API_BASE = 'http://localhost:3000/v1';
+const configuredApiUrl = window.__HEALTHSYNC_CONFIG__?.VITE_API_URL;
+const apiOrigin = configuredApiUrl || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : '');
+const API_BASE = apiOrigin.replace(/\/$/, '').replace(/\/v1$/, '') + '/v1';
 
 // Global variables
 let allDoctors = [];
