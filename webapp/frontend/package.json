@@ -1,0 +1,7 @@
+{
+  "name": "healthsync-frontend",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/generate-runtime-config.js"
+  }
+}
