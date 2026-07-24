@@ -1,0 +1,19 @@
+{
+  "name": "healthsync-webapp",
+  "version": "1.0.0",
+  "description": "HealthSync outpatient clinic management web application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "allowScripts": {
+    "sqlite3@5.1.7": true
+  }
+}

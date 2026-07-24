@@ -1,0 +1,16 @@
+{
+  "appTitle": "HealthSync",
+  "welcomeBack": "परत स्वागत आहे,",
+  "login": "लॉगिन",
+  "sendOtp": "ओटीपी पाठवा",
+  "verify": "सत्यापित करा आणि पुढे जा",
+  "patientDashboard": "रुग्ण डॅशबोर्ड",
+  "doctorDashboard": "डॉक्टर डॅशबोर्ड",
+  "receptionDashboard": "रिसेप्शन डॅशबोर्ड",
+  "emergency": "आणीबाणी",
+  "upcomingAppointment": "पुढील अपॉइंटमेंट",
+  "searchDoctors": "डॉक्टर, स्पेशलायझेशन शोधा...",
+  "privacyConsent": "गोपनीयता आणि संमती",
+  "activeAccess": "सक्रिय प्रवेश अनुदान",
+  "pendingRequests": "प्रलंबित विनंत्या"
+}

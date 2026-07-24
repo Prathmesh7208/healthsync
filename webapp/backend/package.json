@@ -1,0 +1,12 @@
+{
+  "name": "healthsync-backend",
+  "version": "1.0.0",
+  "description": "HealthSync backend web server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}

@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HealthSync — Syncing Care, Improving Lives</title>
+  <meta name="description" content="HealthSync outpatient clinic management — patient queue, appointments, prescriptions and health records.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <section id="auth-screen" class="auth-screen" aria-labelledby="auth-title">
+    <div class="auth-card">
+      <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
+      <h1 id="auth-title">Welcome to better care</h1>
+      <p class="auth-subtitle">Sign in securely with your Indian mobile number.</p>
+      <form id="mobile-login-form" onsubmit="requestOtp(event)">
+        <label class="form-label" for="auth-mobile">Mobile number</label>
+        <div class="auth-mobile-input"><span>+91</span><input id="auth-mobile" class="form-control" inputmode="numeric" maxlength="10" placeholder="98765 43210" required></div>
+        <button class="btn btn-primary w-full mt-3" type="submit">Send OTP</button>
+      </form>
+      <form id="otp-login-form" class="hidden" onsubmit="verifyOtp(event)">
+        <label class="form-label" for="auth-otp">Enter the 6-digit OTP</label>
+        <input id="auth-otp" class="form-control" inputmode="numeric" maxlength="6" placeholder="••••••" required>
+        <p class="auth-help">Enter the OTP sent to your registered mobile number.</p>
+        <button class="btn btn-primary w-full mt-3" type="submit">Verify and sign in</button>
+        <button id="resend-otp-btn" class="btn btn-secondary w-full mt-2" type="button" onclick="resendOtp()" disabled>Resend OTP (30s)</button>
+      </form>
+      <p id="auth-message" class="auth-message" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <div id="app">
+
+    <!-- ======================================= -->
+    <!-- PATIENT ROLE VIEW PANEL                 -->
+    <!-- ======================================= -->
+    <div id="panel-patient" class="role-panel active w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-heart-pulse"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Patient Portal</div>
+          <div class="nav-item active" onclick="switchPatientPage('dashboard')">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
+          </div>
+          <div class="nav-item" onclick="switchPatientPage('appointments')">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-check"></i></span> Appointments
+          </div>
+          <div class="nav-item" onclick="switchPatientPage('doctors')">
+            <span class="nav-icon"><i class="fa-solid fa-user-doctor"></i></span> Doctors
+          </div>
+          <div class="nav-item" onclick="switchPatientPage('health-records')">
+            <span class="nav-icon"><i class="fa-solid fa-file-medical"></i></span> Health Records
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'prescriptions')">
+            <span class="nav-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Prescriptions
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'medicines')">
+            <span class="nav-icon"><i class="fa-solid fa-pills"></i></span> Medicines
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'reminders')">
+            <span class="nav-icon"><i class="fa-solid fa-clock"></i></span> Reminders
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'messages')">
+            <span class="nav-icon"><i class="fa-solid fa-message"></i></span> Messages
+          </div>
+          <div class="nav-item" onclick="openNotifications()">
+            <span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Notifications <span id="notification-count" class="nav-badge">0</span>
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'settings')">
+            <span class="nav-icon"><i class="fa-solid fa-gear"></i></span> Settings
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'help')">
+            <span class="nav-icon"><i class="fa-solid fa-circle-question"></i></span> Help & Support
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <div class="avatar">NK</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Rahul Verma</div>
+              <div class="sidebar-user-role">Patient Account</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <span class="page-title">Patient Dashboard</span>
+          <div class="role-tab-bar">
+            <div class="role-tab active" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+          </div>
+          <div class="header-icons">
+            <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i><span id="notification-dot" class="notif-dot hidden"></span></button>
+            <div class="header-avatar">RV</div>
+          </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="page-content">
+
+          <!-- 1. Patient Dashboard Page -->
+          <div id="patient-page-dashboard" class="page active">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Good Morning, Rahul 👋</h2>
+                <p class="page-subheading">Take charge of your health today!</p>
+              </div>
+              <div class="date-label"><i class="fa-solid fa-calendar-days"></i> <span class="current-date-str"></span></div>
+            </div>
+
+            <div class="grid-col-2-1 mb-4">
+              <!-- Left Side -->
+              <div class="flex flex-col gap-4">
+                <!-- Upcoming Appointment Card -->
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Upcoming Appointment</span>
+                    <span class="badge badge-confirmed">Confirmed</span>
+                  </div>
+                  <div class="card-body flex items-center gap-4">
+                    <div class="doc-avatar">👨‍⚕️</div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-dark">Dr. Priya Sharma</h4>
+                      <p class="text-muted text-sm">Cardiologist</p>
+                      <p class="text-sm mt-1" style="font-weight: 500;"><i class="fa-solid fa-clock"></i> 20 May 2026 | 10:30 AM</p>
+                      <p class="text-muted text-xs mt-1"><i class="fa-solid fa-location-dot"></i> Apollo Hospital, Mumbai</p>
+                    </div>
+                    <div>
+                      <button class="btn btn-secondary btn-sm" onclick="switchPatientPage('appointments')">View Details</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="quick-action-grid">
+                  <div class="quick-action" onclick="openBookAppointmentModal()">
+                    <span class="qa-icon" style="color: #3b82f6;"><i class="fa-solid fa-calendar-plus"></i></span>
+                    Book Appointment
+                  </div>
+                  <div class="quick-action" onclick="switchPatientPage('health-records')">
+                    <span class="qa-icon" style="color: #10b981;"><i class="fa-solid fa-file-medical"></i></span>
+                    Health Records
+                  </div>
+                  <div class="quick-action" onclick="openPortalTool('patient', 'reminders')" role="button" tabindex="0" onkeydown="if(event.key==='Enter') openPortalTool('patient', 'reminders')">
+                    <span class="qa-icon" style="color: #f59e0b;"><i class="fa-solid fa-pills"></i></span>
+                    Medicine Reminder
+                  </div>
+                  <div class="quick-action" onclick="openOnlineConsultation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter') openOnlineConsultation()">
+                    <span class="qa-icon" style="color: #8b5cf6;"><i class="fa-solid fa-comment-medical"></i></span>
+                    Consult Online
+                  </div>
+                </div>
+
+                <!-- Health Tips -->
+                <div class="tip-card">
+                  <div class="tip-header">
+                    <span>💡</span> Health Tips
+                  </div>
+                  <p class="tip-text"><strong>Drink more water and stay active!</strong><br>Daily goal: 8 glasses of water. Remember to stretch after sitting for long periods.</p>
+                </div>
+              </div>
+
+              <!-- Right Side (Health Summary) -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Health Summary</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="health-summary-grid mb-3">
+                      <div class="health-metric">
+                        <div class="health-metric-icon" style="color: #ef4444;"><i class="fa-solid fa-heart"></i></div>
+                        <div class="health-metric-val">72</div>
+                        <div class="health-metric-unit">bpm</div>
+                        <div class="health-metric-label">Heart Rate</div>
+                      </div>
+                      <div class="health-metric">
+                        <div class="health-metric-icon" style="color: #3b82f6;"><i class="fa-solid fa-gauge-simple-high"></i></div>
+                        <div class="health-metric-val">120/80</div>
+                        <div class="health-metric-unit">mmHg</div>
+                        <div class="health-metric-label">Blood Pressure</div>
+                      </div>
+                      <div class="health-metric">
+                        <div class="health-metric-icon" style="color: #10b981;"><i class="fa-solid fa-weight-scale"></i></div>
+                        <div class="health-metric-val">72</div>
+                        <div class="health-metric-unit">kg</div>
+                        <div class="health-metric-label">Weight</div>
+                      </div>
+                      <div class="health-metric">
+                        <div class="health-metric-icon" style="color: #8b5cf6;"><i class="fa-solid fa-bed"></i></div>
+                        <div class="health-metric-val">7.5</div>
+                        <div class="health-metric-unit">hrs</div>
+                        <div class="health-metric-label">Sleep</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Recent Prescriptions</span>
+                    <button class="btn btn-secondary btn-xs" onclick="openPortalTool('patient', 'prescriptions')">View All</button>
+                  </div>
+                  <div class="card-body" id="patient-recent-rx-list">
+                    <p class="text-muted text-sm empty-state">Loading prescriptions...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Patient Appointments Page -->
+          <div id="patient-page-appointments" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">My Appointments</h2>
+                <p class="page-subheading">Track and manage your visits</p>
+              </div>
+              <button class="btn btn-primary" onclick="openBookAppointmentModal()"><i class="fa-solid fa-plus"></i> Book Appointment</button>
+            </div>
+
+            <div class="tab-nav">
+              <button class="tab-btn active" onclick="switchTab(this, 'pt-appt-upcoming')">Upcoming</button>
+              <button class="tab-btn" onclick="switchTab(this, 'pt-appt-completed')">Completed</button>
+              <button class="tab-btn" onclick="switchTab(this, 'pt-appt-cancelled')">Cancelled</button>
+            </div>
+
+            <div id="pt-appt-upcoming" class="tab-content active">
+              <div id="pt-upcoming-appt-container">
+                <!-- Appt items will be loaded dynamically -->
+              </div>
+            </div>
+            <div id="pt-appt-completed" class="tab-content">
+              <div id="pt-completed-appt-container">
+                <p class="text-muted text-sm empty-state">No completed appointments found.</p>
+              </div>
+            </div>
+            <div id="pt-appt-cancelled" class="tab-content">
+              <div id="pt-cancelled-appt-container">
+                <p class="text-muted text-sm empty-state">No cancelled appointments found.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Patient Doctors Page -->
+          <div id="patient-page-doctors" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Doctors Directory</h2>
+                <p class="page-subheading">Find specialist care for your needs</p>
+              </div>
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="pt-doc-search-input" placeholder="Search doctor or specialization..." oninput="handlePatientDocSearch()">
+              </div>
+            </div>
+            <div id="patient-doctors-container" class="flex flex-col gap-3">
+              <!-- Doctors List will be loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- 4. Patient Health Records Page -->
+          <div id="patient-page-health-records" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Health Records</h2>
+                <p class="page-subheading">Access your clinical reports and documentation</p>
+              </div>
+              <button class="btn btn-primary" onclick="openUploadRecordModal()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Report</button>
+            </div>
+
+            <div class="records-layout">
+              <!-- Records Sidebar -->
+              <div class="records-sidebar">
+                <div class="card">
+                  <nav style="padding: 10px 0;">
+                    <div class="records-menu-item active" onclick="switchRecordsSubtab(this, 'lab-reports')">
+                      <i class="fa-solid fa-microscope"></i> Lab Reports
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'prescriptions')">
+                      <i class="fa-solid fa-file-prescription"></i> Prescriptions
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'immunization')">
+                      <i class="fa-solid fa-syringe"></i> Immunization
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'vitals')">
+                      <i class="fa-solid fa-heart-pulse"></i> Vitals
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'documents')">
+                      <i class="fa-solid fa-folder-open"></i> Documents
+                    </div>
+                  </nav>
+                </div>
+              </div>
+
+              <!-- Records List Content -->
+              <div class="records-content card">
+                <div class="card-header">
+                  <span class="card-title" id="records-subtab-title">Lab Reports</span>
+                </div>
+                <div class="card-body" id="records-list-container">
+                  <!-- Record items will be injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ======================================= -->
+    <!-- DOCTOR ROLE VIEW PANEL                  -->
+    <!-- ======================================= -->
+    <div id="panel-doctor" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-user-md"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Doctor Clinical Portal</div>
+          <div class="nav-item active" onclick="switchDoctorPage('dashboard')">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
+          </div>
+          <div class="nav-item" onclick="switchDoctorPage('appointments')">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-days"></i></span> Appointments
+          </div>
+          <div class="nav-item" onclick="switchDoctorPage('patients')">
+            <span class="nav-icon"><i class="fa-solid fa-hospital-user"></i></span> Patients
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'prescriptions')">
+            <span class="nav-icon"><i class="fa-solid fa-file-prescription"></i></span> Prescriptions
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'schedule')">
+            <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Schedule
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'requests')">
+            <span class="nav-icon"><i class="fa-solid fa-clipboard-question"></i></span> Requests
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'messages')">
+            <span class="nav-icon"><i class="fa-solid fa-message"></i></span> Messages
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'earnings')">
+            <span class="nav-icon"><i class="fa-solid fa-indian-rupee-sign"></i></span> Earnings
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'reports')">
+            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Reports
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'settings')">
+            <span class="nav-icon"><i class="fa-solid fa-gear"></i></span> Settings
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <div class="avatar">AP</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Dr. Priya Sharma</div>
+              <div class="sidebar-user-role">Cardiologist</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <span class="page-title">Doctor Dashboard</span>
+          <div class="role-tab-bar">
+            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab active" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+          </div>
+          <div class="header-icons">
+            <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
+            <div class="header-avatar">PS</div>
+          </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="page-content">
+
+          <!-- 1. Doctor Dashboard Page -->
+          <div id="doctor-page-dashboard" class="page active">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Welcome Back, Dr. Priya Sharma</h2>
+                <p class="page-subheading">Here's your clinical overview for today</p>
+              </div>
+              <div class="date-label"><i class="fa-solid fa-calendar"></i> <span class="current-date-str"></span></div>
+            </div>
+
+            <!-- KPIs Row -->
+            <div class="grid-4 mb-4">
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon blue"><i class="fa-solid fa-hospital-user" style="color: #3b82f6;"></i></div>
+                  <span class="kpi-change">Today</span>
+                </div>
+                <div class="kpi-number" id="doc-kpi-total">12</div>
+                <div class="kpi-label">Today's Appointments</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon green"><i class="fa-solid fa-check-circle" style="color: #10b981;"></i></div>
+                  <span class="kpi-change">Active</span>
+                </div>
+                <div class="kpi-number" id="doc-kpi-done">8</div>
+                <div class="kpi-label">Completed</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon yellow"><i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i></div>
+                  <span class="kpi-change">Waiting</span>
+                </div>
+                <div class="kpi-number" id="doc-kpi-pending">4</div>
+                <div class="kpi-label">Pending</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon purple"><i class="fa-solid fa-file-circle-plus" style="color: #8b5cf6;"></i></div>
+                  <span class="kpi-change">New</span>
+                </div>
+                <div class="kpi-number" id="doc-kpi-requests">3</div>
+                <div class="kpi-label">New Requests</div>
+              </div>
+            </div>
+
+            <div class="grid-col-2-1 mb-4">
+              <!-- Left Column: Today's Appointments -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Today's Appointments</span>
+                  <button class="btn btn-primary btn-xs" onclick="handleCallNext()">📢 Advance Queue</button>
+                </div>
+                <div class="card-body" id="doc-today-appointments-list">
+                  <!-- List item template -->
+                </div>
+              </div>
+
+              <!-- Right Column: Graphs / Overview & Recent Patients -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Appointment Overview</span>
+                    <span class="text-muted text-xs">Weekly Stats</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="chart-area">
+                      <div class="chart-bars">
+                        <div class="chart-bar" style="height: 40%;"></div>
+                        <div class="chart-bar" style="height: 65%;"></div>
+                        <div class="chart-bar" style="height: 50%;"></div>
+                        <div class="chart-bar" style="height: 85%;"></div>
+                        <div class="chart-bar" style="height: 70%;"></div>
+                        <div class="chart-bar" style="height: 90%;"></div>
+                        <div class="chart-bar" style="height: 55%;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Recent Patients</span>
+                    <button class="btn btn-secondary btn-xs" onclick="switchDoctorPage('patients')">View All</button>
+                  </div>
+                  <div class="card-body" id="doc-recent-patients-list">
+                    <!-- Loaded dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Doctor Patient Details Page -->
+          <div id="doctor-page-patients" class="page">
+            <div class="page-header-row">
+              <button class="btn btn-secondary" onclick="switchDoctorPage('dashboard')"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+              <h2 class="page-heading">Patient Details</h2>
+            </div>
+
+            <!-- Profile Summary Banner -->
+            <div class="patient-profile-card">
+              <div class="patient-profile-avatar" id="det-pat-avatar">RV</div>
+              <div class="flex-1">
+                <h3 class="patient-profile-name" id="det-pat-name">Rahul Verma</h3>
+                <p class="patient-profile-meta" id="det-pat-meta">34 Years, Male | +91 9876543210</p>
+                <div class="patient-info-pills">
+                  <span class="info-pill" id="det-pat-hsid">HealthSync ID: HS-2026-907501</span>
+                  <span class="info-pill" id="det-pat-blood">Blood Group: B+</span>
+                </div>
+              </div>
+              <div class="med-history-card">
+                <div class="med-history-title"><i class="fa-solid fa-triangle-exclamation"></i> Medical History Warnings</div>
+                <div style="font-size: 11.5px; color: #7f1d1d;" id="det-pat-history-text">• Diabetes Type 2<br>• Hypertension<br>• No known drug allergies</div>
+              </div>
+            </div>
+
+            <!-- Detail Tabs Navigation -->
+            <div class="tab-nav">
+              <button class="tab-btn active" onclick="switchTab(this, 'doc-det-summary')">Summary</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-history')">History</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-rx')">Prescriptions</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-reports')">Reports</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-appointments')">Appointments</button>
+            </div>
+
+            <!-- Summary Tab Content -->
+            <div id="doc-det-summary" class="tab-content active">
+              <div class="grid-2">
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Consultation Summary Notes</span></div>
+                  <div class="card-body">
+                    <p style="font-size: 13px; line-height: 1.6; color: var(--text-medium);">Patient is responding well to medication. The blood sugar readings show stability over the past 3 weeks. Recommended to continue regular exercise and healthy diet plan.</p>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Active Care Plan Summary</span></div>
+                  <div class="card-body">
+                    <ul style="font-size: 13px; line-height: 1.8; color: var(--text-medium); padding-left: 16px; list-style-type: disc;">
+                      <li>Vitals checks every 15 days</li>
+                      <li>HbA1c test next month</li>
+                      <li>Consultation review on 20 May 2026</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-between mt-4">
+                <div></div>
+                <button class="btn btn-primary" onclick="openCreatePrescriptionPage()">📝 Create Digital Prescription</button>
+              </div>
+            </div>
+
+            <div id="doc-det-history" class="tab-content">
+              <p class="text-muted text-sm empty-state">No extended history details recorded.</p>
+            </div>
+            <div id="doc-det-rx" class="tab-content">
+              <div class="flex flex-col gap-3" id="doc-det-rx-container"></div>
+            </div>
+            <div id="doc-det-reports" class="tab-content">
+              <p class="text-muted text-sm empty-state">No lab reports found for this patient.</p>
+            </div>
+            <div id="doc-det-appointments" class="tab-content">
+              <div id="doc-det-appts-container"></div>
+            </div>
+          </div>
+
+          <!-- 3. Doctor Write Prescription Page -->
+          <div id="doctor-page-prescription" class="page">
+            <div class="page-header-row">
+              <button class="btn btn-secondary" onclick="switchDoctorPage('patients')"><i class="fa-solid fa-chevron-left"></i> Patient Details</button>
+              <h2 class="page-heading">Create Prescription</h2>
+            </div>
+
+            <div class="grid-col-2-1">
+              <!-- Left side: Medications Table Form -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Prescription Details</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-row mb-3">
+                      <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="text" class="form-control" id="rx-form-date" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Diagnosis Type *</label>
+                        <input type="text" class="form-control" id="rx-form-diagnosis" placeholder="e.g. Type 2 Diabetes, Acute Migraine">
+                      </div>
+                    </div>
+
+                    <!-- Medicines Add table -->
+                    <div class="med-table-wrap">
+                      <table class="med-table" id="rx-form-med-table">
+                        <thead>
+                          <tr>
+                            <th>Medicine *</th>
+                            <th>Dosage Strength</th>
+                            <th>Frequency *</th>
+                            <th>Duration *</th>
+                            <th style="width: 50px;"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <!-- Rows added dynamically -->
+                        </tbody>
+                      </table>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="addMedRowToRxForm()"><i class="fa-solid fa-plus"></i> Add Medicine</button>
+
+                    <div class="form-group mt-3">
+                      <label class="form-label">Advice / Instructions</label>
+                      <textarea class="form-control" id="rx-form-instructions" placeholder="Take medicine after meals, drink plenty of fluids..."></textarea>
+                    </div>
+                  </div>
+                  <div class="card-footer flex justify-between">
+                    <button class="btn btn-secondary" onclick="saveRxDraft()">Save as Draft</button>
+                    <button class="btn btn-success" onclick="submitPrescription()">Save & Issue Prescription ➔</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right side: Patient Mini-Profile -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-body rx-patient-panel">
+                    <div class="rx-patient-avatar">RV</div>
+                    <div class="flex-1">
+                      <h4 class="rx-patient-name">Rahul Verma</h4>
+                      <p class="rx-patient-meta">34 Years, Male | +91 9876543210</p>
+                      <p class="rx-patient-id">HS ID: HS-2026-907501</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Recent Prescriptions</span></div>
+                  <div class="card-body" id="rx-form-recent-list">
+                    <p class="text-muted text-sm empty-state">No recent records available.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ======================================= -->
+    <!-- RECEPTIONIST ROLE VIEW PANEL            -->
+    <!-- ======================================= -->
+    <div id="panel-reception" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-headset"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Reception Dashboard</div>
+          <div class="nav-item active" onclick="switchReceptionPage('dashboard')">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
+          </div>
+          <div class="nav-item" onclick="switchReceptionPage('walk-in')">
+            <span class="nav-icon"><i class="fa-solid fa-pencil"></i></span> Walk-In Registration
+          </div>
+          <div class="nav-item" onclick="switchReceptionPage('appointments')">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-check"></i></span> Appointments
+          </div>
+          <div class="nav-item" onclick="switchReceptionPage('queue-mgmt')">
+            <span class="nav-icon"><i class="fa-solid fa-list-ol"></i></span> Queue Management
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'patients')">
+            <span class="nav-icon"><i class="fa-solid fa-users"></i></span> Patients
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'doctors')">
+            <span class="nav-icon"><i class="fa-solid fa-user-doctor"></i></span> Doctors
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'reports')">
+            <span class="nav-icon"><i class="fa-solid fa-file-invoice"></i></span> Reports
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'settings')">
+            <span class="nav-icon"><i class="fa-solid fa-gears"></i></span> Settings
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <div class="avatar">R</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Receptionist Desk</div>
+              <div class="sidebar-user-role">Main Clinic Pune</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <span class="page-title">Reception Dashboard</span>
+          <div class="role-tab-bar">
+            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab active" onclick="switchGlobalRole('reception')">Receptionist View</div>
+          </div>
+          <div class="header-icons">
+            <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
+            <div class="header-avatar">R</div>
+          </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="page-content">
+
+          <!-- 1. Reception Dashboard Page -->
+          <div id="reception-page-dashboard" class="page active">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Welcome, Receptionist 👋</h2>
+                <p class="page-subheading">Here's what is happening today in the clinic</p>
+              </div>
+              <div class="date-label"><i class="fa-solid fa-clock"></i> <span class="current-date-str"></span></div>
+            </div>
+
+            <!-- KPIs Row -->
+            <div class="grid-4 mb-4">
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon blue"><i class="fa-solid fa-users" style="color: #3b82f6;"></i></div>
+                  <span class="kpi-change">Today</span>
+                </div>
+                <div class="kpi-number" id="rec-kpi-total">56</div>
+                <div class="kpi-label">Total Tokens Today</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon yellow"><i class="fa-solid fa-clock" style="color: #f59e0b;"></i></div>
+                  <span class="kpi-change">Waiting</span>
+                </div>
+                <div class="kpi-number" id="rec-kpi-waiting">18</div>
+                <div class="kpi-label">Waiting</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon purple"><i class="fa-solid fa-user-md" style="color: #8b5cf6;"></i></div>
+                  <span class="kpi-change">Consulting</span>
+                </div>
+                <div class="kpi-number" id="rec-kpi-consulting">12</div>
+                <div class="kpi-label">In Consultation</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-icon-row">
+                  <div class="kpi-icon green"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i></div>
+                  <span class="kpi-change">Done</span>
+                </div>
+                <div class="kpi-number" id="rec-kpi-done">26</div>
+                <div class="kpi-label">Completed</div>
+              </div>
+            </div>
+
+            <div class="grid-col-2-1 mb-4">
+              <!-- Left Side: Live Queue Table -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Current Queue</span>
+                  <span class="badge badge-dot badge-confirmed">Live Updates</span>
+                </div>
+                <div class="card-body table-wrap">
+                  <table class="hs-table" id="rec-dashboard-queue-table">
+                    <thead>
+                      <tr>
+                        <th>Token No.</th>
+                        <th>Patient Name</th>
+                        <th>Doctor</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Injected via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Right Side: Quick Actions & Today's Schedule -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Quick Actions</span></div>
+                  <div class="card-body flex flex-col gap-2">
+                    <button class="btn btn-secondary w-full" onclick="switchReceptionPage('walk-in')"><i class="fa-solid fa-user-plus"></i> Walk-In Registration</button>
+                    <button class="btn btn-secondary w-full" onclick="openReceptionIssueTokenModal()"><i class="fa-solid fa-ticket"></i> Generate Token</button>
+                    <button class="btn btn-secondary w-full" onclick="openBookAppointmentModal()"><i class="fa-solid fa-calendar-days"></i> Appointment Booking</button>
+                    <button class="btn btn-secondary w-full" onclick="switchReceptionPage('queue-mgmt')"><i class="fa-solid fa-magnifying-glass"></i> Patient Search</button>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Today's Appointments</span>
+                    <button class="btn btn-secondary btn-xs" onclick="switchReceptionPage('appointments')">View All</button>
+                  </div>
+                  <div class="card-body" id="rec-dashboard-appointments-list">
+                    <!-- Loader -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Reception Queue Management Page -->
+          <div id="reception-page-queue-mgmt" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Queue Management</h2>
+                <p class="page-subheading">Control status, order, and dispatch of patients</p>
+              </div>
+              <button class="btn btn-primary" onclick="openReceptionIssueTokenModal()"><i class="fa-solid fa-plus-circle"></i> Generate Token</button>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="flex justify-between items-center mb-3">
+              <div class="queue-filter-tabs">
+                <div class="q-tab active" onclick="filterQueueTable(this, 'all')">All</div>
+                <div class="q-tab" onclick="filterQueueTable(this, 'Waiting')">Waiting</div>
+                <div class="q-tab" onclick="filterQueueTable(this, 'In Consultation')">In Consultation</div>
+                <div class="q-tab" onclick="filterQueueTable(this, 'Completed')">Completed</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table class="hs-table" id="rec-mgmt-queue-table">
+                  <thead>
+                    <tr>
+                      <th>Token No.</th>
+                      <th>Patient Name</th>
+                      <th>Doctor</th>
+                      <th>Status</th>
+                      <th>Time</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Injected dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Reception Walk-in Registration Page -->
+          <div id="reception-page-walk-in" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Walk-In Registration</h2>
+                <p class="page-subheading">Add new patient or issue token directly to slot queue</p>
+              </div>
+            </div>
+
+            <div class="grid-col-2-1">
+              <div class="card">
+                <div class="card-header"><span class="card-title">Patient Information</span></div>
+                <div class="card-body">
+                  <div class="form-section">
+                    <div class="form-row-3">
+                      <div class="form-group">
+                        <label class="form-label">Full Name <span class="req">*</span></label>
+                        <input type="text" class="form-control" id="walkin-form-name" placeholder="Enter Full Name" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Age <span class="req">*</span></label>
+                        <input type="number" class="form-control" id="walkin-form-age" placeholder="Age" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Gender <span class="req">*</span></label>
+                        <select class="form-control" id="walkin-form-gender" required>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Mobile Number <span class="req">*</span></label>
+                        <input type="text" class="form-control" id="walkin-form-mobile" placeholder="Mobile" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="walkin-form-email" placeholder="Email (Optional)">
+                      </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                      <label class="form-label">Address</label>
+                      <input type="text" class="form-control" id="walkin-form-address" placeholder="Address">
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Blood Group</label>
+                        <select class="form-control" id="walkin-form-blood">
+                          <option value="">Select Blood Group</option>
+                          <option value="A+">A+</option>
+                          <option value="B+">B+</option>
+                          <option value="O+">O+</option>
+                          <option value="AB+">AB+</option>
+                          <option value="A-">A-</option>
+                          <option value="B-">B-</option>
+                          <option value="O-">O-</option>
+                          <option value="AB-">AB-</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">ID Proof</label>
+                        <select class="form-control" id="walkin-form-idproof">
+                          <option value="">Select ID Proof</option>
+                          <option value="Aadhar Card">Aadhar Card</option>
+                          <option value="PAN Card">PAN Card</option>
+                          <option value="Driving License">Driving License</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section">
+                    <h4 class="form-section-title">Visit Information</h4>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Select Doctor <span class="req">*</span></label>
+                        <select class="form-control" id="walkin-form-doctor" required></select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Purpose of Visit <span class="req">*</span></label>
+                        <select class="form-control" id="walkin-form-purpose" required>
+                          <option value="General Checkup">General Checkup</option>
+                          <option value="Follow-up">Follow-up</option>
+                          <option value="Emergency Consultation">Emergency Consultation</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; gap: 8px; align-items: center; font-size: 13px;" class="mb-3">
+                    <input type="checkbox" id="walkin-form-confirm" required>
+                    <label for="walkin-form-confirm">I confirm the patient details are correct.</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Output Token Area -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Generate Token</span></div>
+                  <div class="card-body flex flex-col gap-4 items-center justify-between" style="min-height: 220px;">
+                    <div class="token-output w-full" id="walkin-token-display-box" style="display: none;">
+                      <div class="token-big" id="walkin-generated-token-val">W12</div>
+                      <div class="token-label">Token Generated Successfully</div>
+                    </div>
+                    <div id="walkin-generate-prompt-text" class="text-muted text-sm text-center">Fill details to output token</div>
+                    <button class="btn btn-primary w-full" onclick="submitReceptionWalkinForm()"><i class="fa-solid fa-ticket"></i> Generate Token</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Reception Appointments Page -->
+          <div id="reception-page-appointments" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Today's Appointment Schedule</h2>
+                <p class="page-subheading">Track patient checkins, rescheduling and confirmations</p>
+              </div>
+              <button class="btn btn-primary" onclick="openBookAppointmentModal()"><i class="fa-solid fa-plus"></i> Book Appointment</button>
+            </div>
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table class="hs-table" id="rec-schedule-appointments-table">
+                  <thead>
+                    <tr>
+                      <th>Patient Name</th>
+                      <th>Doctor</th>
+                      <th>Time Slot</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Injected via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ───────────────── MODALS ───────────────── -->
+
+  <!-- 1. Book Appointment Modal -->
+  <div id="modal-book-appt" class="modal-backdrop">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <h3>Appointment Booking</h3>
+        <button class="modal-close" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-3">
+          <label class="form-label">Select Specialization & Doctor <span class="req">*</span></label>
+          <select class="form-control" id="booking-doctor-select" required></select>
+        </div>
+        <div class="form-row mb-3">
+          <div class="form-group">
+            <label class="form-label">Select Date <span class="req">*</span></label>
+            <input type="date" class="form-control" id="booking-date-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preferred Time Slot <span class="req">*</span></label>
+            <select class="form-control" id="booking-time-select" required>
+              <option value="09:00 AM">09:00 AM</option>
+              <option value="09:30 AM">09:30 AM</option>
+              <option value="10:00 AM">10:00 AM</option>
+              <option value="10:30 AM">10:30 AM</option>
+              <option value="11:00 AM">11:00 AM</option>
+              <option value="11:30 AM">11:30 AM</option>
+              <option value="12:00 PM">12:00 PM</option>
+              <option value="02:00 PM">02:00 PM</option>
+              <option value="02:30 PM">02:30 PM</option>
+              <option value="03:00 PM">03:00 PM</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Patient Name (If booking on behalf)</label>
+          <input type="text" class="form-control" id="booking-patient-name" value="Rahul Verma">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAllModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAppointmentBooking()">Book Slot</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Generate Token Modal (Reception) -->
+  <div id="modal-issue-token" class="modal-backdrop">
+    <div class="modal-box modal-sm">
+      <div class="modal-header">
+        <h3>Generate Queue Token</h3>
+        <button class="modal-close" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-3">
+          <label class="form-label">Patient Name <span class="req">*</span></label>
+          <input type="text" class="form-control" id="issue-token-patient-name" placeholder="Enter Patient Name" required>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">Assign Doctor <span class="req">*</span></label>
+          <select class="form-control" id="issue-token-doctor-select" required></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAllModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReceptionQuickToken()">Generate Token</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Upload Record Modal -->
+  <div id="modal-upload-record" class="modal-backdrop">
+    <div class="modal-box modal-sm">
+      <div class="modal-header">
+        <h3>Upload Health Record</h3>
+        <button class="modal-close" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-3">
+          <label class="form-label">Document Name *</label>
+          <input type="text" class="form-control" id="upload-doc-name" placeholder="e.g. Blood Sugar Report" required>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">Doctor Name</label>
+          <input type="text" class="form-control" id="upload-doc-doc" placeholder="e.g. Dr. Amit Patil">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Select File *</label>
+          <input type="file" class="form-control" id="upload-doc-file" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAllModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitUploadRecord()">Upload File</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-notifications" class="modal-backdrop">
+    <div class="modal-box modal-sm">
+      <div class="modal-header"><h3>Notifications</h3><button class="modal-close" onclick="closeAllModals()">&times;</button></div>
+      <div id="notification-list" class="modal-body notification-list"></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="clearNotifications()">Clear history</button><button class="btn btn-primary" onclick="closeAllModals()">Done</button></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-root"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

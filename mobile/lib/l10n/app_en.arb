@@ -1,0 +1,16 @@
+{
+  "appTitle": "HealthSync",
+  "welcomeBack": "Welcome Back,",
+  "login": "Login",
+  "sendOtp": "Send OTP",
+  "verify": "Verify & Proceed",
+  "patientDashboard": "Patient Dashboard",
+  "doctorDashboard": "Doctor Dashboard",
+  "receptionDashboard": "Reception Dashboard",
+  "emergency": "EMERGENCY",
+  "upcomingAppointment": "Upcoming Appointment",
+  "searchDoctors": "Search Doctors, Specialization...",
+  "privacyConsent": "Privacy & Consent",
+  "activeAccess": "Active Access Grants",
+  "pendingRequests": "Pending Requests"
+}
