@@ -333,6 +333,7 @@ const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const OTP_CHANNEL = process.env.OTP_CHANNEL === 'whatsapp' ? 'whatsapp' : 'sms';
 const DEMO_ADMIN_CODE = process.env.DEMO_ADMIN_CODE || '';
+const DEMO_GUEST_CODE = process.env.DEMO_GUEST_CODE || '';
 
 function twilioVerifyConfigured() {
   return Boolean(TWILIO_VERIFY_SERVICE_SID && TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN);
@@ -354,10 +355,10 @@ function sendRealOtp(mobile) {
 function checkRealOtp(mobile, code) {
   return twilioVerifyRequest('/VerificationCheck', { To:'+91' + mobile, Code:code });
 }
-function demoCodeMatches(code) {
-  if (!DEMO_ADMIN_CODE || typeof code !== 'string') return false;
+function demoCodeMatches(code, expectedCode) {
+  if (!expectedCode || typeof code !== 'string') return false;
   const supplied = Buffer.from(code);
-  const expected = Buffer.from(DEMO_ADMIN_CODE);
+  const expected = Buffer.from(expectedCode);
   return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
 }
 
@@ -440,9 +441,11 @@ function apiRouter(req, res, pathname, url, body) {
   // This endpoint only unlocks the browser-only demo portal. It never reads
   // or writes production records, and the access code is configured on Render.
   if (pathname === '/v1/demo/access' && method === 'POST') {
-    if (!DEMO_ADMIN_CODE) return json(res, 503, { success:false, message:'Demo Portal is not configured. Set DEMO_ADMIN_CODE on the server.' });
-    if (!demoCodeMatches(String(body.code || ''))) return json(res, 401, { success:false, message:'Invalid demo access code.' });
-    return json(res, 200, { success:true, message:'Demo Portal unlocked.' });
+    if (!DEMO_ADMIN_CODE && !DEMO_GUEST_CODE) return json(res, 503, { success:false, message:'Demo Portal is not configured. Set a demo access code on the server.' });
+    const code = String(body.code || '');
+    const access = demoCodeMatches(code, DEMO_ADMIN_CODE) ? 'admin' : demoCodeMatches(code, DEMO_GUEST_CODE) ? 'guest' : '';
+    if (!access) return json(res, 401, { success:false, message:'Invalid demo access code.' });
+    return json(res, 200, { success:true, access, message:'Demo Portal unlocked.' });
   }
 
   // ── Auth: Request OTP ──────────────────────────────────────────────────
