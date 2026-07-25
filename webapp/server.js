@@ -350,10 +350,18 @@ async function twilioVerifyRequest(pathname, params) {
   return data;
 }
 function sendRealOtp(mobile) {
-  return twilioVerifyRequest('/Verifications', { To:'+91' + mobile, Channel:OTP_CHANNEL });
+  return twilioVerifyRequest('/Verifications', { To:mobile, Channel:OTP_CHANNEL });
 }
 function checkRealOtp(mobile, code) {
-  return twilioVerifyRequest('/VerificationCheck', { To:'+91' + mobile, Code:code });
+  return twilioVerifyRequest('/VerificationCheck', { To:mobile, Code:code });
+}
+function normalizeMobileNumber(value) {
+  const raw = String(value || '').trim();
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  // Preserve backwards compatibility for existing Indian-only stored numbers.
+  if (!raw.startsWith('+') && /^[6-9]\d{9}$/.test(digits)) return '+91' + digits;
+  return '+' + digits;
 }
 function demoCodeMatches(code, expectedCode) {
   if (!expectedCode || typeof code !== 'string') return false;
@@ -450,8 +458,8 @@ function apiRouter(req, res, pathname, url, body) {
 
   // ── Auth: Request OTP ──────────────────────────────────────────────────
   if (pathname === '/v1/auth/login' && method === 'POST') {
-    const mobile = String(body.mobileNumber || '').replace(/\D/g, '');
-    if (!/^[6-9]\d{9}$/.test(mobile)) return json(res, 400, { success:false, code:'AUTH_001', message:'Please enter a valid 10-digit mobile number' });
+    const mobile = normalizeMobileNumber(body.mobileNumber);
+    if (!/^\+\d{7,15}$/.test(mobile)) return json(res, 400, { success:false, code:'AUTH_001', message:'Please enter a valid mobile number with country code' });
 
     const requestedAt = otpRequestStore.get(mobile) || 0;
     const retryAfterMs = OTP_RESEND_COOLDOWN_MS - (Date.now() - requestedAt);
@@ -481,11 +489,11 @@ function apiRouter(req, res, pathname, url, body) {
 
   // ── Auth: Verify OTP & Return/Create User Session ───────────────────────
   if (pathname === '/v1/auth/verify' && method === 'POST') {
-    const mobile = String(body.mobileNumber || '').replace(/\D/g, '');
+    const mobile = normalizeMobileNumber(body.mobileNumber);
     const otpCode = String(body.otpCode || '').replace(/\D/g, '');
 
-    if (!/^[6-9]\d{9}$/.test(mobile) || !/^\d{6}$/.test(otpCode)) {
-      return json(res, 400, { success:false, message:'A valid mobile number and 6-digit OTP are required.' });
+    if (!/^\+\d{7,15}$/.test(mobile) || !/^\d{6}$/.test(otpCode)) {
+      return json(res, 400, { success:false, message:'A valid international mobile number and 6-digit OTP are required.' });
     }
 
     let saved = otpStore.get(mobile);
@@ -523,7 +531,8 @@ function apiRouter(req, res, pathname, url, body) {
     otpRequestStore.delete(mobile);
 
     // Look up user or auto-register
-    db.get('SELECT * FROM users WHERE mobile_number = ?', [mobile], (err, user) => {
+    const legacyIndianMobile = mobile.startsWith('+91') ? mobile.slice(3) : mobile;
+    db.get('SELECT * FROM users WHERE mobile_number = ? OR mobile_number = ?', [mobile, legacyIndianMobile], (err, user) => {
       if (user) {
         // Existing user
         const token = jwtSign({ userId: user.id, role: user.role });

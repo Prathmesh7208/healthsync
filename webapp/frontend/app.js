@@ -30,6 +30,7 @@ let currentSelectedPatientId = 'pat1'; // Default demo patient
 let currentSelectedDoctorId = 'doc1';  // Default demo doctor
 let currentUser = null;
 let pendingMobile = '';
+let pendingCountryCode = '+91';
 let resendTimer = null;
 let bookingMode = 'IN_PERSON';
 let persistedReminders = [];
@@ -60,6 +61,24 @@ function escapeHtml(value) {
   const node = document.createElement('div');
   node.textContent = value == null ? '' : String(value);
   return node.innerHTML;
+}
+
+function populateCountryCodeSelects() {
+  const countries = window.HEALTHSYNC_COUNTRY_CODES || [['IN', 'India', '+91']];
+  document.querySelectorAll('.country-code-select').forEach(select => {
+    if (select.options.length) return;
+    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" ${iso === 'IN' ? 'selected' : ''}>${name} (${code})</option>`).join('');
+  });
+}
+function selectedCountryCode(id) { return document.getElementById(id)?.value || '+91'; }
+function internationalPhone(countryCode, value) {
+  const code = `+${String(countryCode || '+91').replace(/\D/g, '')}`;
+  const number = String(value || '').replace(/\D/g, '');
+  return `${code}${number}`;
+}
+function setCountryCodeValue(id, value) {
+  const select = document.getElementById(id);
+  if (select && value && [...select.options].some(option => option.value === value)) select.value = value;
 }
 
 // Language is selected before authentication and saved only in this browser.
@@ -111,6 +130,7 @@ window.backToLanguageSelection = function() {
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   applyLanguage(selectedLanguage);
+  populateCountryCodeSelects();
   updateAppHistoryButtons();
   renderPatientHealthProfile();
   restoreSession();
@@ -173,8 +193,11 @@ function authMessage(message, isError = false) { const el = document.getElementB
 function setAuthBusy(buttonId, busy, idleLabel) { const button = document.getElementById(buttonId); if (button) { button.disabled = busy; button.textContent = busy ? 'Please wait…' : idleLabel; } }
 window.requestOtp = async function(event) {
   event.preventDefault();
-  pendingMobile = document.getElementById('auth-mobile').value.replace(/\D/g, '');
-  if (!/^[6-9]\d{9}$/.test(pendingMobile)) return authMessage('Enter a valid 10-digit Indian mobile number.', true);
+  pendingCountryCode = selectedCountryCode('auth-country-code');
+  const localMobile = document.getElementById('auth-mobile').value.replace(/\D/g, '');
+  if (pendingCountryCode === '+91' && !/^[6-9]\d{9}$/.test(localMobile)) return authMessage('Enter a valid 10-digit Indian mobile number.', true);
+  pendingMobile = internationalPhone(pendingCountryCode, localMobile);
+  if (!/^\+\d{7,15}$/.test(pendingMobile)) return authMessage('Enter a valid mobile number for the selected country code.', true);
   setAuthBusy('send-otp-btn', true, 'Send OTP');
   try {
     const data = await requestJson('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile}) });
@@ -375,7 +398,8 @@ function renderProfileSafety(container, profile) {
   if (!container) return;
   const safety = document.createElement('section');
   safety.className = 'health-safety-card';
-  safety.innerHTML = `<div class="health-safety-heading"><i class="fa-solid fa-shield-heart"></i><span>Safety information</span></div><div class="health-safety-grid"><div><span>Blood group</span><strong>${escapeHtml(profile.bloodGroup || 'Unknown')}</strong></div><div><span>Emergency contact</span><strong>${escapeHtml(profile.emergencyName || 'Not added')}</strong><small>${escapeHtml(profile.emergencyPhone || 'No phone number added')}</small></div></div><div class="health-safety-detail"><span>Allergies</span><strong>${escapeHtml(profile.allergies || 'Not added')}</strong></div><div class="health-safety-detail"><span>Medical conditions</span><strong>${escapeHtml(profile.conditions || 'Not added')}</strong></div>`;
+  const emergencyPhone = profile.emergencyPhone ? `${profile.emergencyCountryCode || '+91'} ${profile.emergencyPhone}` : 'No phone number added';
+  safety.innerHTML = `<div class="health-safety-heading"><i class="fa-solid fa-shield-heart"></i><span>Safety information</span></div><div class="health-safety-grid"><div><span>Blood group</span><strong>${escapeHtml(profile.bloodGroup || 'Unknown')}</strong></div><div><span>Emergency contact</span><strong>${escapeHtml(profile.emergencyName || 'Not added')}</strong><small>${escapeHtml(emergencyPhone)}</small></div></div><div class="health-safety-detail"><span>Allergies</span><strong>${escapeHtml(profile.allergies || 'Not added')}</strong></div><div class="health-safety-detail"><span>Medical conditions</span><strong>${escapeHtml(profile.conditions || 'Not added')}</strong></div>`;
   container.querySelector('.health-guide-tip')?.before(safety);
 }
 function renderPatientHealthProfile() {
@@ -386,6 +410,7 @@ function renderPatientHealthProfile() {
   if (form && profile) {
     ['name','age','gender','job','height','weight','workHours','bloodGroup','emergencyName','emergencyPhone','allergies','conditions'].forEach(field => { const elementId = `profile-${field.replace('workHours', 'work-hours').replace('bloodGroup', 'blood-group').replace('emergencyName', 'emergency-name').replace('emergencyPhone', 'emergency-phone')}`; const input = document.getElementById(elementId); if (input) input.value = profile[field] ?? ''; });
     const custom = document.getElementById('profile-custom-job'); if (custom) custom.value = profile.customJob || '';
+    setCountryCodeValue('profile-emergency-country-code', profile.emergencyCountryCode || '+91');
     window.toggleCustomWorkField?.();
   }
   if (!profile) {
@@ -403,7 +428,7 @@ window.saveHealthProfile = function(event) {
   event.preventDefault();
   const profile = {
     name: document.getElementById('profile-name').value.trim(), age: Number(document.getElementById('profile-age').value), gender: document.getElementById('profile-gender').value,
-    job: document.getElementById('profile-job').value, customJob: document.getElementById('profile-custom-job').value.trim(), height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value), workHours: Number(document.getElementById('profile-work-hours').value), bloodGroup: document.getElementById('profile-blood-group').value, emergencyName: document.getElementById('profile-emergency-name').value.trim(), emergencyPhone: document.getElementById('profile-emergency-phone').value.trim(), allergies: document.getElementById('profile-allergies').value.trim(), conditions: document.getElementById('profile-conditions').value.trim()
+    job: document.getElementById('profile-job').value, customJob: document.getElementById('profile-custom-job').value.trim(), height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value), workHours: Number(document.getElementById('profile-work-hours').value), bloodGroup: document.getElementById('profile-blood-group').value, emergencyName: document.getElementById('profile-emergency-name').value.trim(), emergencyCountryCode: selectedCountryCode('profile-emergency-country-code'), emergencyPhone: document.getElementById('profile-emergency-phone').value.trim(), allergies: document.getElementById('profile-allergies').value.trim(), conditions: document.getElementById('profile-conditions').value.trim()
   };
   const emergencyDigits = profile.emergencyPhone.replace(/\D/g, '');
   if (!profile.name || !profile.job || (profile.job === 'Other' && !profile.customJob) || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400 || profile.workHours < 0 || profile.workHours > 24 || (profile.emergencyPhone && emergencyDigits.length < 7)) return showToast('Please enter valid adult health profile details.', 'warning');
@@ -992,11 +1017,12 @@ window.submitUploadRecord = function() {
 window.submitReceptionWalkinForm = async function() {
   const name = document.getElementById('walkin-form-name')?.value.trim();
   const mobile = document.getElementById('walkin-form-mobile')?.value.trim();
+  const mobileNumber = internationalPhone(selectedCountryCode('walkin-country-code'), mobile);
   const select = document.getElementById('walkin-form-doctor');
   const docId = select?.value || 'doc1';
   const confirmChecked = document.getElementById('walkin-form-confirm')?.checked;
 
-  if (!name || !mobile) {
+  if (!name || !mobile || !/^\+\d{7,15}$/.test(mobileNumber)) {
     showToast('Please enter Patient Name and Mobile Number.', 'warning');
     return;
   }
@@ -1009,7 +1035,7 @@ window.submitReceptionWalkinForm = async function() {
     const res = await fetch(`${API_BASE}/reception/walkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ patientName: name, mobile: mobile, doctorId: docId })
+      body: JSON.stringify({ patientName: name, mobile: mobileNumber, doctorId: docId })
     });
     const data = await res.json();
     if (data.success) {
