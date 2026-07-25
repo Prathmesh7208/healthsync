@@ -204,6 +204,9 @@ db.serialize(() => {
   db.get('SELECT COUNT(*) AS c FROM doctors', (err, row) => {
     if (row && row.c === 0) {
       // Doctor profiles reference user accounts; create those accounts first.
+      // This callback runs after the outer schema sequence, so explicitly
+      // serialize these dependent writes before inserting doctor profiles.
+      db.serialize(() => {
       const userStmt = db.prepare('INSERT OR IGNORE INTO users (id, mobile_number, role) VALUES (?, ?, ?)', () => {});
       userStmt.run('u-doc1', '9000000001', 'DOCTOR');
       userStmt.run('u-doc2', '9000000002', 'DOCTOR');
@@ -222,13 +225,15 @@ db.serialize(() => {
       stmt.run('doc4','u-doc4','Dr. Priya Kulkarni','Pediatrician','MD (Peds)','Kids Clinic, Pune',400,'8+ Years Exp.','Marathi, Hindi, English',4.8,180);
       stmt.run('doc5','u-doc5','Dr. Sanjay Desai','Dermatologist','MD (DVL)','SkinCare Center, Pune',550,'9+ Years Exp.','Hindi, English',4.6,145);
       stmt.finalize();
+      });
       console.log('✅ Seeded 5 doctors');
     }
   });
 
   db.get('SELECT COUNT(*) AS c FROM patients', (err, row) => {
     if (row && row.c === 0) {
-      // Seed demo user and patient
+      // Seed demo user and patient. Keep related inserts in their dependency order.
+      db.serialize(() => {
       db.run(`INSERT INTO users (id, mobile_number, role) VALUES ('u-pat1','9075012345','PATIENT')`);
       db.run(`INSERT INTO patients (id, user_id, healthsync_id, full_name, gender, date_of_birth, blood_group)
               VALUES ('pat1','u-pat1','HS-2026-907501','Neha Kulkarni','Female','1998-05-14','O+')`);
@@ -267,6 +272,7 @@ db.serialize(() => {
               [medsJSON], seedErr => {
                 if (seedErr) console.error('Unable to seed demo prescription:', seedErr.message);
               });
+      });
 
       console.log('✅ Seeded demo patient, queue, and prescription');
     }
