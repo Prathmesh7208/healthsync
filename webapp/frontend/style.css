@@ -609,6 +609,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .tip-card { background: linear-gradient(135deg, #EFF6FF, #F0FDF4); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; }
 .tip-header { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; margin-bottom: 6px; }
 .tip-text { font-size: 13px; color: var(--text-medium); line-height: 1.5; }
+.tip-source-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; color: var(--blue-primary); font-size: 11.5px; font-weight: 600; }.tip-source-link:hover { color: var(--blue-hover); text-decoration: underline; }
 
 /* ─── Walk-In Token Output ─── */
 .token-output {

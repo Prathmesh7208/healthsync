@@ -37,6 +37,14 @@ let persistedReminders = [];
 let remindersLoaded = false;
 let appHistory = [{ role:'patient', page:'dashboard' }];
 let appHistoryIndex = 0;
+let healthTipIndex = 0;
+let healthTipTimer = null;
+const curatedHealthTips = [
+  { icon:'fa-person-walking', title:'Move regularly', text:'Adults can aim for 150–300 minutes of moderate physical activity each week. If you are starting out, begin with manageable movement and build gradually.', source:'World Health Organization', url:'https://www.who.int/europe/news-room/fact-sheets/item/physical-activity' },
+  { icon:'fa-bed', title:'Protect your sleep', text:'Most adults need at least 7 hours of sleep each day. A consistent sleep and wake time can support better sleep habits.', source:'CDC Sleep', url:'https://www.cdc.gov/sleep/about/index.html' },
+  { icon:'fa-glass-water', title:'Choose water often', text:'Water supports normal body function and can help prevent dehydration. Your needs can increase with heat, fever, and physical activity.', source:'CDC Healthy Drinks', url:'https://www.cdc.gov/healthy-weight-growth/water-healthy-drinks/index.html' },
+  { icon:'fa-heart-pulse', title:'Make time to unwind', text:'Brief calming practices such as slow breathing, stretching, or a short outdoor break can be part of a healthy stress-management routine.', source:'CDC Mental Health', url:'https://www.cdc.gov/mental-health/living-with/index.html' }
+];
 
 async function requestJson(path, options = {}) {
   let response;
@@ -170,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateCountryCodeSelects();
   updateAppHistoryButtons();
   renderPatientHealthProfile();
+  startHealthTipRotation();
   restoreSession();
   // Set current date strings across panels
   const dates = document.querySelectorAll('.current-date-str');
@@ -190,6 +199,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Setup periodic refresh
   setInterval(syncAllData, 8000);
 });
+
+function renderHealthTip() {
+  const tip = curatedHealthTips[healthTipIndex];
+  const title = document.getElementById('patient-health-tip-title');
+  const icon = document.getElementById('patient-health-tip-icon');
+  const text = document.getElementById('patient-health-tip-text');
+  const source = document.getElementById('patient-health-tip-source');
+  if (!tip || !title || !icon || !text || !source) return;
+  title.textContent = tip.title;
+  icon.innerHTML = `<i class="fa-solid ${tip.icon}"></i>`;
+  text.textContent = tip.text;
+  source.href = tip.url;
+  source.innerHTML = `${escapeHtml(tip.source)} <i class="fa-solid fa-arrow-up-right-from-square"></i>`;
+}
+function startHealthTipRotation() {
+  renderHealthTip();
+  clearInterval(healthTipTimer);
+  healthTipTimer = setInterval(() => { healthTipIndex = (healthTipIndex + 1) % curatedHealthTips.length; renderHealthTip(); }, 20000);
+}
 
 async function restoreSession() {
   const saved = localStorage.getItem('healthsync-session');
