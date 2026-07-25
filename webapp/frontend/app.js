@@ -101,6 +101,10 @@ window.continueToLogin = function() {
   document.getElementById('language-screen')?.classList.add('hidden');
   document.getElementById('auth-screen')?.classList.remove('hidden');
 };
+window.backToLanguageSelection = function() {
+  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('language-screen')?.classList.remove('hidden');
+};
 
 // ---------------------------------------------------------------------------
 // INITIALIZATION
@@ -238,7 +242,7 @@ function updateAppHistoryButtons() {
   document.querySelectorAll('[onclick="goAppForward()"]').forEach(button => button.disabled = appHistoryIndex >= appHistory.length - 1);
 }
 function goToAppHistoryState(state) {
-  switchGlobalRole(state.role);
+  switchGlobalRole(state.role, false);
   if (state.page.startsWith('tool:')) {
     openPortalTool(state.role, state.page.slice(5), false);
     return;
@@ -249,7 +253,7 @@ function goToAppHistoryState(state) {
 window.goAppBack = function() { if (appHistoryIndex === 0) return; appHistoryIndex--; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
 window.goAppForward = function() { if (appHistoryIndex >= appHistory.length - 1) return; appHistoryIndex++; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
 
-window.switchGlobalRole = function(role) {
+window.switchGlobalRole = function(role, remember = true) {
   document.querySelectorAll('.role-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
 
@@ -261,6 +265,12 @@ window.switchGlobalRole = function(role) {
 
   // Sync data immediately when switching
   syncAllData();
+  if (remember && targetPanel) {
+    const activeId = targetPanel.querySelector('.page.active')?.id || `${role}-page-dashboard`;
+    let page = activeId.replace(`${role}-page-`, '');
+    if (page.startsWith('tool-')) page = `tool:${page.slice(5)}`;
+    recordAppNavigation(role, page);
+  }
 };
 
 // ---------------------------------------------------------------------------

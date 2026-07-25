@@ -160,8 +160,7 @@ img { max-width: 100%; display: block; }
 .search-box input::placeholder { color: var(--text-light); }
 .header-icons { display: flex; align-items: center; gap: 12px; }
 .app-history-nav { display: flex; align-items: center; gap: 4px; padding-right: 8px; border-right: 1px solid var(--border); }
-.app-history-nav .icon-btn { width: 30px; height: 30px; font-size: 12px; }
-.app-history-nav .icon-btn:disabled { opacity: .42; cursor: not-allowed; }
+.app-nav-button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--page-bg); color: var(--text-medium); cursor: pointer; font: 600 12px inherit; }.app-nav-button:hover { background: var(--blue-light); border-color: var(--blue-primary); color: var(--blue-primary); }.app-nav-button:disabled { opacity: .42; cursor: not-allowed; }
 .icon-btn {
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--page-bg); border: 1px solid var(--border);
@@ -686,7 +685,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .search-box { display: none; }
   .header-icons { gap: 8px; }
   .app-history-nav { gap: 2px; padding-right: 5px; }
-  .app-history-nav .icon-btn { width: 28px; height: 28px; }
+  .app-nav-button { min-height: 28px; padding: 0 7px; gap: 4px; font-size: 11px; }
   .icon-btn, .header-avatar { width: 34px; height: 34px; }
   .role-tab-bar { max-width: 48vw; overflow-x: auto; flex-wrap: nowrap; }
   .role-tab { padding: 6px 10px; white-space: nowrap; }
