@@ -648,6 +648,96 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* =====================================================
+   RESPONSIVE LAYOUT
+   ===================================================== */
+@media (max-width: 1024px) {
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-col-2-1, .grid-col-1-2 { grid-template-columns: 1fr; }
+  .health-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  html, body { overflow: auto; }
+  #app { display: block; height: 100dvh; overflow: hidden; }
+  .role-panel.active { display: block; height: 100%; }
+
+  .sidebar {
+    width: 100%; min-width: 0; height: auto; max-height: 58px;
+    flex-direction: row; align-items: stretch; overflow-x: auto; overflow-y: hidden;
+    border-right: 0; border-bottom: 1px solid var(--border);
+  }
+  .sidebar-brand { padding: 10px 14px; border-bottom: 0; flex: 0 0 auto; }
+  .sidebar-logo { width: 30px; height: 30px; font-size: 13px; }
+  .sidebar-brand-name { display: none; }
+  .sidebar-nav { display: flex; align-items: center; gap: 2px; padding: 6px 4px; min-width: max-content; }
+  .nav-section-label, .sidebar-footer { display: none; }
+  .nav-item { margin: 0; padding: 8px 10px; font-size: 12px; white-space: nowrap; }
+  .nav-item .nav-icon { font-size: 15px; width: auto; }
+  .nav-item .nav-badge { margin-left: 2px; }
+
+  .main-area { height: calc(100dvh - 58px); min-height: 0; }
+  .top-header { height: 56px; padding: 0 14px; gap: 10px; }
+  .top-header .page-title { font-size: 14px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-box { display: none; }
+  .header-icons { gap: 8px; }
+  .icon-btn, .header-avatar { width: 34px; height: 34px; }
+  .role-tab-bar { max-width: 48vw; overflow-x: auto; flex-wrap: nowrap; }
+  .role-tab { padding: 6px 10px; white-space: nowrap; }
+
+  .page-content { padding: 16px; overscroll-behavior: contain; }
+  .page-header-row { align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .page-header-row > :last-child:not(:first-child) { flex-shrink: 0; }
+  .page-heading { font-size: 18px; }
+  .page-subheading { font-size: 12px; }
+  .card-header, .card-body, .card-footer { padding-left: 14px; padding-right: 14px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 12px; }
+  .quick-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .health-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; gap: 12px; }
+  .form-control { min-height: 42px; font-size: 16px; }
+  .btn { min-height: 40px; justify-content: center; }
+
+  .table-wrap, .med-table-wrap { margin-left: -14px; margin-right: -14px; padding: 0 14px; }
+  table.hs-table { min-width: 620px; }
+  .hs-table th, .hs-table td { padding: 10px 12px; }
+  .records-layout { grid-template-columns: 1fr; }
+  .records-sidebar { overflow-x: auto; }
+  .records-sidebar .card { min-width: 220px; }
+  .doctor-search-card { align-items: flex-start; flex-wrap: wrap; }
+  .doctor-card-right { width: 100%; text-align: left; }
+
+  .modal-backdrop { align-items: flex-end; }
+  .modal-box, .modal-sm, .modal-md, .modal-lg { width: 100%; max-width: none; max-height: 88dvh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .modal-header, .modal-body, .modal-footer { padding-left: 16px; padding-right: 16px; }
+  .modal-footer { flex-wrap: wrap; }
+  .modal-footer .btn { flex: 1 1 140px; }
+
+  .toast-container { left: 12px; right: 12px; bottom: 12px; }
+  .toast { min-width: 0; max-width: none; width: 100%; }
+  .auth-screen { padding: 16px; align-items: center; }
+  .auth-card { width: 100%; max-width: 420px; padding: 28px 22px; }
+}
+
+@media (max-width: 420px) {
+  .sidebar { max-height: 54px; }
+  .sidebar-brand { padding: 10px; }
+  .sidebar-logo { width: 28px; height: 28px; }
+  .nav-item { padding: 7px 8px; font-size: 11px; }
+  .main-area { height: calc(100dvh - 54px); }
+  .top-header { padding: 0 12px; }
+  .role-tab-bar { max-width: 44vw; }
+  .page-content { padding: 12px; }
+  .page-header-row { flex-wrap: wrap; }
+  .page-header-row > :last-child:not(:first-child) { width: 100%; }
+  .page-header-row .btn { width: 100%; }
+  .quick-action-grid { gap: 8px; }
+  .quick-action { padding: 12px 6px; }
+  .kpi-card { padding: 14px; }
+  .auth-card { padding: 26px 20px; }
+  .auth-card h1 { font-size: 22px; }
+}
 ::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
 
 /* ─── Page transitions ─── */
