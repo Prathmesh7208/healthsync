@@ -439,37 +439,57 @@ function renderAppointmentsList() {
   const ptCompleted = document.getElementById('pt-completed-appt-container');
   const ptCancelled = document.getElementById('pt-cancelled-appt-container');
 
-  const upcomingList = todayAppointments.filter(a => a.status === 'CONFIRMED' || a.status === 'Checked In' || a.status === 'In Progress');
-  const completedList = todayAppointments.filter(a => a.status === 'Completed');
-  const cancelledList = todayAppointments.filter(a => a.status === 'Cancelled' || a.status === 'No Show');
+  const status = appt => String(appt.status || '').trim().toUpperCase();
+  const upcomingList = todayAppointments.filter(a => ['CONFIRMED', 'CHECKED IN', 'IN PROGRESS', 'WAITING', 'IN CONSULTATION'].includes(status(a)));
+  const completedList = todayAppointments.filter(a => status(a) === 'COMPLETED');
+  const cancelledList = todayAppointments.filter(a => ['CANCELLED', 'NO SHOW'].includes(status(a)));
 
-  if (ptUpcoming) {
-    ptUpcoming.innerHTML = upcomingList.length === 0
-      ? `<p class="text-muted text-sm empty-state">No upcoming appointments.</p>`
-      : upcomingList.map(appt => {
-          const dateObj = new Date();
-          const day = dateObj.getDate();
-          const mon = dateObj.toLocaleDateString('en-IN', { month: 'short' });
-          return `
-            <div class="appt-card">
-              <div class="appt-date-box">
-                <div class="appt-day">${day}</div>
-                <div class="appt-mon">${mon}</div>
-              </div>
-              <div class="appt-info">
-                <div class="appt-doc">${appt.doctorName}</div>
-                <div class="appt-spec">Consulting Cardiologist</div>
-                <div class="appt-clinic"><i class="fa-solid fa-location-dot"></i> Apollo Hospital, Mumbai</div>
-                <div class="appt-time"><i class="fa-solid fa-clock"></i> ${appt.slot_time}</div>
-              </div>
-              <div class="appt-actions">
-                <span class="badge badge-confirmed">${appt.status}</span>
-                <span class="token-chip mt-2">Token ${appt.token_number}</span>
-                <button class="btn btn-danger btn-xs mt-2" onclick="cancelAppointment('${appt.id}')">Cancel</button>
-              </div>
-            </div>`;
-        }).join('');
-  }
+  const emptyAppointments = (type) => {
+    const content = {
+      upcoming: ['No upcoming appointments', 'Book an appointment to see your confirmed visits and queue details here.', 'Book an appointment'],
+      completed: ['No completed appointments yet', 'After a consultation is completed, its visit summary will appear here.', 'Book an appointment'],
+      cancelled: ['No cancelled appointments', 'Cancelled visits are kept here so your upcoming appointments stay uncluttered.', 'View upcoming appointments']
+    }[type];
+    const action = type === 'cancelled'
+      ? "showPatientAppointmentTab('pt-appt-upcoming')"
+      : 'openBookAppointmentModal()';
+    return `<div class="empty-state appointment-empty-state"><div class="es-icon"><i class="fa-regular fa-calendar"></i></div><div class="es-text">${content[0]}</div><div class="es-sub">${content[1]}</div><button class="btn btn-primary btn-sm mt-3" onclick="${action}"><i class="fa-solid fa-calendar-plus"></i> ${content[2]}</button></div>`;
+  };
+
+  const patientCard = (appt, category) => {
+    const rawDate = appt.slot_date || appt.date || appt.appointment_date;
+    const dateObj = rawDate ? new Date(`${String(rawDate).slice(0, 10)}T12:00:00`) : new Date();
+    const validDate = Number.isNaN(dateObj.getTime()) ? new Date() : dateObj;
+    const doctorName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync care team';
+    const specialty = appt.specialization || appt.specialty || appt.reason || 'Consultation';
+    const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'HealthSync Partner Clinic';
+    const token = appt.token_number || appt.token;
+    const normalizedStatus = status(appt);
+    const displayStatus = normalizedStatus === 'CHECKED IN' ? 'Checked in' : normalizedStatus === 'IN PROGRESS' ? 'In consultation' : normalizedStatus.replace(/\b\w/g, char => char.toUpperCase());
+    const action = category === 'upcoming'
+      ? `<button class="btn btn-danger btn-xs mt-2" onclick="cancelAppointment('${appt.id}')">Cancel</button>`
+      : category === 'completed'
+        ? `<button class="btn btn-secondary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}')">Book follow-up</button>`
+        : `<button class="btn btn-primary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}')">Book again</button>`;
+    return `<div class="appt-card">
+      <div class="appt-date-box"><div class="appt-day">${validDate.getDate()}</div><div class="appt-mon">${validDate.toLocaleDateString('en-IN', { month: 'short' })}</div></div>
+      <div class="appt-info">
+        <div class="appt-doc">${escapeHtml(doctorName)}</div>
+        <div class="appt-spec">${escapeHtml(specialty)}</div>
+        <div class="appt-clinic"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(clinic)}</div>
+        <div class="appt-time"><i class="fa-solid fa-clock"></i> ${escapeHtml(appt.slot_time || appt.time || 'Time to be confirmed')}</div>
+      </div>
+      <div class="appt-actions">
+        <span class="badge ${getBadgeClass(normalizedStatus)}">${escapeHtml(displayStatus)}</span>
+        ${token ? `<span class="token-chip mt-2">Token ${escapeHtml(token)}</span>` : ''}
+        ${action}
+      </div>
+    </div>`;
+  };
+
+  if (ptUpcoming) ptUpcoming.innerHTML = upcomingList.length ? upcomingList.map(appt => patientCard(appt, 'upcoming')).join('') : emptyAppointments('upcoming');
+  if (ptCompleted) ptCompleted.innerHTML = completedList.length ? completedList.map(appt => patientCard(appt, 'completed')).join('') : emptyAppointments('completed');
+  if (ptCancelled) ptCancelled.innerHTML = cancelledList.length ? cancelledList.map(appt => patientCard(appt, 'cancelled')).join('') : emptyAppointments('cancelled');
 
   // Render Doctor Panel List
   const docList = document.getElementById('doc-today-appointments-list');
@@ -501,7 +521,7 @@ function renderAppointmentsList() {
       : todayAppointments.map(appt => `
         <tr>
           <td class="cell-strong">${appt.patient_name}</td>
-          <td>${appt.doctorName}</td>
+          <td>${escapeHtml(appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync care team')}</td>
           <td>${appt.slot_time}</td>
           <td><span class="badge ${getBadgeClass(appt.status)}">${appt.status}</span></td>
           <td>
@@ -517,12 +537,13 @@ function renderAppointmentsList() {
 
 // Helper badge class resolver
 function getBadgeClass(status) {
-  if (status === 'CONFIRMED') return 'badge-confirmed';
-  if (status === 'Waiting') return 'badge-waiting';
-  if (status === 'In Consultation') return 'badge-in-consult';
-  if (status === 'Completed') return 'badge-completed';
-  if (status === 'Cancelled') return 'badge-cancelled';
-  if (status === 'No Show') return 'badge-noshow';
+  const value = String(status || '').trim().toUpperCase();
+  if (value === 'CONFIRMED') return 'badge-confirmed';
+  if (value === 'WAITING' || value === 'CHECKED IN') return 'badge-waiting';
+  if (value === 'IN CONSULTATION' || value === 'IN PROGRESS') return 'badge-in-consult';
+  if (value === 'COMPLETED') return 'badge-completed';
+  if (value === 'CANCELLED') return 'badge-cancelled';
+  if (value === 'NO SHOW') return 'badge-noshow';
   return 'badge-pending';
 }
 
@@ -1030,10 +1051,24 @@ window.switchTab = function(btn, contentId) {
   parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
-  const container = parent.nextElementSibling;
+  // Tab panels are sibling sections under the page, not children of the first
+  // panel. Searching the shared page wrapper ensures exactly one panel is shown.
+  const container = parent.parentElement;
   container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   const target = document.getElementById(contentId);
   if (target) target.classList.add('active');
+};
+
+// Used by the appointment empty states without relying on fragile inline DOM selectors.
+window.showPatientAppointmentTab = function(contentId) {
+  const target = document.getElementById(contentId);
+  if (!target) return;
+  const page = document.getElementById('patient-page-appointments');
+  page?.querySelectorAll('.tab-btn').forEach(button => {
+    const isTarget = button.getAttribute('onclick')?.includes(contentId);
+    button.classList.toggle('active', Boolean(isTarget));
+  });
+  page?.querySelectorAll('.tab-content').forEach(section => section.classList.toggle('active', section.id === contentId));
 };
 
 // ---------------------------------------------------------------------------

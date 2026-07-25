@@ -110,9 +110,10 @@ window.DemoPortal = (() => {
       if (path.endsWith('/queue/live')) return jsonResponse({success:true, queue, stats:{todaysTokens:46,inQueue:7,inConsultation:2,completed:37}});
       if (path.endsWith('/appointments') && String(options.method || 'GET').toUpperCase() === 'POST') return jsonResponse({success:true, appointment:{id:'demo-appt-19',token:'A19'}});
       if (path.endsWith('/appointments')) return jsonResponse({success:true, appointments:[
-        {id:'appt-1',slot_date:'2026-07-28',slot_time:'10:30 AM',patient_name:'Aarav Mehta',doctor_name:'Dr. Kavya Iyer',status:'CONFIRMED',token_number:'A13'},
-        {id:'appt-2',slot_date:'2026-08-04',slot_time:'4:15 PM',patient_name:'Meera Kulkarni',doctor_name:'Dr. Rohan Shah',status:'CONFIRMED',token_number:'A18'},
-        {id:'appt-3',slot_date:'2026-07-25',slot_time:'9:30 AM',patient_name:'Vikram Rao',doctor_name:'Dr. Kavya Iyer',status:'COMPLETED',token_number:'A09'}
+        {id:'appt-1',doctor_id:'doc1',slot_date:'2026-07-28',slot_time:'10:30 AM',patient_name:'Aarav Mehta',doctor_name:'Dr. Kavya Iyer',doctorName:'Dr. Kavya Iyer',specialization:'Cardiology follow-up',clinic_name:'Lakeview Multispecialty Hospital',status:'CONFIRMED',token_number:'A13'},
+        {id:'appt-2',doctor_id:'doc2',slot_date:'2026-08-04',slot_time:'4:15 PM',patient_name:'Aarav Mehta',doctor_name:'Dr. Rohan Shah',doctorName:'Dr. Rohan Shah',specialization:'Annual wellness visit',clinic_name:'Lakeview Multispecialty Hospital',status:'CONFIRMED',token_number:'A18'},
+        {id:'appt-3',doctor_id:'doc1',slot_date:'2026-07-18',slot_time:'9:30 AM',patient_name:'Aarav Mehta',doctor_name:'Dr. Kavya Iyer',doctorName:'Dr. Kavya Iyer',specialization:'Cardiology consultation',clinic_name:'Lakeview Multispecialty Hospital',status:'COMPLETED',token_number:'A09'},
+        {id:'appt-4',doctor_id:'doc3',slot_date:'2026-07-11',slot_time:'3:00 PM',patient_name:'Aarav Mehta',doctor_name:'Dr. Nisha Desai',doctorName:'Dr. Nisha Desai',specialization:'Endocrinology review',clinic_name:'Lakeview Multispecialty Hospital',status:'CANCELLED',token_number:'A05'}
       ]});
       if (path.endsWith('/prescriptions')) return jsonResponse({success:true, prescriptions:[
         {id:'rx-1',diagnosis:'Dyslipidemia follow-up',doctor_name:'Dr. Kavya Iyer',created_at:'2026-07-24T10:15:00Z',medications_json:'[{"name":"Atorvastatin 10 mg","dosage":"1 tablet","frequency":"Night","duration":"30 days"}]'},
