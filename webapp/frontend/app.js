@@ -67,8 +67,11 @@ function populateCountryCodeSelects() {
   const countries = window.HEALTHSYNC_COUNTRY_CODES || [['IN', 'India', '+91']];
   document.querySelectorAll('.country-code-select').forEach(select => {
     if (select.options.length) return;
-    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" ${iso === 'IN' ? 'selected' : ''}>${name} (${code})</option>`).join('');
+    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" ${iso === 'IN' ? 'selected' : ''}>${countryFlag(iso)} ${name} (${code})</option>`).join('');
   });
+}
+function countryFlag(iso) {
+  return String(iso || '').toUpperCase().replace(/./g, letter => String.fromCodePoint(127397 + letter.charCodeAt(0)));
 }
 function selectedCountryCode(id) { return document.getElementById(id)?.value || '+91'; }
 function internationalPhone(countryCode, value) {
