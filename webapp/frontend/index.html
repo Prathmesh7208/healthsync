@@ -78,6 +78,9 @@
           <div class="nav-item" onclick="switchPatientPage('health-records')">
             <span class="nav-icon"><i class="fa-solid fa-file-medical"></i></span> Health Records
           </div>
+          <div class="nav-item" onclick="switchPatientPage('health-profile')">
+            <span class="nav-icon"><i class="fa-solid fa-heart-pulse"></i></span> My Health Profile
+          </div>
           <div class="nav-item" onclick="openPortalTool('patient', 'prescriptions')">
             <span class="nav-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Prescriptions
           </div>
@@ -228,6 +231,8 @@
                   </div>
                 </div>
 
+                <div id="patient-health-guide" class="card health-guide-card" aria-live="polite"></div>
+
                 <div class="card">
                   <div class="card-header">
                     <span class="card-title">Recent Prescriptions</span>
@@ -238,6 +243,38 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Patient Health Profile Page -->
+          <div id="patient-page-health-profile" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">My Health Profile</h2>
+                <p class="page-subheading">Keep your wellness details up to date for a personalised dashboard guide.</p>
+              </div>
+            </div>
+            <div class="grid-col-2-1">
+              <form class="card" id="health-profile-form" onsubmit="saveHealthProfile(event)">
+                <div class="card-header"><span class="card-title">About you</span><span class="text-muted text-sm">Private to your patient dashboard</span></div>
+                <div class="card-body">
+                  <div class="form-row">
+                    <div class="form-group"><label class="form-label" for="profile-name">Full name <span class="req">*</span></label><input class="form-control" id="profile-name" maxlength="80" required placeholder="Your full name"></div>
+                    <div class="form-group"><label class="form-label" for="profile-age">Age <span class="req">*</span></label><input class="form-control" id="profile-age" type="number" min="18" max="120" required placeholder="e.g. 30"></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label class="form-label" for="profile-gender">Gender</label><select class="form-control" id="profile-gender"><option value="Prefer not to say">Prefer not to say</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select></div>
+                    <div class="form-group"><label class="form-label" for="profile-job">Work routine <span class="req">*</span></label><select class="form-control" id="profile-job" required><option value="">Select your work routine</option><option value="Desk-based / mostly sitting">Desk-based / mostly sitting</option><option value="Mixed activity">Mixed activity</option><option value="Physically active work">Physically active work</option><option value="Shift work">Shift work</option></select></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label class="form-label" for="profile-height">Height (cm) <span class="req">*</span></label><input class="form-control" id="profile-height" type="number" min="80" max="250" step="0.1" required placeholder="e.g. 170"></div>
+                    <div class="form-group"><label class="form-label" for="profile-weight">Weight (kg) <span class="req">*</span></label><input class="form-control" id="profile-weight" type="number" min="20" max="400" step="0.1" required placeholder="e.g. 68"></div>
+                  </div>
+                  <p class="health-profile-note"><i class="fa-solid fa-circle-info"></i> This wellness guide is informational and does not replace advice from a qualified clinician.</p>
+                </div>
+                <div class="card-footer"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Save and update my guide</button></div>
+              </form>
+              <aside id="health-profile-summary" class="card health-profile-summary" aria-live="polite"></aside>
             </div>
           </div>
 

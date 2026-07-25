@@ -112,6 +112,7 @@ window.backToLanguageSelection = function() {
 document.addEventListener('DOMContentLoaded', () => {
   applyLanguage(selectedLanguage);
   updateAppHistoryButtons();
+  renderPatientHealthProfile();
   restoreSession();
   // Set current date strings across panels
   const dates = document.querySelectorAll('.current-date-str');
@@ -157,6 +158,7 @@ window.startDemoExperience = function(role, mobile) {
   document.getElementById('app')?.classList.remove('hidden');
   document.getElementById('in-app-demo-banner')?.classList.remove('hidden');
   switchGlobalRole(role === 'reception' ? 'reception' : role);
+  renderPatientHealthProfile();
   fetchDoctors();
   syncAllData();
   return true;
@@ -209,7 +211,7 @@ window.verifyOtp = async function(event) {
   } catch (error) { authMessage(error.message, true); }
   finally { setAuthBusy('verify-otp-btn', false, 'Verify and sign in'); }
 };
-function finishLogin() { document.getElementById('language-screen')?.classList.add('hidden'); document.getElementById('auth-screen').classList.add('hidden'); if (currentUser?.role === 'DOCTOR') switchGlobalRole('doctor'); fetchNotifications(); }
+function finishLogin() { document.getElementById('language-screen')?.classList.add('hidden'); document.getElementById('auth-screen').classList.add('hidden'); if (currentUser?.role === 'DOCTOR') switchGlobalRole('doctor'); renderPatientHealthProfile(); fetchNotifications(); }
 
 async function fetchNotifications() { if (!currentUser) return; try { const res=await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data=await res.json(); renderNotifications(data.notifications || []); } catch {} }
 function renderNotifications(items) { const unread=items.filter(item=>item.status==='UNREAD').length; const count=document.getElementById('notification-count'); const dot=document.getElementById('notification-dot'); if(count) count.textContent=unread; if(dot) dot.classList.toggle('hidden', !unread); const list=document.getElementById('notification-list'); if(list) list.innerHTML=items.length ? items.map(item=>`<div class="notification-item ${item.status==='UNREAD'?'unread':''}" onclick="markNotificationRead('${item.id}')">${escapeHtml(item.message)}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>'; }
@@ -289,6 +291,7 @@ window.switchPatientPage = function(pageId, remember = true) {
   document.querySelectorAll('#panel-patient .page').forEach(page => page.classList.remove('active'));
   const targetPage = document.getElementById(`patient-page-${pageId}`);
   if (targetPage) targetPage.classList.add('active');
+  if (pageId === 'health-profile') renderPatientHealthProfile();
   if (remember) recordAppNavigation('patient', pageId);
 };
 
@@ -335,6 +338,58 @@ function getUtilityPage(role, tool) {
 function table(rows, headers) { return `<div class="card"><div class="card-body table-wrap"><table class="hs-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}" class="text-center text-muted">No records yet.</td></tr>`}</tbody></table></div></div>`; }
 function localItems(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
 function saveLocalItems(key, values) { localStorage.setItem(key, JSON.stringify(values)); }
+
+function healthProfileKey() { return currentUser?.demo ? null : `healthsync-health-profile-${currentUser?.id || 'local-patient'}`; }
+function getHealthProfile() {
+  if (currentUser?.demo) return window.__healthsyncDemoHealthProfile || null;
+  try { return JSON.parse(localStorage.getItem(healthProfileKey()) || 'null'); } catch { return null; }
+}
+function saveHealthProfileData(profile) {
+  if (currentUser?.demo) { window.__healthsyncDemoHealthProfile = profile; return; }
+  localStorage.setItem(healthProfileKey(), JSON.stringify(profile));
+}
+function healthInsight(profile) {
+  const heightM = Number(profile.height) / 100;
+  const bmi = Number(profile.weight) / (heightM * heightM);
+  const healthyMin = 18.5 * heightM * heightM;
+  const healthyMax = 24.9 * heightM * heightM;
+  let status = 'Healthy weight', tone = 'healthy', message = 'Your current weight is within the standard healthy BMI range.';
+  if (bmi < 18.5) { status = 'Underweight range'; tone = 'under'; message = `A gradual gain of about ${(healthyMin - Number(profile.weight)).toFixed(1)} kg would bring you into the standard healthy range.`; }
+  if (bmi >= 25 && bmi < 30) { status = 'Overweight range'; tone = 'over'; message = `A gradual reduction of about ${(Number(profile.weight) - healthyMax).toFixed(1)} kg would bring you into the standard healthy range.`; }
+  if (bmi >= 30) { status = 'Higher weight range'; tone = 'over'; message = `A gradual reduction of about ${(Number(profile.weight) - healthyMax).toFixed(1)} kg would bring you into the standard healthy range. Consider discussing a plan with a clinician.`; }
+  const age = Number(profile.age);
+  const sleep = age <= 17 ? '8–10 hours' : age >= 65 ? '7–8 hours' : '7–9 hours';
+  const activity = profile.job === 'Desk-based / mostly sitting' ? 'Break up sitting time: stand, stretch, or walk for a few minutes each hour.' : profile.job === 'Shift work' ? 'Keep a consistent sleep window where possible and protect a dark, quiet rest period.' : profile.job === 'Physically active work' ? 'Balance activity with recovery, hydration, and regular meals.' : 'Aim for regular movement across the week and include strength work when suitable.';
+  return { bmi, healthyMin, healthyMax, status, tone, message, sleep, activity };
+}
+function renderPatientHealthProfile() {
+  const profile = getHealthProfile();
+  const guide = document.getElementById('patient-health-guide');
+  const summary = document.getElementById('health-profile-summary');
+  const form = document.getElementById('health-profile-form');
+  if (form && profile) ['name','age','gender','job','height','weight'].forEach(field => { const input = document.getElementById(`profile-${field}`); if (input) input.value = profile[field] ?? ''; });
+  if (!profile) {
+    const empty = `<div class="card-header"><span class="card-title">Your wellness guide</span></div><div class="card-body health-guide-empty"><div class="health-guide-icon"><i class="fa-solid fa-heart-pulse"></i></div><strong>Complete your health profile</strong><p>Add your height, weight, age, and work routine to see your personal healthy-weight and sleep guide.</p><button class="btn btn-primary btn-sm" onclick="switchPatientPage('health-profile')">Set up profile</button></div>`;
+    if (guide) guide.innerHTML = empty;
+    if (summary) summary.innerHTML = `<div class="card-header"><span class="card-title">Your guide preview</span></div><div class="card-body health-guide-empty"><div class="health-guide-icon"><i class="fa-solid fa-chart-line"></i></div><strong>Waiting for your details</strong><p>Save your profile to generate BMI, weight, sleep, and activity guidance.</p></div>`;
+    return;
+  }
+  const insight = healthInsight(profile);
+  const content = `<div class="card-header"><span class="card-title">Your wellness guide</span><span class="health-status ${insight.tone}">${insight.status}</span></div><div class="card-body"><div class="health-guide-name">Hi ${escapeHtml(profile.name.split(' ')[0])}, here is your current guide.</div><div class="health-guide-metrics"><div><span>BMI</span><strong>${insight.bmi.toFixed(1)}</strong><small>${insight.status}</small></div><div><span>Healthy range</span><strong>${insight.healthyMin.toFixed(1)}–${insight.healthyMax.toFixed(1)} kg</strong><small>For ${escapeHtml(profile.height)} cm</small></div><div><span>Sleep target</span><strong>${insight.sleep}</strong><small>Most nights</small></div></div><p class="health-guide-message">${insight.message}</p><p class="health-guide-tip"><i class="fa-solid fa-person-walking"></i> ${insight.activity}</p><button class="btn btn-secondary btn-sm" onclick="switchPatientPage('health-profile')"><i class="fa-solid fa-pen"></i> Update profile</button></div>`;
+  if (guide) guide.innerHTML = content;
+  if (summary) summary.innerHTML = content;
+}
+window.saveHealthProfile = function(event) {
+  event.preventDefault();
+  const profile = {
+    name: document.getElementById('profile-name').value.trim(), age: Number(document.getElementById('profile-age').value), gender: document.getElementById('profile-gender').value,
+    job: document.getElementById('profile-job').value, height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value)
+  };
+  if (!profile.name || !profile.job || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400) return showToast('Please enter valid adult health profile details.', 'warning');
+  saveHealthProfileData(profile);
+  renderPatientHealthProfile();
+  showToast('Your wellness guide has been updated.', 'success');
+};
 window.openPortalTool = function(role, tool, remember = true) {
   if (role === 'patient' && tool === 'reminders' && !remindersLoaded) {
     fetchReminders().then(() => openPortalTool(role, tool));
