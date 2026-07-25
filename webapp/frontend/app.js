@@ -20,6 +20,12 @@ let patientRecords = [
   { id: 'rec-3', name: 'Blood Sugar (Fasting)', doctor: 'Dr. Amit Patil', date: '10 Apr 2026', type: 'lab-reports' },
   { id: 'rec-4', name: 'Thyroid Profile', doctor: 'Dr. Amit Patil', date: '02 Apr 2026', type: 'lab-reports' }
 ];
+const doctorPatientReports = [
+  { id:'dr-1', name:'Complete Blood Count', date:'16 Apr 2026', facility:'HealthSync Diagnostics', status:'Reviewed', summary:'Haemoglobin and white-cell counts are within the expected range.' },
+  { id:'dr-2', name:'Lipid Profile', date:'15 Apr 2026', facility:'Apollo Diagnostics', status:'Action needed', summary:'LDL is mildly elevated; review diet, activity and follow-up treatment.' },
+  { id:'dr-3', name:'ECG Report', date:'10 Apr 2026', facility:'Cardiology Unit', status:'Reviewed', summary:'Normal sinus rhythm recorded. No acute abnormality noted.' },
+  { id:'dr-4', name:'HbA1c Report', date:'02 Apr 2026', facility:'HealthSync Diagnostics', status:'Reviewed', summary:'Glycaemic control is stable compared with the previous result.' }
+];
 let currentSelectedPatientId = 'pat1'; // Default demo patient
 let currentSelectedDoctorId = 'doc1';  // Default demo doctor
 let currentUser = null;
@@ -54,10 +60,51 @@ function escapeHtml(value) {
   return node.innerHTML;
 }
 
+// Language is selected before authentication and saved only in this browser.
+// The source phrase is kept on each text node, so a user can change languages
+// repeatedly without a page reload or corrupting the original text.
+let selectedLanguage = localStorage.getItem('healthsync-language') || 'English';
+const translations = {
+  Hindi: {
+    'Welcome to better care':'बेहतर देखभाल में आपका स्वागत है', 'Sign in securely with your Indian mobile number.':'अपने भारतीय मोबाइल नंबर से सुरक्षित साइन इन करें।', 'Mobile number':'मोबाइल नंबर', 'Send OTP':'ओटीपी भेजें', 'Enter the 6-digit OTP':'6 अंकों का ओटीपी दर्ज करें', 'Verify and sign in':'सत्यापित करें और साइन इन करें', 'Resend OTP (30s)':'ओटीपी दोबारा भेजें (30 सेकंड)', 'Open Demo Portal':'डेमो पोर्टल खोलें', 'Patient Portal':'रोगी पोर्टल', 'Dashboard':'डैशबोर्ड', 'Appointments':'अपॉइंटमेंट', 'Doctors':'डॉक्टर', 'Health Records':'स्वास्थ्य रिकॉर्ड', 'Prescriptions':'पर्चे', 'Medicines':'दवाइयाँ', 'Reminders':'रिमाइंडर', 'Messages':'संदेश', 'Notifications':'सूचनाएँ', 'Settings':'सेटिंग्स', 'Help & Support':'सहायता और समर्थन', 'Book Appointment':'अपॉइंटमेंट बुक करें', 'Upcoming':'आगामी', 'Completed':'पूर्ण', 'Cancelled':'रद्द', 'Reports':'रिपोर्ट', 'Patient View':'रोगी दृश्य', 'Doctor View':'डॉक्टर दृश्य', 'Receptionist View':'रिसेप्शन दृश्य', 'Choose your language':'अपनी भाषा चुनें', 'You can change this later from Settings.':'इसे बाद में सेटिंग्स से बदला जा सकता है।', 'Continue':'जारी रखें'
+  },
+  Marathi: {
+    'Welcome to better care':'उत्तम आरोग्यसेवेत आपले स्वागत आहे', 'Sign in securely with your Indian mobile number.':'तुमच्या भारतीय मोबाईल क्रमांकाने सुरक्षित साइन इन करा.', 'Mobile number':'मोबाईल क्रमांक', 'Send OTP':'ओटीपी पाठवा', 'Enter the 6-digit OTP':'6 अंकी ओटीपी टाका', 'Verify and sign in':'पडताळा आणि साइन इन करा', 'Resend OTP (30s)':'ओटीपी पुन्हा पाठवा (30 से.)', 'Open Demo Portal':'डेमो पोर्टल उघडा', 'Patient Portal':'रुग्ण पोर्टल', 'Dashboard':'डॅशबोर्ड', 'Appointments':'अपॉइंटमेंट्स', 'Doctors':'डॉक्टर्स', 'Health Records':'आरोग्य नोंदी', 'Prescriptions':'प्रिस्क्रिप्शन', 'Medicines':'औषधे', 'Reminders':'स्मरणपत्रे', 'Messages':'संदेश', 'Notifications':'सूचना', 'Settings':'सेटिंग्ज', 'Help & Support':'मदत आणि सहाय्य', 'Book Appointment':'अपॉइंटमेंट बुक करा', 'Upcoming':'आगामी', 'Completed':'पूर्ण झालेले', 'Cancelled':'रद्द झालेले', 'Reports':'अहवाल', 'Patient View':'रुग्ण दृश्य', 'Doctor View':'डॉक्टर दृश्य', 'Receptionist View':'रिसेप्शन दृश्य', 'Choose your language':'तुमची भाषा निवडा', 'You can change this later from Settings.':'हे नंतर सेटिंग्जमधून बदलता येईल.', 'Continue':'पुढे जा'
+  }
+};
+
+function applyLanguage(language = selectedLanguage) {
+  selectedLanguage = language;
+  localStorage.setItem('healthsync-language', language);
+  document.documentElement.lang = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
+  const dictionary = translations[language] || {};
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    const original = node.__healthsyncEnglish ?? node.nodeValue;
+    node.__healthsyncEnglish = original;
+    const trimmed = original.trim();
+    if (!trimmed || !dictionary[trimmed]) { node.nodeValue = original; return; }
+    const prefix = original.slice(0, original.indexOf(trimmed));
+    const suffix = original.slice(original.indexOf(trimmed) + trimmed.length);
+    node.nodeValue = `${prefix}${dictionary[trimmed]}${suffix}`;
+  });
+  document.querySelectorAll('.language-choice').forEach(button => button.classList.toggle('active', button.dataset.language === language));
+}
+
+window.selectAppLanguage = function(language) { applyLanguage(language); };
+window.continueToLogin = function() {
+  applyLanguage(selectedLanguage);
+  document.getElementById('language-screen')?.classList.add('hidden');
+  document.getElementById('auth-screen')?.classList.remove('hidden');
+};
+
 // ---------------------------------------------------------------------------
 // INITIALIZATION
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+  applyLanguage(selectedLanguage);
   restoreSession();
   // Set current date strings across panels
   const dates = document.querySelectorAll('.current-date-str');
@@ -146,7 +193,7 @@ window.verifyOtp = async function(event) {
   } catch (error) { authMessage(error.message, true); }
   finally { setAuthBusy('verify-otp-btn', false, 'Verify and sign in'); }
 };
-function finishLogin() { document.getElementById('auth-screen').classList.add('hidden'); if (currentUser?.role === 'DOCTOR') switchGlobalRole('doctor'); fetchNotifications(); }
+function finishLogin() { document.getElementById('language-screen')?.classList.add('hidden'); document.getElementById('auth-screen').classList.add('hidden'); if (currentUser?.role === 'DOCTOR') switchGlobalRole('doctor'); fetchNotifications(); }
 
 async function fetchNotifications() { if (!currentUser) return; try { const res=await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data=await res.json(); renderNotifications(data.notifications || []); } catch {} }
 function renderNotifications(items) { const unread=items.filter(item=>item.status==='UNREAD').length; const count=document.getElementById('notification-count'); const dot=document.getElementById('notification-dot'); if(count) count.textContent=unread; if(dot) dot.classList.toggle('hidden', !unread); const list=document.getElementById('notification-list'); if(list) list.innerHTML=items.length ? items.map(item=>`<div class="notification-item ${item.status==='UNREAD'?'unread':''}" onclick="markNotificationRead('${item.id}')">${escapeHtml(item.message)}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>'; }
@@ -160,6 +207,7 @@ async function syncAllData() {
     fetchAppointmentsToday(),
     fetchPrescriptions()
   ]);
+  renderDoctorPatientReports();
 }
 
 // ---------------------------------------------------------------------------
@@ -302,7 +350,7 @@ window.saveSettings = async function() {
   const notificationsEnabled = document.getElementById('setting-notifications')?.checked !== false;
   const smsEnabled = document.getElementById('setting-sms')?.checked !== false;
   const reminderEnabled = document.getElementById('setting-reminders')?.checked !== false;
-  localStorage.setItem('healthsync-language', language);
+  applyLanguage(language);
   if (!currentUser?.id) return showToast('Settings saved on this device. Sign in to sync them.', 'info');
   try {
     const response = await fetch(API_BASE + '/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId:currentUser.id, language, notificationsEnabled, smsEnabled, reminderEnabled }) });
@@ -627,6 +675,24 @@ function renderDoctorPatientPrescriptions() {
       </div>
     </div>
   `).join('');
+}
+
+function renderDoctorPatientReports() {
+  const container = document.getElementById('doc-det-reports');
+  if (!container) return;
+  container.innerHTML = `<div class="flex flex-col gap-3">${doctorPatientReports.map(report => `
+    <article class="report-row doctor-report-row">
+      <div class="report-icon"><i class="fa-solid fa-file-medical" style="color:#2563eb;"></i></div>
+      <div class="flex-1">
+        <div class="report-name">${escapeHtml(report.name)}</div>
+        <div class="report-meta">${escapeHtml(report.facility)} &bull; ${escapeHtml(report.date)}</div>
+        <div class="text-sm mt-1">${escapeHtml(report.summary)}</div>
+      </div>
+      <div class="report-actions">
+        <span class="badge ${report.status === 'Action needed' ? 'badge-pending' : 'badge-completed'}">${escapeHtml(report.status)}</span>
+        <button class="btn btn-secondary btn-xs" onclick="showToast('Opening ${escapeHtml(report.name)} for clinical review.', 'info')"><i class="fa-solid fa-eye"></i> Review</button>
+      </div>
+    </article>`).join('')}</div>`;
 }
 
 // ---------------------------------------------------------------------------

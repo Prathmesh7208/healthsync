@@ -11,7 +11,21 @@
 </head>
 <body>
 
-  <section id="auth-screen" class="auth-screen" aria-labelledby="auth-title">
+  <section id="language-screen" class="auth-screen language-screen" aria-labelledby="language-title">
+    <div class="auth-card language-card">
+      <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
+      <h1 id="language-title" data-i18n="Choose your language">Choose your language</h1>
+      <p class="auth-subtitle" data-i18n="You can change this later from Settings.">You can change this later from Settings.</p>
+      <div class="language-choice-grid" role="radiogroup" aria-label="Choose your language">
+        <button type="button" class="language-choice active" data-language="English" onclick="selectAppLanguage('English')"><strong>English</strong><span>English</span></button>
+        <button type="button" class="language-choice" data-language="Hindi" onclick="selectAppLanguage('Hindi')"><strong>हिन्दी</strong><span>Hindi</span></button>
+        <button type="button" class="language-choice" data-language="Marathi" onclick="selectAppLanguage('Marathi')"><strong>मराठी</strong><span>Marathi</span></button>
+      </div>
+      <button class="btn btn-primary w-full mt-3" type="button" onclick="continueToLogin()" data-i18n="Continue">Continue</button>
+    </div>
+  </section>
+
+  <section id="auth-screen" class="auth-screen hidden" aria-labelledby="auth-title">
     <div class="auth-card">
       <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
       <h1 id="auth-title">Welcome to better care</h1>
