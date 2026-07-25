@@ -778,3 +778,17 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .auth-brand { font-size: 20px; font-weight: 800; color: var(--blue-primary); margin-bottom: 28px; }.auth-brand i { color: #ef4444; }
 .auth-card h1 { font-size: 24px; color: var(--text-dark); }.auth-subtitle { color: var(--text-muted); font-size: 14px; margin: 8px 0 24px; }.auth-mobile-input { display: flex; align-items: center; gap: 8px; }.auth-mobile-input span { font-weight: 700; }.auth-help,.auth-message { font-size: 12px; color: var(--text-muted); margin-top: 10px; }.auth-message { min-height: 18px; color: var(--blue-primary); font-weight: 600; }
 .notification-list { padding-top: 8px; padding-bottom: 8px; }.notification-item { padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }.notification-item:last-child { border-bottom: none; }.notification-item.unread { font-weight: 700; }.notification-time { display: block; margin-top: 4px; font-size: 11px; color: var(--text-muted); }
+
+/* These rules deliberately live last: the base role-panel/auth declarations
+   above must not override the phone layout through CSS source order. */
+@media (max-width: 768px) {
+  .role-panel.active { display: block; height: 100%; }
+  .auth-screen { padding: 16px; align-items: center; }
+  .auth-card { width: 100%; max-width: 420px; padding: 28px 22px; }
+}
+
+@media (max-width: 420px) {
+  .role-panel.active { display: block; height: 100%; }
+  .auth-card { padding: 26px 20px; }
+  .auth-card h1 { font-size: 22px; }
+}
