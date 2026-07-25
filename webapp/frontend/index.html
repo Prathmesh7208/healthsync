@@ -6,6 +6,7 @@
   <title>HealthSync — Syncing Care, Improving Lives</title>
   <meta name="description" content="HealthSync outpatient clinic management — patient queue, appointments, prescriptions and health records.">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="demo.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -28,8 +29,11 @@
         <button id="resend-otp-btn" class="btn btn-secondary w-full mt-2" type="button" onclick="resendOtp()" disabled>Resend OTP (30s)</button>
       </form>
       <p id="auth-message" class="auth-message" aria-live="polite"></p>
+      <button class="demo-entry-link" type="button" onclick="DemoPortal.open()"><i class="fa-solid fa-display"></i> Open Demo Portal</button>
     </div>
   </section>
+
+  <section id="demo-portal" class="demo-portal hidden" aria-live="polite"></section>
 
   <div id="app">
 
@@ -1111,5 +1115,6 @@
   <div class="toast-container" id="toast-root"></div>
 
   <script src="app.js"></script>
+  <script src="demo.js"></script>
 </body>
 </html>
