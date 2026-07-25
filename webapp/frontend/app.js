@@ -67,12 +67,46 @@ function populateCountryCodeSelects() {
   const countries = window.HEALTHSYNC_COUNTRY_CODES || [['IN', 'India', '+91']];
   document.querySelectorAll('.country-code-select').forEach(select => {
     if (select.options.length) return;
-    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" ${iso === 'IN' ? 'selected' : ''}>${countryFlag(iso)} ${name} (${code})</option>`).join('');
+    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${name} (${code})</option>`).join('');
+    createCountryPicker(select);
   });
 }
-function countryFlag(iso) {
-  return String(iso || '').toUpperCase().replace(/./g, letter => String.fromCodePoint(127397 + letter.charCodeAt(0)));
+function countryFlagUrl(iso) { return `https://flagcdn.com/w40/${String(iso || 'in').toLowerCase()}.png`; }
+function syncCountryPicker(select) {
+  const picker = select?.previousElementSibling;
+  if (!picker?.classList.contains('country-picker')) return;
+  const selected = select.options[select.selectedIndex];
+  const image = picker.querySelector('.country-picker-trigger img');
+  const label = picker.querySelector('.country-picker-label');
+  if (image) { image.src = countryFlagUrl(selected?.dataset.iso); image.alt = selected?.dataset.iso || ''; }
+  if (label) label.textContent = selected?.textContent || 'Select country';
 }
+function createCountryPicker(select) {
+  if (select.dataset.enhanced === 'true') return;
+  select.dataset.enhanced = 'true';
+  const picker = document.createElement('div');
+  picker.className = 'country-picker';
+  picker.innerHTML = `<button type="button" class="country-picker-trigger" aria-haspopup="listbox" aria-expanded="false"><img alt=""><span class="country-picker-label"></span><i class="fa-solid fa-chevron-down"></i></button><div class="country-picker-menu hidden"><div class="country-picker-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search country or code" aria-label="Search country code"></div><div class="country-picker-options" role="listbox"></div></div>`;
+  select.before(picker);
+  select.classList.add('native-country-code-select');
+  const optionsRoot = picker.querySelector('.country-picker-options');
+  const renderOptions = (query = '') => {
+    const term = query.trim().toLowerCase();
+    optionsRoot.innerHTML = [...select.options].filter(option => option.textContent.toLowerCase().includes(term) || option.value.includes(term)).map(option => `<button type="button" class="country-picker-option ${option.selected ? 'selected' : ''}" data-value="${option.value}"><img src="${countryFlagUrl(option.dataset.iso)}" alt="${option.dataset.iso} flag"><span>${option.textContent}</span></button>`).join('');
+  };
+  const menu = picker.querySelector('.country-picker-menu');
+  const trigger = picker.querySelector('.country-picker-trigger');
+  const search = picker.querySelector('input');
+  trigger.addEventListener('click', () => { const isOpen = !menu.classList.contains('hidden'); document.querySelectorAll('.country-picker-menu').forEach(item => item.classList.add('hidden')); menu.classList.toggle('hidden', isOpen); trigger.setAttribute('aria-expanded', String(!isOpen)); if (!isOpen) { search.value = ''; renderOptions(); search.focus(); } });
+  search.addEventListener('input', () => renderOptions(search.value));
+  optionsRoot.addEventListener('click', event => { const option = event.target.closest('.country-picker-option'); if (!option) return; select.value = option.dataset.value; select.dispatchEvent(new Event('change', { bubbles:true })); renderOptions(search.value); syncCountryPicker(select); menu.classList.add('hidden'); trigger.setAttribute('aria-expanded', 'false'); });
+  syncCountryPicker(select); renderOptions();
+}
+document.addEventListener('click', event => {
+  if (event.target.closest('.country-picker')) return;
+  document.querySelectorAll('.country-picker-menu').forEach(menu => menu.classList.add('hidden'));
+  document.querySelectorAll('.country-picker-trigger').forEach(button => button.setAttribute('aria-expanded', 'false'));
+});
 function selectedCountryCode(id) { return document.getElementById(id)?.value || '+91'; }
 function internationalPhone(countryCode, value) {
   const code = `+${String(countryCode || '+91').replace(/\D/g, '')}`;
@@ -81,7 +115,7 @@ function internationalPhone(countryCode, value) {
 }
 function setCountryCodeValue(id, value) {
   const select = document.getElementById(id);
-  if (select && value && [...select.options].some(option => option.value === value)) select.value = value;
+  if (select && value && [...select.options].some(option => option.value === value)) { select.value = value; syncCountryPicker(select); }
 }
 
 // Language is selected before authentication and saved only in this browser.
