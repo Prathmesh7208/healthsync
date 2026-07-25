@@ -93,6 +93,26 @@ async function restoreSession() {
   } catch { localStorage.removeItem('healthsync-session'); }
 }
 
+// Demo sessions use the same role panels as production, but their API calls are
+// intercepted by demo.js and never reach the production database.
+window.startDemoExperience = function(role, mobile) {
+  const roleMap = { patient:'PATIENT', doctor:'DOCTOR', reception:'RECEPTIONIST' };
+  if (!roleMap[role]) return false;
+  currentUser = { id:`demo-${role}`, patientId:'pat1', name: role === 'doctor' ? 'Dr. Kavya Iyer' : role === 'reception' ? 'Nisha Verma' : 'Aarav Mehta', mobile, role:roleMap[role], demo:true };
+  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('app')?.classList.remove('hidden');
+  document.getElementById('in-app-demo-banner')?.classList.remove('hidden');
+  switchGlobalRole(role === 'reception' ? 'reception' : role);
+  fetchDoctors();
+  syncAllData();
+  return true;
+};
+window.exitDemoExperience = function() {
+  window.__HEALTHSYNC_DEMO_MODE__ = false;
+  document.getElementById('in-app-demo-banner')?.classList.add('hidden');
+  location.href = location.pathname;
+};
+
 function authMessage(message, isError = false) { const el = document.getElementById('auth-message'); if (el) { el.textContent = message; el.style.color = isError ? '#b91c1c' : ''; } }
 function setAuthBusy(buttonId, busy, idleLabel) { const button = document.getElementById(buttonId); if (button) { button.disabled = busy; button.textContent = busy ? 'Please wait…' : idleLabel; } }
 window.requestOtp = async function(event) {

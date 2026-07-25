@@ -1,4 +1,5 @@
 .demo-entry-link { width:100%; margin-top:16px; padding:10px; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; font-weight:700; }
+.in-app-demo-banner{position:fixed;z-index:9000;left:50%;top:10px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;max-width:calc(100% - 24px);padding:8px 12px;border:1px solid #c4b5fd;border-radius:999px;background:#312e81;color:#fff;box-shadow:0 5px 20px #312e8140;font-size:12px;font-weight:700}.in-app-demo-banner button{padding:4px 7px;border-radius:5px;background:#fff;color:#312e81;font-size:11px;font-weight:800}
 .demo-portal { min-height:100dvh; color:#172033; background:#f5f7fb; }
 .demo-portal:not(.hidden) { display:block; }
 .demo-shell { min-height:100dvh; display:flex; flex-direction:column; }

@@ -7,6 +7,8 @@ window.DemoPortal = (() => {
   const productionNodes = () => [document.getElementById('auth-screen'), document.getElementById('app')];
   let selectedRole = null;
   let demo = null;
+  const productionFetch = window.fetch.bind(window);
+  let demoFetchEnabled = false;
 
   const source = {
     patient: {
@@ -75,7 +77,58 @@ window.DemoPortal = (() => {
     const mobile = document.getElementById('demo-mobile').value.replace(/\D/g, '');
     const error = document.getElementById('demo-gate-error');
     if (!/^\d{10}$/.test(mobile)) { error.textContent = 'Enter exactly 10 digits to start Demo Mode.'; return; }
-    demo = clone(source[selectedRole]); demo.mobile = mobile; demo.role = selectedRole; demo.tab = 'overview'; renderWorkspace();
+    demo = clone(source[selectedRole]); demo.mobile = mobile; demo.role = selectedRole; demo.tab = 'overview';
+    if (selectedRole !== 'admin') {
+      enableRealInterfaceDemo(selectedRole);
+      root().classList.add('hidden');
+      document.getElementById('app')?.classList.remove('hidden');
+      window.startDemoExperience?.(selectedRole, mobile);
+      return;
+    }
+    renderWorkspace();
+  }
+  function jsonResponse(data, status = 200) { return Promise.resolve(new Response(JSON.stringify(data), { status, headers:{'Content-Type':'application/json'} })); }
+  function enableRealInterfaceDemo(role) {
+    if (demoFetchEnabled) return;
+    demoFetchEnabled = true;
+    window.__HEALTHSYNC_DEMO_MODE__ = true;
+    window.fetch = (input, options = {}) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (!window.__HEALTHSYNC_DEMO_MODE__ || !url.includes('/v1/')) return productionFetch(input, options);
+      const path = new URL(url, location.origin).pathname;
+      const queue = [
+        {token:'A12', patientName:'Aarav Mehta', doctorName:'Dr. Kavya Iyer', status:'In Consultation', time:'10:12 AM'},
+        {token:'A13', patientName:'Meera Kulkarni', doctorName:'Dr. Kavya Iyer', status:'Waiting', time:'10:25 AM'},
+        {token:'A14', patientName:'Ritesh Nair', doctorName:'Dr. Kavya Iyer', status:'Waiting', time:'10:40 AM'},
+        {token:'W07', patientName:'Pranav Joshi', doctorName:'Dr. Rohan Shah', status:'Waiting', time:'11:05 AM'}
+      ];
+      if (path.endsWith('/doctors/search')) return jsonResponse({success:true, doctors:[
+        {id:'doc1',full_name:'Dr. Kavya Iyer',name:'Dr. Kavya Iyer',specialization:'Cardiologist',available_today:true,rating:4.9,consultation_fee:850},
+        {id:'doc2',full_name:'Dr. Rohan Shah',name:'Dr. Rohan Shah',specialization:'General Physician',available_today:true,rating:4.8,consultation_fee:600},
+        {id:'doc3',full_name:'Dr. Nisha Desai',name:'Dr. Nisha Desai',specialization:'Endocrinologist',available_today:false,rating:4.9,consultation_fee:950}
+      ]});
+      if (path.endsWith('/queue/live')) return jsonResponse({success:true, queue, stats:{todaysTokens:46,inQueue:7,inConsultation:2,completed:37}});
+      if (path.endsWith('/appointments') && String(options.method || 'GET').toUpperCase() === 'POST') return jsonResponse({success:true, appointment:{id:'demo-appt-19',token:'A19'}});
+      if (path.endsWith('/appointments')) return jsonResponse({success:true, appointments:[
+        {id:'appt-1',slot_date:'2026-07-28',slot_time:'10:30 AM',patient_name:'Aarav Mehta',doctor_name:'Dr. Kavya Iyer',status:'CONFIRMED',token_number:'A13'},
+        {id:'appt-2',slot_date:'2026-08-04',slot_time:'4:15 PM',patient_name:'Meera Kulkarni',doctor_name:'Dr. Rohan Shah',status:'CONFIRMED',token_number:'A18'},
+        {id:'appt-3',slot_date:'2026-07-25',slot_time:'9:30 AM',patient_name:'Vikram Rao',doctor_name:'Dr. Kavya Iyer',status:'COMPLETED',token_number:'A09'}
+      ]});
+      if (path.endsWith('/prescriptions')) return jsonResponse({success:true, prescriptions:[
+        {id:'rx-1',diagnosis:'Dyslipidemia follow-up',doctor_name:'Dr. Kavya Iyer',created_at:'2026-07-24T10:15:00Z',medications_json:'[{"name":"Atorvastatin 10 mg","dosage":"1 tablet","frequency":"Night","duration":"30 days"}]'},
+        {id:'rx-2',diagnosis:'Type 2 diabetes review',doctor_name:'Dr. Nisha Desai',created_at:'2026-06-14T10:15:00Z',medications_json:'[{"name":"Metformin XR 500 mg","dosage":"1 tablet","frequency":"After dinner","duration":"30 days"}]'}
+      ]});
+      if (path.endsWith('/notifications')) return jsonResponse({success:true,notifications:[
+        {id:'n1',message:'Your appointment with Dr. Kavya Iyer is confirmed for 28 July at 10:30 AM.',status:'UNREAD',created_at:'2026-07-25T08:30:00Z'},
+        {id:'n2',message:'Lipid Profile report is ready to review.',status:'UNREAD',created_at:'2026-07-24T12:00:00Z'},
+        {id:'n3',message:'Medicine reminder: Atorvastatin is due at 9:00 PM.',status:'READ',created_at:'2026-07-24T11:00:00Z'}
+      ]});
+      if (path.endsWith('/reminders')) return jsonResponse({success:true,reminders:[
+        {id:'r1',medicine_name:'Atorvastatin 10 mg',reminder_time:'21:00'}, {id:'r2',medicine_name:'Metformin XR 500 mg',reminder_time:'20:00'}
+      ]});
+      if (path.includes('/auth/')) return jsonResponse({success:true,token:'demo-token',refreshToken:'demo-refresh',user:{id:`demo-${role}`,patientId:'pat1',name:role==='doctor'?'Dr. Kavya Iyer':'Aarav Mehta',role:role==='doctor'?'DOCTOR':role==='reception'?'RECEPTIONIST':'PATIENT'}});
+      return jsonResponse({success:true,message:'Demo action completed. Changes reset on refresh.',appointment:{token:'A19'},token:'W08'});
+    };
   }
   function renderWorkspace() {
     const roleLabel = demo.role === 'reception' ? 'Receptionist' : demo.role[0].toUpperCase() + demo.role.slice(1);
