@@ -17,14 +17,14 @@
       <p class="auth-subtitle">Sign in securely with your Indian mobile number.</p>
       <form id="mobile-login-form" onsubmit="requestOtp(event)">
         <label class="form-label" for="auth-mobile">Mobile number</label>
-        <div class="auth-mobile-input"><span>+91</span><input id="auth-mobile" class="form-control" inputmode="numeric" maxlength="10" placeholder="98765 43210" required></div>
-        <button class="btn btn-primary w-full mt-3" type="submit">Send OTP</button>
+        <div class="auth-mobile-input"><span>+91</span><input id="auth-mobile" class="form-control" inputmode="numeric" autocomplete="tel" pattern="[6-9][0-9]{9}" maxlength="10" placeholder="98765 43210" required></div>
+        <button id="send-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Send OTP</button>
       </form>
       <form id="otp-login-form" class="hidden" onsubmit="verifyOtp(event)">
         <label class="form-label" for="auth-otp">Enter the 6-digit OTP</label>
-        <input id="auth-otp" class="form-control" inputmode="numeric" maxlength="6" placeholder="••••••" required>
+        <input id="auth-otp" class="form-control" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required>
         <p class="auth-help">Enter the OTP sent to your registered mobile number.</p>
-        <button class="btn btn-primary w-full mt-3" type="submit">Verify and sign in</button>
+        <button id="verify-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Verify and sign in</button>
         <button id="resend-otp-btn" class="btn btn-secondary w-full mt-2" type="button" onclick="resendOtp()" disabled>Resend OTP (30s)</button>
       </form>
       <p id="auth-message" class="auth-message" aria-live="polite"></p>

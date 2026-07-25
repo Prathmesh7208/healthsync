@@ -310,6 +310,9 @@ function jwtVerify(token) {
 
 // OTP Store Map: mobileNumber => { code, expiresAt, attempts }
 const otpStore = new Map();
+const otpRequestStore = new Map();
+const OTP_TTL_MS = 5 * 60 * 1000;
+const OTP_RESEND_COOLDOWN_MS = 30 * 1000;
 const TWILIO_VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID;
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
@@ -417,14 +420,24 @@ function apiRouter(req, res, pathname, url, body) {
     const mobile = String(body.mobileNumber || '').replace(/\D/g, '');
     if (!/^[6-9]\d{9}$/.test(mobile)) return json(res, 400, { success:false, code:'AUTH_001', message:'Please enter a valid 10-digit mobile number' });
 
+    const requestedAt = otpRequestStore.get(mobile) || 0;
+    const retryAfterMs = OTP_RESEND_COOLDOWN_MS - (Date.now() - requestedAt);
+    if (retryAfterMs > 0) {
+      return json(res, 429, { success:false, code:'AUTH_002', message:`Please wait ${Math.ceil(retryAfterMs / 1000)} seconds before requesting another OTP.` });
+    }
+    otpRequestStore.set(mobile, Date.now());
+
     // Generate random 6 digit numeric code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins expiry
+    const expiresAt = Date.now() + OTP_TTL_MS;
 
     if (twilioVerifyConfigured()) {
       return sendRealOtp(mobile)
         .then(() => json(res, 200, { success:true, message:'OTP sent to your ' + (OTP_CHANNEL === 'whatsapp' ? 'WhatsApp' : 'SMS inbox') + '.', mobile, channel:OTP_CHANNEL }))
-        .catch(error => json(res, 502, { success:false, message:'Unable to deliver OTP: ' + error.message }));
+        .catch(error => {
+          otpRequestStore.delete(mobile);
+          json(res, 502, { success:false, message:'Unable to deliver OTP: ' + error.message });
+        });
     }
     otpStore.set(mobile, { code: otp, expiresAt, attempts: 0 });
     console.log(`[SMS-MOCK] OTP for mobile ${mobile} is: ${otp}`);
@@ -435,11 +448,11 @@ function apiRouter(req, res, pathname, url, body) {
 
   // ── Auth: Verify OTP & Return/Create User Session ───────────────────────
   if (pathname === '/v1/auth/verify' && method === 'POST') {
-    const mobile = body.mobileNumber || '';
-    const otpCode = body.otpCode || '';
+    const mobile = String(body.mobileNumber || '').replace(/\D/g, '');
+    const otpCode = String(body.otpCode || '').replace(/\D/g, '');
 
-    if (!mobile || !otpCode) {
-      return json(res, 400, { success:false, message:'Mobile number and OTP code required' });
+    if (!/^[6-9]\d{9}$/.test(mobile) || !/^\d{6}$/.test(otpCode)) {
+      return json(res, 400, { success:false, message:'A valid mobile number and 6-digit OTP are required.' });
     }
 
     let saved = otpStore.get(mobile);
@@ -458,6 +471,7 @@ function apiRouter(req, res, pathname, url, body) {
 
     if (Date.now() > saved.expiresAt) {
       otpStore.delete(mobile);
+      otpRequestStore.delete(mobile);
       return json(res, 400, { success:false, message:'OTP has expired. Please request a new one' });
     }
 
@@ -473,6 +487,7 @@ function apiRouter(req, res, pathname, url, body) {
 
     // OTP Correct! Clear it.
     otpStore.delete(mobile);
+    otpRequestStore.delete(mobile);
 
     // Look up user or auto-register
     db.get('SELECT * FROM users WHERE mobile_number = ?', [mobile], (err, user) => {

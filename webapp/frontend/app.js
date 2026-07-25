@@ -6,9 +6,8 @@
 
 'use strict';
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000/v1' 
-  : 'https://soothing-blessing-production-a59b.up.railway.app/v1';
+// Render serves the website and API from the same service.
+const API_BASE = `${window.location.origin}/v1`;
 
 // Global variables
 let allDoctors = [];
@@ -29,6 +28,25 @@ let resendTimer = null;
 let bookingMode = 'IN_PERSON';
 let persistedReminders = [];
 let remindersLoaded = false;
+
+async function requestJson(path, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, options);
+  } catch {
+    throw new Error('Cannot connect to HealthSync. Check your internet connection and try again.');
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  let data = null;
+  if (contentType.includes('application/json')) {
+    data = await response.json().catch(() => null);
+  }
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message || `HealthSync returned an error (${response.status}).`);
+  }
+  return data;
+}
 
 function escapeHtml(value) {
   const node = document.createElement('div');
@@ -76,15 +94,37 @@ async function restoreSession() {
 }
 
 function authMessage(message, isError = false) { const el = document.getElementById('auth-message'); if (el) { el.textContent = message; el.style.color = isError ? '#b91c1c' : ''; } }
+function setAuthBusy(buttonId, busy, idleLabel) { const button = document.getElementById(buttonId); if (button) { button.disabled = busy; button.textContent = busy ? 'Please wait…' : idleLabel; } }
 window.requestOtp = async function(event) {
-  event.preventDefault(); pendingMobile = document.getElementById('auth-mobile').value.replace(/\D/g, '');
-  try { const res = await fetch(`${API_BASE}/auth/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobileNumber:pendingMobile})}); const data = await res.json(); if (!data.success) return authMessage(data.message, true); document.getElementById('mobile-login-form').classList.add('hidden'); document.getElementById('otp-login-form').classList.remove('hidden'); authMessage(`OTP sent. Development OTP: ${data.otp}`); startResendCooldown(); } catch { authMessage('Unable to reach HealthSync. Please try again.', true); }
+  event.preventDefault();
+  pendingMobile = document.getElementById('auth-mobile').value.replace(/\D/g, '');
+  if (!/^[6-9]\d{9}$/.test(pendingMobile)) return authMessage('Enter a valid 10-digit Indian mobile number.', true);
+  setAuthBusy('send-otp-btn', true, 'Send OTP');
+  try {
+    const data = await requestJson('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile}) });
+    document.getElementById('mobile-login-form').classList.add('hidden');
+    document.getElementById('otp-login-form').classList.remove('hidden');
+    document.getElementById('auth-otp').focus();
+    authMessage(data.otp ? `Development OTP: ${data.otp}` : (data.message || 'OTP sent successfully.'));
+    startResendCooldown();
+  } catch (error) { authMessage(error.message, true); }
+  finally { setAuthBusy('send-otp-btn', false, 'Send OTP'); }
 };
 window.resendOtp = function() { requestOtp({ preventDefault() {} }); };
 function startResendCooldown() { let seconds=30; const button=document.getElementById('resend-otp-btn'); clearInterval(resendTimer); button.disabled=true; resendTimer=setInterval(()=>{ seconds--; button.textContent=seconds ? `Resend OTP (${seconds}s)` : 'Resend OTP'; if(!seconds){button.disabled=false;clearInterval(resendTimer);}},1000); }
 window.verifyOtp = async function(event) {
-  event.preventDefault(); const otpCode=document.getElementById('auth-otp').value;
-  try { const res=await fetch(`${API_BASE}/auth/verify`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobileNumber:pendingMobile,otpCode})}); const data=await res.json(); if(!data.success)return authMessage(data.message,true); currentUser={...data.user,token:data.token,refreshToken:data.refreshToken}; localStorage.setItem('healthsync-session',JSON.stringify({user:currentUser,refreshToken:currentUser.refreshToken})); finishLogin(); } catch {authMessage('Sign in failed. Please try again.',true);}
+  event.preventDefault();
+  const otpCode = document.getElementById('auth-otp').value.replace(/\D/g, '');
+  if (!pendingMobile) return authMessage('Request a new OTP first.', true);
+  if (!/^\d{6}$/.test(otpCode)) return authMessage('Enter the 6-digit OTP.', true);
+  setAuthBusy('verify-otp-btn', true, 'Verify and sign in');
+  try {
+    const data = await requestJson('/auth/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile,otpCode}) });
+    currentUser = {...data.user, token:data.token, refreshToken:data.refreshToken};
+    localStorage.setItem('healthsync-session', JSON.stringify({user:currentUser, refreshToken:currentUser.refreshToken}));
+    finishLogin();
+  } catch (error) { authMessage(error.message, true); }
+  finally { setAuthBusy('verify-otp-btn', false, 'Verify and sign in'); }
 };
 function finishLogin() { document.getElementById('auth-screen').classList.add('hidden'); if (currentUser?.role === 'DOCTOR') switchGlobalRole('doctor'); fetchNotifications(); }
 
