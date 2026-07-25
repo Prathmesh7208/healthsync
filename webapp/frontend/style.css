@@ -797,3 +797,67 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .auth-card { padding: 26px 20px; }
   .auth-card h1 { font-size: 22px; }
 }
+
+/* =====================================================
+   FINAL VISUAL RHYTHM — shared alignment and typography
+   ===================================================== */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { line-height: 1.45; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; letter-spacing: .002em; }
+button, input, select, textarea { letter-spacing: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(37, 99, 235, .22); outline-offset: 2px; }
+
+.sidebar-brand, .top-header, .card-header, .card-body, .card-footer, .modal-header, .modal-body, .modal-footer { min-width: 0; }
+.sidebar-brand-name, .page-title, .page-heading, .card-title, .appt-doc, .doctor-card-name { letter-spacing: -.012em; }
+.page-content { scroll-behavior: smooth; }
+.page-header-row { min-height: 42px; }
+.page-heading { line-height: 1.22; }
+.page-subheading { line-height: 1.45; }
+
+.nav-item { min-height: 40px; line-height: 1.25; }
+.nav-item, .role-tab, .btn, .app-nav-button { white-space: nowrap; }
+.role-tab { min-height: 34px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+.btn { min-height: 36px; justify-content: center; line-height: 1.2; text-align: center; }
+.btn-xs { min-height: 28px; padding: 6px 10px; font-size: 11.5px; }
+.btn-sm { min-height: 32px; padding: 7px 12px; }
+
+.form-group { min-width: 0; }
+.form-label { line-height: 1.3; letter-spacing: .01em; }
+.form-control { min-height: 38px; line-height: 1.35; }
+textarea.form-control { line-height: 1.5; }
+select.form-control { padding-right: 34px; }
+
+.card { overflow: hidden; }
+.card-header { min-height: 52px; gap: 12px; }
+.card-title { line-height: 1.25; }
+.kpi-card, .doctor-search-card, .appt-card { min-width: 0; }
+.appt-info, .doctor-card-info, .flex-1 { min-width: 0; }
+.appt-doc, .doctor-card-name, .sidebar-user-name { overflow-wrap: anywhere; }
+.appt-actions { flex-shrink: 0; }
+
+.table-wrap { border-radius: calc(var(--radius-md) - 1px); }
+.hs-table th { white-space: nowrap; line-height: 1.25; }
+.hs-table td { line-height: 1.4; }
+.hs-table td .btn { vertical-align: middle; }
+.badge, .token-chip { white-space: nowrap; line-height: 1.2; }
+
+.modal-box { overflow: hidden; }
+.modal-header h3 { line-height: 1.25; }
+.modal-footer { align-items: center; }
+
+@media (max-width: 768px) {
+  .top-header { gap: 8px; }
+  .top-header .page-title { flex: 0 1 auto; }
+  .header-icons { margin-left: auto; flex-shrink: 0; }
+  .page-header-row { min-height: 0; }
+  .card-header { min-height: 0; align-items: flex-start; }
+  .appt-card { align-items: flex-start; }
+  .appt-actions { max-width: 112px; }
+}
+
+@media (max-width: 420px) {
+  .app-nav-button { padding: 0 6px; }
+  .app-nav-button span { font-size: 10.5px; }
+  .card-header { gap: 8px; }
+  .appt-card { gap: 10px; padding: 12px; }
+  .appt-card .appt-date-box { min-width: 46px; }
+}
