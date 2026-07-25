@@ -371,13 +371,20 @@ function healthInsight(profile) {
   const water = profile.gender === 'Male' ? '3.7 L' : profile.gender === 'Female' ? '2.7 L' : '3.2 L';
   return { bmi, healthyMin, healthyMax, status, tone, message, sleep, activity, calories, protein, carbs, fats, water };
 }
+function renderProfileSafety(container, profile) {
+  if (!container) return;
+  const safety = document.createElement('section');
+  safety.className = 'health-safety-card';
+  safety.innerHTML = `<div class="health-safety-heading"><i class="fa-solid fa-shield-heart"></i><span>Safety information</span></div><div class="health-safety-grid"><div><span>Blood group</span><strong>${escapeHtml(profile.bloodGroup || 'Unknown')}</strong></div><div><span>Emergency contact</span><strong>${escapeHtml(profile.emergencyName || 'Not added')}</strong><small>${escapeHtml(profile.emergencyPhone || 'No phone number added')}</small></div></div><div class="health-safety-detail"><span>Allergies</span><strong>${escapeHtml(profile.allergies || 'Not added')}</strong></div><div class="health-safety-detail"><span>Medical conditions</span><strong>${escapeHtml(profile.conditions || 'Not added')}</strong></div>`;
+  container.querySelector('.health-guide-tip')?.before(safety);
+}
 function renderPatientHealthProfile() {
   const profile = getHealthProfile();
   const guide = document.getElementById('patient-health-guide');
   const summary = document.getElementById('health-profile-summary');
   const form = document.getElementById('health-profile-form');
   if (form && profile) {
-    ['name','age','gender','job','height','weight','workHours'].forEach(field => { const input = document.getElementById(`profile-${field.replace('workHours', 'work-hours')}`); if (input) input.value = profile[field] ?? ''; });
+    ['name','age','gender','job','height','weight','workHours','bloodGroup','emergencyName','emergencyPhone','allergies','conditions'].forEach(field => { const elementId = `profile-${field.replace('workHours', 'work-hours').replace('bloodGroup', 'blood-group').replace('emergencyName', 'emergency-name').replace('emergencyPhone', 'emergency-phone')}`; const input = document.getElementById(elementId); if (input) input.value = profile[field] ?? ''; });
     const custom = document.getElementById('profile-custom-job'); if (custom) custom.value = profile.customJob || '';
     window.toggleCustomWorkField?.();
   }
@@ -389,16 +396,17 @@ function renderPatientHealthProfile() {
   }
   const insight = healthInsight(profile);
   const content = `<div class="card-header"><span class="card-title">Your wellness guide</span><span class="health-status ${insight.tone}">${insight.status}</span></div><div class="card-body"><div class="health-guide-name">Hi ${escapeHtml(profile.name.split(' ')[0])}, here is your current guide.</div><div class="health-guide-metrics"><div><span>BMI</span><strong>${insight.bmi.toFixed(1)}</strong><small>${insight.status}</small></div><div><span>Healthy range</span><strong>${insight.healthyMin.toFixed(1)}–${insight.healthyMax.toFixed(1)} kg</strong><small>For ${escapeHtml(profile.height)} cm</small></div><div><span>Sleep target</span><strong>${insight.sleep}</strong><small>Most nights</small></div></div><p class="health-guide-message">${insight.message}</p><div class="nutrition-guide"><div class="nutrition-guide-heading"><i class="fa-solid fa-utensils"></i><span>Daily nutrition estimate</span><small>Based on ${escapeHtml(profile.job === 'Other' ? profile.customJob || 'your routine' : profile.job)} · ${escapeHtml(profile.workHours)} hrs/day</small></div><div class="nutrition-grid"><div><span>Calories</span><strong>~${insight.calories} kcal</strong><small>Maintenance estimate</small></div><div><span>Protein</span><strong>≥${insight.protein} g</strong><small>Healthy-adult baseline</small></div><div><span>Carbohydrates</span><strong>${insight.carbs}</strong><small>Daily range</small></div><div><span>Fats</span><strong>${insight.fats}</strong><small>Daily range</small></div><div><span>Total water</span><strong>${insight.water}</strong><small>Drinks + food</small></div></div></div><p class="health-guide-tip"><i class="fa-solid fa-person-walking"></i> ${insight.activity}</p><p class="nutrition-disclaimer">General healthy-adult estimate only. Needs change with exercise, climate, pregnancy, medicines, and health conditions; consult a dietitian or clinician for a personal plan.</p><button class="btn btn-secondary btn-sm" onclick="switchPatientPage('health-profile')"><i class="fa-solid fa-pen"></i> Update profile</button></div>`;
-  if (guide) guide.innerHTML = content;
-  if (summary) summary.innerHTML = content;
+  if (guide) { guide.innerHTML = content; renderProfileSafety(guide, profile); }
+  if (summary) { summary.innerHTML = content; renderProfileSafety(summary, profile); }
 }
 window.saveHealthProfile = function(event) {
   event.preventDefault();
   const profile = {
     name: document.getElementById('profile-name').value.trim(), age: Number(document.getElementById('profile-age').value), gender: document.getElementById('profile-gender').value,
-    job: document.getElementById('profile-job').value, customJob: document.getElementById('profile-custom-job').value.trim(), height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value), workHours: Number(document.getElementById('profile-work-hours').value)
+    job: document.getElementById('profile-job').value, customJob: document.getElementById('profile-custom-job').value.trim(), height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value), workHours: Number(document.getElementById('profile-work-hours').value), bloodGroup: document.getElementById('profile-blood-group').value, emergencyName: document.getElementById('profile-emergency-name').value.trim(), emergencyPhone: document.getElementById('profile-emergency-phone').value.trim(), allergies: document.getElementById('profile-allergies').value.trim(), conditions: document.getElementById('profile-conditions').value.trim()
   };
-  if (!profile.name || !profile.job || (profile.job === 'Other' && !profile.customJob) || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400 || profile.workHours < 0 || profile.workHours > 24) return showToast('Please enter valid adult health profile details.', 'warning');
+  const emergencyDigits = profile.emergencyPhone.replace(/\D/g, '');
+  if (!profile.name || !profile.job || (profile.job === 'Other' && !profile.customJob) || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400 || profile.workHours < 0 || profile.workHours > 24 || (profile.emergencyPhone && emergencyDigits.length < 7)) return showToast('Please enter valid adult health profile details.', 'warning');
   saveHealthProfileData(profile);
   renderPatientHealthProfile();
   showToast('Your wellness guide has been updated.', 'success');

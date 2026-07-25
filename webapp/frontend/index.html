@@ -272,6 +272,16 @@
                     <div class="form-group"><label class="form-label" for="profile-weight">Weight (kg) <span class="req">*</span></label><input class="form-control" id="profile-weight" type="number" min="20" max="400" step="0.1" required placeholder="e.g. 68"></div>
                   </div>
                   <div class="form-group"><label class="form-label" for="profile-work-hours">Average work / study hours per day <span class="req">*</span></label><input class="form-control" id="profile-work-hours" type="number" min="0" max="24" step="0.5" required placeholder="e.g. 8"><span class="form-help">Include study, paid work, caregiving, or your main regular daily routine.</span></div>
+                  <div class="form-section health-safety-section">
+                    <div class="form-section-title"><i class="fa-solid fa-shield-heart"></i> Safety information</div>
+                    <div class="form-row">
+                      <div class="form-group"><label class="form-label" for="profile-blood-group">Blood group</label><select class="form-control" id="profile-blood-group"><option value="Unknown">I don't know</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option></select></div>
+                      <div class="form-group"><label class="form-label" for="profile-emergency-name">Emergency contact name</label><input class="form-control" id="profile-emergency-name" maxlength="80" placeholder="For example: Priya Sharma"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label" for="profile-emergency-phone">Emergency contact mobile number</label><input class="form-control" id="profile-emergency-phone" inputmode="numeric" maxlength="15" placeholder="Include country code if needed"><span class="form-help">This is shown only in your patient profile summary.</span></div>
+                    <div class="form-group"><label class="form-label" for="profile-allergies">Allergies</label><textarea class="form-control" id="profile-allergies" maxlength="500" placeholder="For example: Penicillin, peanuts, pollen — or write None known"></textarea></div>
+                    <div class="form-group"><label class="form-label" for="profile-conditions">Medical conditions</label><textarea class="form-control" id="profile-conditions" maxlength="500" placeholder="For example: Asthma, diabetes, hypertension — or write None known"></textarea></div>
+                  </div>
                   <p class="health-profile-note"><i class="fa-solid fa-circle-info"></i> This wellness guide is informational and does not replace advice from a qualified clinician.</p>
                 </div>
                 <div class="card-footer"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Save and update my guide</button></div>
