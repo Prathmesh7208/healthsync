@@ -245,8 +245,15 @@ db.serialize(() => {
         INSERT INTO queue_entries
           (id, token_number, patient_id, patient_name, doctor_id, status, checkin_time)
         VALUES (?, ?, ?, ?, 'doc1', ?, ?)`);
-      queueSeed.forEach(q => qStmt.run(q.id, q.token, 'pat-' + q.token, q.name, q.status, q.time));
-      qStmt.finalize();
+      // Queue entries are display records for the demo patient.  Older local
+      // databases may enforce a foreign key on patient_id, so every seed row
+      // must use the patient created above instead of a made-up `pat-A12` id.
+      queueSeed.forEach(q => qStmt.run(q.id, q.token, 'pat1', q.name, q.status, q.time, seedErr => {
+        if (seedErr) console.error('Unable to seed demo queue entry:', seedErr.message);
+      }));
+      qStmt.finalize(seedErr => {
+        if (seedErr) console.error('Unable to finalize demo queue seed:', seedErr.message);
+      });
 
       // Seed one prescription
       const medsJSON = JSON.stringify([
@@ -257,7 +264,9 @@ db.serialize(() => {
                 (id, patient_id, patient_name, doctor_id, doctor_name, diagnosis, medications_json, instructions)
               VALUES ('rx101','pat1','Neha Kulkarni','doc1','Dr. Amit Patil',
                       'Acute Viral Fever & Migraine', ?, 'Take rest, drink 3 liters of warm water daily.')`,
-              [medsJSON]);
+              [medsJSON], seedErr => {
+                if (seedErr) console.error('Unable to seed demo prescription:', seedErr.message);
+              });
 
       console.log('✅ Seeded demo patient, queue, and prescription');
     }
