@@ -359,15 +359,28 @@ function healthInsight(profile) {
   if (bmi >= 30) { status = 'Higher weight range'; tone = 'over'; message = `A gradual reduction of about ${(Number(profile.weight) - healthyMax).toFixed(1)} kg would bring you into the standard healthy range. Consider discussing a plan with a clinician.`; }
   const age = Number(profile.age);
   const sleep = age <= 17 ? '8–10 hours' : age >= 65 ? '7–8 hours' : '7–9 hours';
-  const activity = profile.job === 'Desk-based / mostly sitting' ? 'Break up sitting time: stand, stretch, or walk for a few minutes each hour.' : profile.job === 'Shift work' ? 'Keep a consistent sleep window where possible and protect a dark, quiet rest period.' : profile.job === 'Physically active work' ? 'Balance activity with recovery, hydration, and regular meals.' : 'Aim for regular movement across the week and include strength work when suitable.';
-  return { bmi, healthyMin, healthyMax, status, tone, message, sleep, activity };
+  const activity = profile.job === 'Desk-based / mostly sitting' ? 'Break up sitting time: stand, stretch, or walk for a few minutes each hour.' : profile.job === 'Shift work' ? 'Keep a consistent sleep window where possible and protect a dark, quiet rest period.' : profile.job === 'Physically active work' ? 'Balance activity with recovery, hydration, and regular meals.' : profile.job === 'Driving / travel-based work' ? 'Plan short movement and water breaks during long travel periods.' : profile.job === 'Student' ? 'Use regular meal, movement, and screen-break times during study blocks.' : 'Aim for regular movement across the week and include strength work when suitable.';
+  const activityFactors = { Student:1.3, 'Desk-based / mostly sitting':1.25, 'Business owner / entrepreneur':1.35, 'Mixed activity':1.45, 'Physically active work':1.65, 'Healthcare / service work':1.5, 'Driving / travel-based work':1.3, 'Homemaker / caregiver':1.45, 'Shift work':1.4, Retired:1.25, Other:1.35 };
+  const sexAdjustment = profile.gender === 'Male' ? 5 : profile.gender === 'Female' ? -161 : -78;
+  const bmr = 10 * Number(profile.weight) + 6.25 * Number(profile.height) - 5 * age + sexAdjustment;
+  const hourAdjustment = Math.min(1.12, Math.max(.9, 1 + ((Number(profile.workHours || 8) - 8) * .015)));
+  const calories = Math.round((bmr * (activityFactors[profile.job] || 1.35) * hourAdjustment) / 50) * 50;
+  const protein = Math.ceil(Math.max(Number(profile.weight) * .8, (calories * .1) / 4));
+  const carbs = `${Math.round((calories * .45) / 4)}–${Math.round((calories * .65) / 4)} g`;
+  const fats = `${Math.round((calories * .20) / 9)}–${Math.round((calories * .35) / 9)} g`;
+  const water = profile.gender === 'Male' ? '3.7 L' : profile.gender === 'Female' ? '2.7 L' : '3.2 L';
+  return { bmi, healthyMin, healthyMax, status, tone, message, sleep, activity, calories, protein, carbs, fats, water };
 }
 function renderPatientHealthProfile() {
   const profile = getHealthProfile();
   const guide = document.getElementById('patient-health-guide');
   const summary = document.getElementById('health-profile-summary');
   const form = document.getElementById('health-profile-form');
-  if (form && profile) ['name','age','gender','job','height','weight'].forEach(field => { const input = document.getElementById(`profile-${field}`); if (input) input.value = profile[field] ?? ''; });
+  if (form && profile) {
+    ['name','age','gender','job','height','weight','workHours'].forEach(field => { const input = document.getElementById(`profile-${field.replace('workHours', 'work-hours')}`); if (input) input.value = profile[field] ?? ''; });
+    const custom = document.getElementById('profile-custom-job'); if (custom) custom.value = profile.customJob || '';
+    window.toggleCustomWorkField?.();
+  }
   if (!profile) {
     const empty = `<div class="card-header"><span class="card-title">Your wellness guide</span></div><div class="card-body health-guide-empty"><div class="health-guide-icon"><i class="fa-solid fa-heart-pulse"></i></div><strong>Complete your health profile</strong><p>Add your height, weight, age, and work routine to see your personal healthy-weight and sleep guide.</p><button class="btn btn-primary btn-sm" onclick="switchPatientPage('health-profile')">Set up profile</button></div>`;
     if (guide) guide.innerHTML = empty;
@@ -375,7 +388,7 @@ function renderPatientHealthProfile() {
     return;
   }
   const insight = healthInsight(profile);
-  const content = `<div class="card-header"><span class="card-title">Your wellness guide</span><span class="health-status ${insight.tone}">${insight.status}</span></div><div class="card-body"><div class="health-guide-name">Hi ${escapeHtml(profile.name.split(' ')[0])}, here is your current guide.</div><div class="health-guide-metrics"><div><span>BMI</span><strong>${insight.bmi.toFixed(1)}</strong><small>${insight.status}</small></div><div><span>Healthy range</span><strong>${insight.healthyMin.toFixed(1)}–${insight.healthyMax.toFixed(1)} kg</strong><small>For ${escapeHtml(profile.height)} cm</small></div><div><span>Sleep target</span><strong>${insight.sleep}</strong><small>Most nights</small></div></div><p class="health-guide-message">${insight.message}</p><p class="health-guide-tip"><i class="fa-solid fa-person-walking"></i> ${insight.activity}</p><button class="btn btn-secondary btn-sm" onclick="switchPatientPage('health-profile')"><i class="fa-solid fa-pen"></i> Update profile</button></div>`;
+  const content = `<div class="card-header"><span class="card-title">Your wellness guide</span><span class="health-status ${insight.tone}">${insight.status}</span></div><div class="card-body"><div class="health-guide-name">Hi ${escapeHtml(profile.name.split(' ')[0])}, here is your current guide.</div><div class="health-guide-metrics"><div><span>BMI</span><strong>${insight.bmi.toFixed(1)}</strong><small>${insight.status}</small></div><div><span>Healthy range</span><strong>${insight.healthyMin.toFixed(1)}–${insight.healthyMax.toFixed(1)} kg</strong><small>For ${escapeHtml(profile.height)} cm</small></div><div><span>Sleep target</span><strong>${insight.sleep}</strong><small>Most nights</small></div></div><p class="health-guide-message">${insight.message}</p><div class="nutrition-guide"><div class="nutrition-guide-heading"><i class="fa-solid fa-utensils"></i><span>Daily nutrition estimate</span><small>Based on ${escapeHtml(profile.job === 'Other' ? profile.customJob || 'your routine' : profile.job)} · ${escapeHtml(profile.workHours)} hrs/day</small></div><div class="nutrition-grid"><div><span>Calories</span><strong>~${insight.calories} kcal</strong><small>Maintenance estimate</small></div><div><span>Protein</span><strong>≥${insight.protein} g</strong><small>Healthy-adult baseline</small></div><div><span>Carbohydrates</span><strong>${insight.carbs}</strong><small>Daily range</small></div><div><span>Fats</span><strong>${insight.fats}</strong><small>Daily range</small></div><div><span>Total water</span><strong>${insight.water}</strong><small>Drinks + food</small></div></div></div><p class="health-guide-tip"><i class="fa-solid fa-person-walking"></i> ${insight.activity}</p><p class="nutrition-disclaimer">General healthy-adult estimate only. Needs change with exercise, climate, pregnancy, medicines, and health conditions; consult a dietitian or clinician for a personal plan.</p><button class="btn btn-secondary btn-sm" onclick="switchPatientPage('health-profile')"><i class="fa-solid fa-pen"></i> Update profile</button></div>`;
   if (guide) guide.innerHTML = content;
   if (summary) summary.innerHTML = content;
 }
@@ -383,12 +396,19 @@ window.saveHealthProfile = function(event) {
   event.preventDefault();
   const profile = {
     name: document.getElementById('profile-name').value.trim(), age: Number(document.getElementById('profile-age').value), gender: document.getElementById('profile-gender').value,
-    job: document.getElementById('profile-job').value, height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value)
+    job: document.getElementById('profile-job').value, customJob: document.getElementById('profile-custom-job').value.trim(), height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value), workHours: Number(document.getElementById('profile-work-hours').value)
   };
-  if (!profile.name || !profile.job || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400) return showToast('Please enter valid adult health profile details.', 'warning');
+  if (!profile.name || !profile.job || (profile.job === 'Other' && !profile.customJob) || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400 || profile.workHours < 0 || profile.workHours > 24) return showToast('Please enter valid adult health profile details.', 'warning');
   saveHealthProfileData(profile);
   renderPatientHealthProfile();
   showToast('Your wellness guide has been updated.', 'success');
+};
+window.toggleCustomWorkField = function() {
+  const isOther = document.getElementById('profile-job')?.value === 'Other';
+  const group = document.getElementById('profile-custom-job-group');
+  const input = document.getElementById('profile-custom-job');
+  group?.classList.toggle('hidden', !isOther);
+  if (input) input.required = Boolean(isOther);
 };
 window.openPortalTool = function(role, tool, remember = true) {
   if (role === 'patient' && tool === 'reminders' && !remindersLoaded) {
