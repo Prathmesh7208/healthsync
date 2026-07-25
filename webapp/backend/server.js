@@ -426,7 +426,8 @@ const server = http.createServer((req, res) => {
   });
 });
 
-const PORT = 3000;
+// Railway (and other hosts) assign the listening port through PORT.
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`====================================================`);
   console.log(`🏥 HealthSync Real SQLite Database Server Running`);
