@@ -159,6 +159,9 @@ img { max-width: 100%; display: block; }
 .search-box input { background: none; border: none; font-size: 13px; color: var(--text-dark); width: 100%; }
 .search-box input::placeholder { color: var(--text-light); }
 .header-icons { display: flex; align-items: center; gap: 12px; }
+.app-history-nav { display: flex; align-items: center; gap: 4px; padding-right: 8px; border-right: 1px solid var(--border); }
+.app-history-nav .icon-btn { width: 30px; height: 30px; font-size: 12px; }
+.app-history-nav .icon-btn:disabled { opacity: .42; cursor: not-allowed; }
 .icon-btn {
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--page-bg); border: 1px solid var(--border);
@@ -682,6 +685,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .top-header .page-title { font-size: 14px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .search-box { display: none; }
   .header-icons { gap: 8px; }
+  .app-history-nav { gap: 2px; padding-right: 5px; }
+  .app-history-nav .icon-btn { width: 28px; height: 28px; }
   .icon-btn, .header-avatar { width: 34px; height: 34px; }
   .role-tab-bar { max-width: 48vw; overflow-x: auto; flex-wrap: nowrap; }
   .role-tab { padding: 6px 10px; white-space: nowrap; }

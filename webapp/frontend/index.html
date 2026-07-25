@@ -41,6 +41,7 @@
         <p class="auth-help">Enter the OTP sent to your registered mobile number.</p>
         <button id="verify-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Verify and sign in</button>
         <button id="resend-otp-btn" class="btn btn-secondary w-full mt-2" type="button" onclick="resendOtp()" disabled>Resend OTP (30s)</button>
+        <button class="btn btn-secondary w-full mt-2" type="button" onclick="backToMobileLogin()"><i class="fa-solid fa-arrow-left"></i> Change mobile number</button>
       </form>
       <p id="auth-message" class="auth-message" aria-live="polite"></p>
       <button class="demo-entry-link" type="button" onclick="DemoPortal.open()"><i class="fa-solid fa-display"></i> Open Demo Portal</button>
@@ -119,6 +120,7 @@
             <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
           </div>
           <div class="header-icons">
+            <div class="app-history-nav" aria-label="Page navigation"><button class="icon-btn" type="button" onclick="goAppBack()" aria-label="Go back"><i class="fa-solid fa-arrow-left"></i></button><button class="icon-btn" type="button" onclick="goAppForward()" aria-label="Go forward"><i class="fa-solid fa-arrow-right"></i></button></div>
             <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i><span id="notification-dot" class="notif-dot hidden"></span></button>
             <div class="header-avatar">RV</div>
           </div>
@@ -403,6 +405,7 @@
             <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
           </div>
           <div class="header-icons">
+            <div class="app-history-nav" aria-label="Page navigation"><button class="icon-btn" type="button" onclick="goAppBack()" aria-label="Go back"><i class="fa-solid fa-arrow-left"></i></button><button class="icon-btn" type="button" onclick="goAppForward()" aria-label="Go forward"><i class="fa-solid fa-arrow-right"></i></button></div>
             <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
             <div class="header-avatar">PS</div>
           </div>
@@ -720,6 +723,7 @@
             <div class="role-tab active" onclick="switchGlobalRole('reception')">Receptionist View</div>
           </div>
           <div class="header-icons">
+            <div class="app-history-nav" aria-label="Page navigation"><button class="icon-btn" type="button" onclick="goAppBack()" aria-label="Go back"><i class="fa-solid fa-arrow-left"></i></button><button class="icon-btn" type="button" onclick="goAppForward()" aria-label="Go forward"><i class="fa-solid fa-arrow-right"></i></button></div>
             <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
             <div class="header-avatar">R</div>
           </div>

@@ -34,6 +34,8 @@ let resendTimer = null;
 let bookingMode = 'IN_PERSON';
 let persistedReminders = [];
 let remindersLoaded = false;
+let appHistory = [{ role:'patient', page:'dashboard' }];
+let appHistoryIndex = 0;
 
 async function requestJson(path, options = {}) {
   let response;
@@ -105,6 +107,7 @@ window.continueToLogin = function() {
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   applyLanguage(selectedLanguage);
+  updateAppHistoryButtons();
   restoreSession();
   // Set current date strings across panels
   const dates = document.querySelectorAll('.current-date-str');
@@ -178,6 +181,15 @@ window.requestOtp = async function(event) {
   finally { setAuthBusy('send-otp-btn', false, 'Send OTP'); }
 };
 window.resendOtp = function() { requestOtp({ preventDefault() {} }); };
+window.backToMobileLogin = function() {
+  clearInterval(resendTimer);
+  pendingMobile = '';
+  document.getElementById('auth-otp').value = '';
+  document.getElementById('otp-login-form').classList.add('hidden');
+  document.getElementById('mobile-login-form').classList.remove('hidden');
+  authMessage('You can edit your mobile number and request a new OTP.');
+  document.getElementById('auth-mobile')?.focus();
+};
 function startResendCooldown() { let seconds=30; const button=document.getElementById('resend-otp-btn'); clearInterval(resendTimer); button.disabled=true; resendTimer=setInterval(()=>{ seconds--; button.textContent=seconds ? `Resend OTP (${seconds}s)` : 'Resend OTP'; if(!seconds){button.disabled=false;clearInterval(resendTimer);}},1000); }
 window.verifyOtp = async function(event) {
   event.preventDefault();
@@ -213,6 +225,30 @@ async function syncAllData() {
 // ---------------------------------------------------------------------------
 // GLOBAL ROLE VIEW SWITCHER
 // ---------------------------------------------------------------------------
+function recordAppNavigation(role, page) {
+  const current = appHistory[appHistoryIndex];
+  if (current?.role === role && current?.page === page) return;
+  appHistory = appHistory.slice(0, appHistoryIndex + 1);
+  appHistory.push({ role, page });
+  appHistoryIndex = appHistory.length - 1;
+  updateAppHistoryButtons();
+}
+function updateAppHistoryButtons() {
+  document.querySelectorAll('[onclick="goAppBack()"]').forEach(button => button.disabled = appHistoryIndex === 0);
+  document.querySelectorAll('[onclick="goAppForward()"]').forEach(button => button.disabled = appHistoryIndex >= appHistory.length - 1);
+}
+function goToAppHistoryState(state) {
+  switchGlobalRole(state.role);
+  if (state.page.startsWith('tool:')) {
+    openPortalTool(state.role, state.page.slice(5), false);
+    return;
+  }
+  const navigate = { patient: switchPatientPage, doctor: switchDoctorPage, reception: switchReceptionPage }[state.role];
+  navigate?.(state.page, false);
+}
+window.goAppBack = function() { if (appHistoryIndex === 0) return; appHistoryIndex--; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
+window.goAppForward = function() { if (appHistoryIndex >= appHistory.length - 1) return; appHistoryIndex++; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
+
 window.switchGlobalRole = function(role) {
   document.querySelectorAll('.role-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
@@ -230,7 +266,7 @@ window.switchGlobalRole = function(role) {
 // ---------------------------------------------------------------------------
 // NAVIGATION ROUTING
 // ---------------------------------------------------------------------------
-window.switchPatientPage = function(pageId) {
+window.switchPatientPage = function(pageId, remember = true) {
   // Navigation active state
   document.querySelectorAll('#panel-patient .nav-item').forEach(item => {
     item.classList.remove('active');
@@ -243,9 +279,10 @@ window.switchPatientPage = function(pageId) {
   document.querySelectorAll('#panel-patient .page').forEach(page => page.classList.remove('active'));
   const targetPage = document.getElementById(`patient-page-${pageId}`);
   if (targetPage) targetPage.classList.add('active');
+  if (remember) recordAppNavigation('patient', pageId);
 };
 
-window.switchDoctorPage = function(pageId) {
+window.switchDoctorPage = function(pageId, remember = true) {
   document.querySelectorAll('#panel-doctor .nav-item').forEach(item => {
     item.classList.remove('active');
     if (item.getAttribute('onclick')?.includes(pageId)) {
@@ -256,9 +293,10 @@ window.switchDoctorPage = function(pageId) {
   document.querySelectorAll('#panel-doctor .page').forEach(page => page.classList.remove('active'));
   const targetPage = document.getElementById(`doctor-page-${pageId}`);
   if (targetPage) targetPage.classList.add('active');
+  if (remember) recordAppNavigation('doctor', pageId);
 };
 
-window.switchReceptionPage = function(pageId) {
+window.switchReceptionPage = function(pageId, remember = true) {
   document.querySelectorAll('#panel-reception .nav-item').forEach(item => {
     item.classList.remove('active');
     if (item.getAttribute('onclick')?.includes(pageId)) {
@@ -269,6 +307,7 @@ window.switchReceptionPage = function(pageId) {
   document.querySelectorAll('#panel-reception .page').forEach(page => page.classList.remove('active'));
   const targetPage = document.getElementById(`reception-page-${pageId}`);
   if (targetPage) targetPage.classList.add('active');
+  if (remember) recordAppNavigation('reception', pageId);
 };
 
 // ---------------------------------------------------------------------------
@@ -286,7 +325,7 @@ function getUtilityPage(role, tool) {
 function table(rows, headers) { return `<div class="card"><div class="card-body table-wrap"><table class="hs-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}" class="text-center text-muted">No records yet.</td></tr>`}</tbody></table></div></div>`; }
 function localItems(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
 function saveLocalItems(key, values) { localStorage.setItem(key, JSON.stringify(values)); }
-window.openPortalTool = function(role, tool) {
+window.openPortalTool = function(role, tool, remember = true) {
   if (role === 'patient' && tool === 'reminders' && !remindersLoaded) {
     fetchReminders().then(() => openPortalTool(role, tool));
     return;
@@ -296,6 +335,7 @@ window.openPortalTool = function(role, tool) {
   document.querySelectorAll(`#panel-${role} .page`).forEach(item => item.classList.remove('active')); page.classList.add('active');
   const title = utilityTitles[tool] || tool;
   page.innerHTML = `<div class="page-header-row"><div><h2 class="page-heading">${title}</h2><p class="page-subheading">${role === 'doctor' ? 'Clinical portal' : role === 'reception' ? 'Clinic operations' : 'Your HealthSync account'}</p></div></div>${utilityContent(role, tool)}`;
+  if (remember) recordAppNavigation(role, `tool:${tool}`);
 };
 function utilityContent(role, tool) {
   if (tool === 'settings') return settingsContent();
