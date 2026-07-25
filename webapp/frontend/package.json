@@ -2,6 +2,6 @@
   "name": "healthsync-frontend",
   "private": true,
   "scripts": {
-    "build": "node scripts/generate-runtime-config.js"
+    "build": "node -e \"console.log('Static frontend ready')\""
   }
 }

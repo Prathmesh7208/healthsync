@@ -6,9 +6,9 @@
 
 'use strict';
 
-const configuredApiUrl = window.__HEALTHSYNC_CONFIG__?.VITE_API_URL;
-const apiOrigin = configuredApiUrl || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : '');
-const API_BASE = apiOrigin.replace(/\/$/, '').replace(/\/v1$/, '') + '/v1';
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000/v1' 
+  : 'https://soothing-blessing-production-a59b.up.railway.app/v1';
 
 // Global variables
 let allDoctors = [];
