@@ -846,6 +846,8 @@ select.form-control { padding-right: 34px; }
 .modal-footer { align-items: center; }
 
 @media (max-width: 768px) {
+  /* Phones use the browser/Android back gesture or back button. */
+  .app-history-nav { display: none; }
   .top-header { gap: 8px; }
   .top-header .page-title { flex: 0 1 auto; }
   .header-icons { margin-left: auto; flex-shrink: 0; }

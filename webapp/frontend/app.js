@@ -39,6 +39,7 @@ let appHistory = [{ role:'patient', page:'dashboard' }];
 let appHistoryIndex = 0;
 let healthTipIndex = 0;
 let healthTipTimer = null;
+const isMobileAppNavigation = () => window.matchMedia('(max-width: 768px), (pointer: coarse)').matches;
 const curatedHealthTips = [
   { icon:'fa-person-walking', title:'Move regularly', text:'Adults can aim for 150–300 minutes of moderate physical activity each week. If you are starting out, begin with manageable movement and build gradually.', source:'World Health Organization', url:'https://www.who.int/europe/news-room/fact-sheets/item/physical-activity' },
   { icon:'fa-bed', title:'Protect your sleep', text:'Most adults need at least 7 hours of sleep each day. A consistent sleep and wake time can support better sleep habits.', source:'CDC Sleep', url:'https://www.cdc.gov/sleep/about/index.html' },
@@ -177,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyLanguage(selectedLanguage);
   populateCountryCodeSelects();
   updateAppHistoryButtons();
+  if (isMobileAppNavigation()) history.replaceState({ healthsyncNavigation: true, role: 'patient', page: 'dashboard' }, '', window.location.href);
   renderPatientHealthProfile();
   startHealthTipRotation();
   restoreSession();
@@ -325,6 +327,7 @@ function recordAppNavigation(role, page) {
   appHistory = appHistory.slice(0, appHistoryIndex + 1);
   appHistory.push({ role, page });
   appHistoryIndex = appHistory.length - 1;
+  if (isMobileAppNavigation()) history.pushState({ healthsyncNavigation: true, role, page }, '', window.location.href);
   updateAppHistoryButtons();
 }
 function updateAppHistoryButtons() {
@@ -342,6 +345,15 @@ function goToAppHistoryState(state) {
 }
 window.goAppBack = function() { if (appHistoryIndex === 0) return; appHistoryIndex--; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
 window.goAppForward = function() { if (appHistoryIndex >= appHistory.length - 1) return; appHistoryIndex++; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
+window.addEventListener('popstate', event => {
+  const state = event.state;
+  if (!isMobileAppNavigation() || !state?.healthsyncNavigation) return;
+  const index = appHistory.findIndex(item => item.role === state.role && item.page === state.page);
+  if (index >= 0) appHistoryIndex = index;
+  else { appHistory.push({ role: state.role, page: state.page }); appHistoryIndex = appHistory.length - 1; }
+  goToAppHistoryState(state);
+  updateAppHistoryButtons();
+});
 
 window.switchGlobalRole = function(role, remember = true) {
   document.querySelectorAll('.role-panel').forEach(p => p.classList.remove('active'));
