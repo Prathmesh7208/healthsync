@@ -17,7 +17,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    final currentUrl = _settingsBox.get('backend_url', defaultValue: DioClient.defaultUrl);
+    final currentUrl =
+        _settingsBox.get('backend_url', defaultValue: DioClient.defaultUrl);
     _urlController = TextEditingController(text: currentUrl);
   }
 
@@ -30,11 +31,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _saveSettings() {
     final newUrl = _urlController.text.trim();
     if (newUrl.isNotEmpty) {
-      sl<DioClient>().updateBaseUrl(newUrl);
+      try {
+        sl<DioClient>().updateBaseUrl(newUrl);
+      } on FormatException catch (error) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('API Configuration Saved Successfully')),
       );
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     }
   }
 

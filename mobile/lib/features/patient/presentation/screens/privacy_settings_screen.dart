@@ -22,17 +22,27 @@ class PrivacySettingsScreen extends StatelessWidget {
                 children: [
                   _buildHeader(context),
                   const SizedBox(height: 24),
-                  const Text('Active Access Grants', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Active Access Grants',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 12),
-                  if (state.consents.where((c) => c.status == ConsentStatus.granted).isEmpty)
-                    const Center(child: Padding(
+                  if (state.consents
+                      .where((c) => c.status == ConsentStatus.granted)
+                      .isEmpty)
+                    const Center(
+                        child: Padding(
                       padding: EdgeInsets.all(32.0),
-                      child: Text('No active access grants', style: TextStyle(color: Colors.grey)),
+                      child: Text('No active access grants',
+                          style: TextStyle(color: Colors.grey)),
                     ))
                   else
-                    ...state.consents.where((c) => c.status == ConsentStatus.granted).map((c) => _buildConsentCard(context, c)),
+                    ...state.consents
+                        .where((c) => c.status == ConsentStatus.granted)
+                        .map((c) => _buildConsentCard(context, c)),
                   const SizedBox(height: 24),
-                  const Text('Pending Requests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Pending Requests',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 12),
                   // Mocked pending request
                   _buildPendingRequest(context),
@@ -49,7 +59,9 @@ class PrivacySettingsScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12)),
       child: const Row(
         children: [
           Icon(Icons.lock_outline, color: Colors.blue),
@@ -74,20 +86,28 @@ class PrivacySettingsScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.person, color: Colors.white)),
+                const CircleAvatar(
+                    backgroundColor: Colors.blue,
+                    child: Icon(Icons.person, color: Colors.white)),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(consent.doctorName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(consent.clinicName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text(consent.doctorName,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(consent.clinicName,
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
                     ],
                   ),
                 ),
                 TextButton(
-                  onPressed: () => context.read<ConsentBloc>().add(RevokeConsent(consent.id)),
-                  child: const Text('Revoke', style: TextStyle(color: Colors.red)),
+                  onPressed: () => context
+                      .read<ConsentBloc>()
+                      .add(RevokeConsent(consent.id)),
+                  child:
+                      const Text('Revoke', style: TextStyle(color: Colors.red)),
                 ),
               ],
             ),
@@ -95,8 +115,10 @@ class PrivacySettingsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Records: ${consent.recordTypes.join(", ")}', style: const TextStyle(fontSize: 11)),
-                Text('Expires: 24 Jul 2026', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text('Records: ${consent.recordTypes.join(", ")}',
+                    style: const TextStyle(fontSize: 11)),
+                Text('Expires: 24 Jul 2026',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
               ],
             ),
           ],
@@ -113,14 +135,18 @@ class PrivacySettingsScreen extends StatelessWidget {
           children: [
             const Row(
               children: [
-                CircleAvatar(backgroundColor: Colors.orange, child: Icon(Icons.person, color: Colors.white)),
+                CircleAvatar(
+                    backgroundColor: Colors.orange,
+                    child: Icon(Icons.person, color: Colors.white)),
                 SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Dr. Priya Mehra', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('City Skin Clinic', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text('Dr. Priya Mehra',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text('City Skin Clinic',
+                          style: TextStyle(color: Colors.grey, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -135,11 +161,14 @@ class PrivacySettingsScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(onPressed: () {}, child: const Text('Deny')),
+                  child: OutlinedButton(
+                      onPressed: () {}, child: const Text('Deny')),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(onPressed: () => _showGrantDialog(context), child: const Text('Allow Access')),
+                  child: ElevatedButton(
+                      onPressed: () => _showGrantDialog(context),
+                      child: const Text('Allow Access')),
                 ),
               ],
             ),
@@ -152,7 +181,8 @@ class PrivacySettingsScreen extends StatelessWidget {
   void _showGrantDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Padding(
           padding: const EdgeInsets.all(24.0),
@@ -160,7 +190,8 @@ class PrivacySettingsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Grant Access Duration', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Grant Access Duration',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               ListTile(
                 title: const Text('This Visit Only'),

@@ -37,26 +37,32 @@ class HealthSyncIdCard extends StatelessWidget {
             children: [
               const Text(
                 'HealthSync ID',
-                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold),
               ),
               Image.network(
                 'https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=$healthSyncId',
                 width: 40,
                 height: 40,
                 color: Colors.white,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.qr_code, color: Colors.white),
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.qr_code, color: Colors.white),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             name,
-            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             healthSyncId,
-            style: const TextStyle(color: Colors.white, fontSize: 16, letterSpacing: 2),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 16, letterSpacing: 2),
           ),
           const SizedBox(height: 20),
           Row(
@@ -82,7 +88,8 @@ class HealthSyncIdCard extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(label,
+              style: const TextStyle(color: Colors.white, fontSize: 12)),
         ],
       ),
     );

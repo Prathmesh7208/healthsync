@@ -14,7 +14,8 @@ class ConsultationBloc extends Bloc<ConsultationEvent, ConsultationState> {
     on<AddMedication>((event, emit) {
       if (state is ConsultationInProgress) {
         final current = (state as ConsultationInProgress);
-        emit(current.copyWith(medications: [...current.medications, event.medication]));
+        emit(current
+            .copyWith(medications: [...current.medications, event.medication]));
       }
     });
 

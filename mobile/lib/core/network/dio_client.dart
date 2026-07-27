@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:flutter/foundation.dart';
 
 class DioClient {
   late Dio _dio;
@@ -26,14 +27,16 @@ class DioClient {
   }
 
   void _setupInterceptors() {
-    _dio.interceptors.add(PrettyDioLogger(
-      requestHeader: true,
-      requestBody: true,
-      responseBody: true,
-      responseHeader: false,
-      error: true,
-      compact: true,
-    ));
+    if (kDebugMode) {
+      _dio.interceptors.add(PrettyDioLogger(
+        requestHeader: false,
+        requestBody: false,
+        responseBody: false,
+        responseHeader: false,
+        error: true,
+        compact: true,
+      ));
+    }
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
@@ -54,8 +57,13 @@ class DioClient {
 
   /// Updates the base URL at runtime and persists it
   void updateBaseUrl(String newUrl) {
-    _settingsBox.put('backend_url', newUrl);
-    _dio.options.baseUrl = newUrl;
+    final uri = Uri.tryParse(newUrl);
+    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+      throw const FormatException('Enter a valid full API URL.');
+    }
+    final normalizedUrl = newUrl.replaceFirst(RegExp(r'/+$'), '');
+    _settingsBox.put('backend_url', normalizedUrl);
+    _dio.options.baseUrl = normalizedUrl;
   }
 
   Dio get dio => _dio;

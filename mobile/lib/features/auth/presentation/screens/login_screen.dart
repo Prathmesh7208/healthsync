@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:healthsync_mobile/features/auth/presentation/bloc/auth_bloc.dart';
@@ -15,6 +16,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void dispose() {
+    _mobileController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -23,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           IconButton(
             onPressed: () => context.push('/settings'),
-            icon: const Icon(Icons.settings_outlined, color: Colors.black),
+            icon: const Icon(Icons.settings_outlined),
           ),
           const SizedBox(width: 8),
         ],
@@ -39,9 +46,12 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         },
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Welcome to HealthSync',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                   ),
                   const SizedBox(height: 8),
@@ -65,6 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _mobileController,
                     keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.telephoneNumber],
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 10,
                     decoration: const InputDecoration(
                       labelText: 'Mobile Number',
@@ -73,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       counterText: '',
                     ),
                     validator: (value) {
-                      if (value == null || value.length != 10) {
+                      if (value == null || !RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
                         return 'Please enter a valid 10-digit number';
                       }
                       return null;
@@ -103,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

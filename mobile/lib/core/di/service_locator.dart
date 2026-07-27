@@ -14,5 +14,6 @@ Future<void> initServiceLocator() async {
   // sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl(), sl()));
 
   // Blocs
-  sl.registerFactory(() => AuthBloc());
+  sl.registerFactory(
+      () => AuthBloc(sl<DioClient>(), sl<FlutterSecureStorage>()));
 }

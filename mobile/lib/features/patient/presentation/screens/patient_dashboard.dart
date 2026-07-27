@@ -89,7 +89,8 @@ class PatientDashboard extends StatelessWidget {
           children: [
             Icon(Icons.search, color: Colors.grey),
             SizedBox(width: 12),
-            Text('Search Doctors, Specialization...', style: TextStyle(color: Colors.grey)),
+            Text('Search Doctors, Specialization...',
+                style: TextStyle(color: Colors.grey)),
           ],
         ),
       ),
@@ -123,7 +124,8 @@ class PatientDashboard extends StatelessWidget {
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.calendar_today, color: Colors.white),
+                    child:
+                        const Icon(Icons.calendar_today, color: Colors.white),
                   ),
                   const SizedBox(width: 16),
                   const Column(
@@ -131,7 +133,10 @@ class PatientDashboard extends StatelessWidget {
                     children: [
                       Text(
                         'Dr. Amit Shah',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16),
                       ),
                       Text(
                         'Orthopedic • Tomorrow, 10:00 AM',
@@ -160,7 +165,8 @@ class PatientDashboard extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: () {},
       icon: Icon(icon, size: 16, color: Colors.blue),
-      label: Text(label, style: const TextStyle(color: Colors.blue, fontSize: 12)),
+      label:
+          Text(label, style: const TextStyle(color: Colors.blue, fontSize: 12)),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -173,15 +179,18 @@ class PatientDashboard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildActionItem(context, 'Appointments', Icons.book_online, Colors.orange),
+        _buildActionItem(
+            context, 'Appointments', Icons.book_online, Colors.orange),
         _buildActionItem(context, 'Records', Icons.folder_shared, Colors.green),
-        _buildActionItem(context, 'Prescriptions', Icons.medication, Colors.purple),
+        _buildActionItem(
+            context, 'Prescriptions', Icons.medication, Colors.purple),
         _buildActionItem(context, 'Vitals', Icons.favorite, Colors.red),
       ],
     );
   }
 
-  Widget _buildActionItem(BuildContext context, String label, IconData icon, Color color) {
+  Widget _buildActionItem(
+      BuildContext context, String label, IconData icon, Color color) {
     return GestureDetector(
       onTap: () {
         if (label == 'Records') {
@@ -199,7 +208,9 @@ class PatientDashboard extends StatelessWidget {
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(label,
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -219,7 +230,8 @@ class PatientDashboard extends StatelessWidget {
             TextButton(onPressed: () {}, child: const Text('View All')),
           ],
         ),
-        _buildRecordItem('Prescription - Dr. Priya', '15 Jul 2026', Icons.description),
+        _buildRecordItem(
+            'Prescription - Dr. Priya', '15 Jul 2026', Icons.description),
         _buildRecordItem('Blood Test Report', '10 Jul 2026', Icons.analytics),
       ],
     );
@@ -241,7 +253,8 @@ class PatientDashboard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text(date,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12)),
             ],
           ),
           const Spacer(),
@@ -273,7 +286,11 @@ class PatientDashboard extends StatelessWidget {
           SizedBox(width: 12),
           Text(
             'EMERGENCY',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2),
           ),
         ],
       ),
@@ -288,7 +305,8 @@ class PatientDashboard extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Appts'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month), label: 'Appts'),
         BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
       ],

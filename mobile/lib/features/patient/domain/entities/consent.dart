@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 enum ConsentStatus { requested, granted, denied, revoked, expired }
+
 enum AccessDuration { thisVisit, twentyFourHours, sevenDays, untilRevoked }
 
 class Consent extends Equatable {
@@ -34,7 +35,15 @@ class Consent extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, patientId, doctorId, status, duration, recordTypes,
-        purpose, grantedAt, expiresAt, createdAt
+        id,
+        patientId,
+        doctorId,
+        status,
+        duration,
+        recordTypes,
+        purpose,
+        grantedAt,
+        expiresAt,
+        createdAt
       ];
 }

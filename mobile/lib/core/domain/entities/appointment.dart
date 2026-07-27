@@ -1,6 +1,14 @@
 import 'package:equatable/equatable.dart';
 
-enum AppointmentStatus { pending, confirmed, checkedIn, inProgress, completed, cancelled, noShow }
+enum AppointmentStatus {
+  pending,
+  confirmed,
+  checkedIn,
+  inProgress,
+  completed,
+  cancelled,
+  noShow
+}
 
 class Appointment extends Equatable {
   final String id;
@@ -28,5 +36,14 @@ class Appointment extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, patientId, doctorId, clinicId, dateTime, tokenNumber, status, reason];
+  List<Object?> get props => [
+        id,
+        patientId,
+        doctorId,
+        clinicId,
+        dateTime,
+        tokenNumber,
+        status,
+        reason
+      ];
 }

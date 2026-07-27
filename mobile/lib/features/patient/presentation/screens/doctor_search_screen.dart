@@ -57,7 +57,8 @@ class DoctorSearchScreen extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 30,
-                backgroundImage: NetworkImage('https://via.placeholder.com/150'),
+                backgroundImage:
+                    NetworkImage('https://via.placeholder.com/150'),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -66,15 +67,19 @@ class DoctorSearchScreen extends StatelessWidget {
                   children: [
                     const Text(
                       'Dr. Priya Sharma',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    const Text('Dermatologist • 8 Yrs Exp', style: TextStyle(color: Colors.grey)),
+                    const Text('Dermatologist • 8 Yrs Exp',
+                        style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         const Icon(Icons.star, color: Colors.orange, size: 16),
-                        const Text(' 4.8 ', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const Text('(120 reviews)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        const Text(' 4.8 ',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text('(120 reviews)',
+                            style: TextStyle(color: Colors.grey, fontSize: 12)),
                       ],
                     ),
                   ],
@@ -82,8 +87,11 @@ class DoctorSearchScreen extends StatelessWidget {
               ),
               const Column(
                 children: [
-                  Text('₹500', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                  Text('Fee', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text('₹500',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.blue)),
+                  Text('Fee',
+                      style: TextStyle(fontSize: 10, color: Colors.grey)),
                 ],
               ),
             ],
@@ -95,8 +103,11 @@ class DoctorSearchScreen extends StatelessWidget {
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('City Clinic, Andheri', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                  Text('Available: Today, 5 PM', style: TextStyle(fontSize: 12, color: Colors.green)),
+                  Text('City Clinic, Andheri',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text('Available: Today, 5 PM',
+                      style: TextStyle(fontSize: 12, color: Colors.green)),
                 ],
               ),
               ElevatedButton(

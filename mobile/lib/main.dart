@@ -26,13 +26,21 @@ class HealthSyncApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => sl<AuthBloc>()..add(AuthCheckRequested())),
+        BlocProvider(
+            create: (context) => sl<AuthBloc>()..add(AuthCheckRequested())),
       ],
       child: MaterialApp.router(
         title: 'HealthSync',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        supportedLocales: const [
+          Locale('en'),
+          Locale('hi'),
+          Locale('mr'),
+        ],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         routerConfig: AppRouter.router,
       ),
     );

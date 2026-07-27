@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const primaryColor = Color(0xFF007BFF);
-  static const secondaryColor = Color(0xFF6C757D);
-  static const successColor = Color(0xFF28A745);
-  static const errorColor = Color(0xFFDC3545);
-  static const backgroundColor = Color(0xFFF8F9FA);
+  static const primaryColor = Color(0xFF1463D6);
+  static const secondaryColor = Color(0xFF53657D);
+  static const successColor = Color(0xFF15803D);
+  static const errorColor = Color(0xFFBA1A1A);
+  static const backgroundColor = Color(0xFFF7F9FC);
+  static const _radius = 16.0;
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -19,9 +20,14 @@ class AppTheme {
         background: backgroundColor,
         error: errorColor,
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(),
+      scaffoldBackgroundColor: backgroundColor,
+      textTheme: GoogleFonts.poppinsTextTheme().apply(
+        bodyColor: const Color(0xFF172033),
+        displayColor: const Color(0xFF172033),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
@@ -35,29 +41,43 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(48, 50),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(_radius),
           ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: Colors.white,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(_radius),
+          side: const BorderSide(color: Color(0xFFE3E8F0)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(_radius),
+          borderSide: const BorderSide(color: Color(0xFFE3E8F0)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(_radius),
+          borderSide: const BorderSide(color: Color(0xFFE3E8F0)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor),
+          borderRadius: BorderRadius.circular(_radius),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        showCloseIcon: true,
       ),
     );
   }
@@ -72,6 +92,11 @@ class AppTheme {
         primary: primaryColor,
       ),
       textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(_radius)),
+      ),
     );
   }
 }
