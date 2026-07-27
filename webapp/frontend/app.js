@@ -31,6 +31,8 @@ let currentSelectedDoctorId = 'doc1';  // Default demo doctor
 let currentUser = null;
 let pendingMobile = '';
 let pendingCountryCode = '+91';
+let authMode = 'login';
+let pendingRegistration = null;
 let resendTimer = null;
 let bookingMode = 'IN_PERSON';
 let persistedReminders = [];
@@ -260,6 +262,15 @@ function authMessage(message, isError = false) { const el = document.getElementB
 function setAuthBusy(buttonId, busy, idleLabel) { const button = document.getElementById(buttonId); if (button) { button.disabled = busy; button.textContent = busy ? 'Please wait…' : idleLabel; } }
 window.requestOtp = async function(event) {
   event.preventDefault();
+  if (authMode === 'register') {
+    const name = document.getElementById('register-name')?.value.trim() || '';
+    const role = document.getElementById('register-role')?.value || 'PATIENT';
+    const specialization = document.getElementById('register-specialization')?.value.trim() || '';
+    const clinic = document.getElementById('register-clinic')?.value.trim() || '';
+    if (name.length < 2) return authMessage('Enter your full name to register.', true);
+    if (role === 'DOCTOR' && (!specialization || !clinic)) return authMessage('Enter your specialization and clinic to register as a doctor.', true);
+    pendingRegistration = { fullName:name, requestedRole:role, specialization, clinicName:clinic };
+  } else pendingRegistration = null;
   pendingCountryCode = selectedCountryCode('auth-country-code');
   const localMobile = document.getElementById('auth-mobile').value.replace(/\D/g, '');
   if (pendingCountryCode === '+91' && !/^[6-9]\d{9}$/.test(localMobile)) return authMessage('Enter a valid 10-digit Indian mobile number.', true);
@@ -294,12 +305,30 @@ window.verifyOtp = async function(event) {
   if (!/^\d{6}$/.test(otpCode)) return authMessage('Enter the 6-digit OTP.', true);
   setAuthBusy('verify-otp-btn', true, 'Verify and sign in');
   try {
-    const data = await requestJson('/auth/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile,otpCode}) });
+    const data = await requestJson('/auth/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile,otpCode,...(pendingRegistration || {})}) });
     currentUser = {...data.user, token:data.token, refreshToken:data.refreshToken};
     localStorage.setItem('healthsync-session', JSON.stringify({user:currentUser, refreshToken:currentUser.refreshToken}));
     finishLogin();
   } catch (error) { authMessage(error.message, true); }
   finally { setAuthBusy('verify-otp-btn', false, 'Verify and sign in'); }
+};
+window.setAuthMode = function(mode) {
+  authMode = mode === 'register' ? 'register' : 'login';
+  document.getElementById('registration-fields')?.classList.toggle('hidden', authMode !== 'register');
+  document.getElementById('auth-mode-login')?.classList.toggle('active', authMode === 'login');
+  document.getElementById('auth-mode-register')?.classList.toggle('active', authMode === 'register');
+  const registering = authMode === 'register';
+  const title = document.getElementById('auth-title'); const subtitle = document.getElementById('auth-subtitle'); const button = document.getElementById('send-otp-btn');
+  if (title) title.textContent = registering ? 'Create your account' : 'Welcome to better care';
+  if (subtitle) subtitle.textContent = registering ? 'Register securely with your mobile number.' : 'Sign in securely with your mobile number.';
+  if (button) button.textContent = registering ? 'Register and send OTP' : 'Send OTP';
+  authMessage('');
+};
+window.toggleRegistrationFields = function() {
+  const role = document.getElementById('register-role')?.value || 'PATIENT';
+  document.getElementById('doctor-registration-fields')?.classList.toggle('hidden', role !== 'DOCTOR');
+  const help = document.getElementById('registration-role-help');
+  if (help) help.textContent = role === 'DOCTOR' ? 'Doctor profiles become available after OTP verification.' : role === 'RECEPTIONIST' ? 'Reception staff can manage their assigned clinic after OTP verification.' : 'Your patient account will be ready immediately after OTP verification.';
 };
 function finishLogin() {
   document.getElementById('language-screen')?.classList.add('hidden');

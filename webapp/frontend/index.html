@@ -29,8 +29,15 @@
     <div class="auth-card">
       <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
       <h1 id="auth-title">Welcome to better care</h1>
-      <p class="auth-subtitle">Sign in securely with your mobile number.</p>
+      <p id="auth-subtitle" class="auth-subtitle">Sign in securely with your mobile number.</p>
+      <div class="auth-mode-tabs" role="tablist" aria-label="Account action"><button id="auth-mode-login" class="auth-mode-tab active" type="button" onclick="setAuthMode('login')">Log in</button><button id="auth-mode-register" class="auth-mode-tab" type="button" onclick="setAuthMode('register')">Register</button></div>
       <form id="mobile-login-form" onsubmit="requestOtp(event)">
+        <div id="registration-fields" class="hidden">
+          <div class="form-group"><label class="form-label" for="register-name">Full name <span class="req">*</span></label><input id="register-name" class="form-control" maxlength="80" autocomplete="name" placeholder="Your full name"></div>
+          <div class="form-group"><label class="form-label" for="register-role">Register as <span class="req">*</span></label><select id="register-role" class="form-control" onchange="toggleRegistrationFields()"><option value="PATIENT">Patient</option><option value="DOCTOR">Doctor</option><option value="RECEPTIONIST">Receptionist</option></select></div>
+          <div id="doctor-registration-fields" class="hidden"><div class="form-group"><label class="form-label" for="register-specialization">Specialization <span class="req">*</span></label><input id="register-specialization" class="form-control" maxlength="80" placeholder="e.g. General Medicine"></div><div class="form-group"><label class="form-label" for="register-clinic">Hospital / clinic <span class="req">*</span></label><input id="register-clinic" class="form-control" maxlength="100" placeholder="Your clinic or hospital"></div></div>
+          <p id="registration-role-help" class="auth-help">Your patient account will be ready immediately after OTP verification.</p>
+        </div>
         <label class="form-label" for="auth-mobile">Mobile number</label>
         <div class="auth-mobile-input"><select id="auth-country-code" class="country-code-select" aria-label="Country code"></select><input id="auth-mobile" class="form-control" inputmode="numeric" autocomplete="tel" maxlength="15" placeholder="Mobile number" required></div>
         <button id="send-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Send OTP</button>

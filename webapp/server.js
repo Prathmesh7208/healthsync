@@ -65,6 +65,15 @@ db.serialize(() => {
     available_today INTEGER DEFAULT 1
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS receptionists (
+    id TEXT PRIMARY KEY,
+    user_id TEXT REFERENCES users(id),
+    full_name TEXT NOT NULL,
+    clinic_name TEXT,
+    assigned_doctor_id TEXT REFERENCES doctors(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS appointments (
     id TEXT PRIMARY KEY,
     patient_id TEXT NOT NULL,
@@ -548,6 +557,14 @@ function apiRouter(req, res, pathname, url, body) {
                 user: { id: user.id, name: doc ? doc.full_name : 'Doctor', mobile, role: 'DOCTOR' }
               });
             });
+          } else if (user.role === 'RECEPTIONIST') {
+            db.get('SELECT * FROM receptionists WHERE user_id = ?', [user.id], (err, receptionist) => {
+              json(res, 200, {
+                success: true,
+                token, refreshToken, sessionId: sessId,
+                user: { id:user.id, receptionistId:receptionist ? receptionist.id : '', name:receptionist ? receptionist.full_name : 'Receptionist', mobile, role:'RECEPTIONIST' }
+              });
+            });
           } else {
             db.get('SELECT * FROM patients WHERE user_id = ?', [user.id], (err, pat) => {
               json(res, 200, {
@@ -559,25 +576,32 @@ function apiRouter(req, res, pathname, url, body) {
           }
         });
       } else {
-        // Auto-register new patient
+        // Register a new account only after OTP verification.
         const newUserId = 'u-' + uid();
-        const newPatId = 'p-' + uid();
-        const hsid = 'HS-2026-' + Math.floor(100000 + Math.random() * 900000);
-        const name = body.fullName || 'New Patient';
-
-        db.run('INSERT INTO users (id, mobile_number, role) VALUES (?, ?, ?)', [newUserId, mobile, 'PATIENT'], () => {
+        const requestedRole = ['PATIENT','DOCTOR','RECEPTIONIST'].includes(String(body.requestedRole || '').toUpperCase()) ? String(body.requestedRole).toUpperCase() : 'PATIENT';
+        const name = String(body.fullName || '').trim() || (requestedRole === 'DOCTOR' ? 'New Doctor' : requestedRole === 'RECEPTIONIST' ? 'New Receptionist' : 'New Patient');
+        const createSession = (user, extra = {}) => {
+          const token = jwtSign({ userId: newUserId, role: requestedRole });
+          const sessId = 'sess-' + uid();
+          const refreshToken = crypto.randomBytes(32).toString('base64url');
+          db.run('INSERT INTO sessions (id, user_id, access_token, refresh_token) VALUES (?, ?, ?, ?)', [sessId, newUserId, token, refreshToken], () => json(res, 200, { success:true, token, refreshToken, sessionId:sessId, user:{ id:newUserId, name, mobile, role:requestedRole, ...extra } }));
+        };
+        db.run('INSERT INTO users (id, mobile_number, role) VALUES (?, ?, ?)', [newUserId, mobile, requestedRole], () => {
+          if (requestedRole === 'DOCTOR') {
+            const specialization = String(body.specialization || '').trim() || 'General Medicine';
+            const clinic = String(body.clinicName || '').trim() || 'HealthSync Clinic';
+            const doctorId = 'd-' + uid();
+            return db.run('INSERT INTO doctors (id, user_id, full_name, specialization, clinic_name, qualification, experience, languages, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [doctorId, newUserId, name, specialization, clinic, 'Registration pending verification', 'Not added', 'English', 0], () => createSession({ id:newUserId }, { doctorId }));
+          }
+          if (requestedRole === 'RECEPTIONIST') {
+            const receptionistId = 'r-' + uid();
+            return db.run('INSERT INTO receptionists (id, user_id, full_name, clinic_name) VALUES (?, ?, ?, ?)', [receptionistId, newUserId, name, String(body.clinicName || 'HealthSync Clinic')], () => createSession({ id:newUserId }, { receptionistId }));
+          }
+          const newPatId = 'p-' + uid();
+          const hsid = 'HS-2026-' + Math.floor(100000 + Math.random() * 900000);
           db.run('INSERT INTO patients (id, user_id, healthsync_id, full_name) VALUES (?, ?, ?, ?)', [newPatId, newUserId, hsid, name], () => {
-            const token = jwtSign({ userId: newUserId, role: 'PATIENT' });
-            const sessId = 'sess-' + uid();
-            const refreshToken = crypto.randomBytes(32).toString('base64url');
-            db.run('INSERT INTO sessions (id, user_id, access_token, refresh_token) VALUES (?, ?, ?, ?)', [sessId, newUserId, token, refreshToken], () => {
-              createNotification(newUserId, `Welcome to HealthSync! Your HealthSync ID is ${hsid}`);
-              json(res, 200, {
-                success: true,
-                token, refreshToken, sessionId: sessId,
-                user: { id: newUserId, patientId: newPatId, name, mobile, healthSyncId: hsid, role: 'PATIENT' }
-              });
-            });
+            createNotification(newUserId, `Welcome to HealthSync! Your HealthSync ID is ${hsid}`);
+            createSession({ id:newUserId }, { patientId:newPatId, healthSyncId:hsid });
           });
         });
       }
