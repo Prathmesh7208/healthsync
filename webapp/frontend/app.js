@@ -436,6 +436,34 @@ function saveHealthProfileData(profile) {
   if (currentUser?.demo) { window.__healthsyncDemoHealthProfile = profile; return; }
   localStorage.setItem(healthProfileKey(), JSON.stringify(profile));
 }
+function profileInitials(name) {
+  const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+  return (words.slice(0, 2).map(word => word.charAt(0)).join('') || 'HS').toUpperCase();
+}
+function renderPatientIdentity(profile = getHealthProfile()) {
+  const name = profile?.name || currentUser?.name || 'Rahul Verma';
+  const initials = profileInitials(name);
+  const firstName = String(name).trim().split(/\s+/)[0] || 'Patient';
+  ['patient-sidebar-avatar', 'patient-header-avatar', 'patient-profile-photo-preview'].forEach(id => {
+    const avatar = document.getElementById(id);
+    if (!avatar) return;
+    avatar.textContent = initials;
+    avatar.classList.toggle('has-photo', Boolean(profile?.photoDataUrl));
+    avatar.style.backgroundImage = profile?.photoDataUrl ? `url("${profile.photoDataUrl}")` : '';
+  });
+  const sidebarName = document.getElementById('patient-sidebar-name');
+  const dashboardName = document.getElementById('patient-dashboard-name');
+  if (sidebarName) sidebarName.textContent = name;
+  if (dashboardName) dashboardName.textContent = firstName;
+}
+function renderDashboardHealthSummary(profile = getHealthProfile()) {
+  const weight = document.getElementById('dashboard-weight');
+  const bmi = document.getElementById('dashboard-bmi');
+  const bmiLabel = document.getElementById('dashboard-bmi-label');
+  if (weight) weight.textContent = profile?.weight ? String(profile.weight) : '—';
+  if (bmi) bmi.textContent = profile?.height && profile?.weight ? healthInsight(profile).bmi.toFixed(1) : '—';
+  if (bmiLabel) bmiLabel.textContent = profile?.height && profile?.weight ? 'BMI' : 'BMI · add profile';
+}
 function healthInsight(profile) {
   const heightM = Number(profile.height) / 100;
   const bmi = Number(profile.weight) / (heightM * heightM);
@@ -469,6 +497,8 @@ function renderProfileSafety(container, profile) {
 }
 function renderPatientHealthProfile() {
   const profile = getHealthProfile();
+  renderPatientIdentity(profile);
+  renderDashboardHealthSummary(profile);
   const guide = document.getElementById('patient-health-guide');
   const summary = document.getElementById('health-profile-summary');
   const form = document.getElementById('health-profile-form');
@@ -493,13 +523,50 @@ window.saveHealthProfile = function(event) {
   event.preventDefault();
   const profile = {
     name: document.getElementById('profile-name').value.trim(), age: Number(document.getElementById('profile-age').value), gender: document.getElementById('profile-gender').value,
-    job: document.getElementById('profile-job').value, customJob: document.getElementById('profile-custom-job').value.trim(), height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value), workHours: Number(document.getElementById('profile-work-hours').value), bloodGroup: document.getElementById('profile-blood-group').value, emergencyName: document.getElementById('profile-emergency-name').value.trim(), emergencyCountryCode: selectedCountryCode('profile-emergency-country-code'), emergencyPhone: document.getElementById('profile-emergency-phone').value.trim(), allergies: document.getElementById('profile-allergies').value.trim(), conditions: document.getElementById('profile-conditions').value.trim()
+    job: document.getElementById('profile-job').value, customJob: document.getElementById('profile-custom-job').value.trim(), height: Number(document.getElementById('profile-height').value), weight: Number(document.getElementById('profile-weight').value), workHours: Number(document.getElementById('profile-work-hours').value), bloodGroup: document.getElementById('profile-blood-group').value, emergencyName: document.getElementById('profile-emergency-name').value.trim(), emergencyCountryCode: selectedCountryCode('profile-emergency-country-code'), emergencyPhone: document.getElementById('profile-emergency-phone').value.trim(), allergies: document.getElementById('profile-allergies').value.trim(), conditions: document.getElementById('profile-conditions').value.trim(), photoDataUrl: getHealthProfile()?.photoDataUrl || ''
   };
   const emergencyDigits = profile.emergencyPhone.replace(/\D/g, '');
   if (!profile.name || !profile.job || (profile.job === 'Other' && !profile.customJob) || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400 || profile.workHours < 0 || profile.workHours > 24 || (profile.emergencyPhone && emergencyDigits.length < 7)) return showToast('Please enter valid adult health profile details.', 'warning');
   saveHealthProfileData(profile);
   renderPatientHealthProfile();
   showToast('Your wellness guide has been updated.', 'success');
+};
+window.chooseProfilePhoto = function(source) {
+  document.getElementById(source === 'camera' ? 'profile-photo-camera' : 'profile-photo-gallery')?.click();
+};
+window.saveProfilePhoto = function(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return showToast('Please choose an image file.', 'warning');
+  if (file.size > 8 * 1024 * 1024) return showToast('Choose an image smaller than 8 MB.', 'warning');
+  const current = getHealthProfile();
+  if (!current?.name) return showToast('Save your profile details first, then add your photo.', 'warning');
+  const reader = new FileReader();
+  reader.onload = () => {
+    const image = new Image();
+    image.onload = () => {
+      const maxSize = 360;
+      const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+      current.photoDataUrl = canvas.toDataURL('image/jpeg', .84);
+      saveHealthProfileData(current);
+      renderPatientHealthProfile();
+      showToast('Profile photo updated.', 'success');
+    };
+    image.onerror = () => showToast('That image could not be opened. Please try another one.', 'error');
+    image.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+};
+window.removeProfilePhoto = function() {
+  const profile = getHealthProfile();
+  if (!profile?.photoDataUrl) return showToast('There is no profile photo to remove.', 'warning');
+  delete profile.photoDataUrl;
+  saveHealthProfileData(profile);
+  renderPatientHealthProfile();
+  showToast('Profile photo removed.', 'success');
 };
 window.toggleCustomWorkField = function() {
   const isOther = document.getElementById('profile-job')?.value === 'Other';
@@ -664,14 +731,17 @@ function populateDoctorSelects() {
 function renderPatientDoctorsList() {
   const container = document.getElementById('patient-doctors-container');
   if (!container) return;
-  container.innerHTML = allDoctors.map(doc => `
+  const term = document.getElementById('pt-doc-search-input')?.value.trim().toLowerCase() || '';
+  const doctors = allDoctors.filter(doc => !term || [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
+  container.innerHTML = doctors.length ? doctors.map(doc => `
     <div class="doctor-search-card">
       <div class="doc-avatar">👨‍⚕️</div>
       <div class="doctor-card-info">
-        <h4 class="doctor-card-name">${doc.name}</h4>
+        <h4 class="doctor-card-name">${doc.name} <span class="verified-doctor" title="Verified HealthSync doctor"><i class="fa-solid fa-circle-check"></i> Verified</span></h4>
         <p class="doctor-card-spec">${doc.specialization}</p>
         <p class="doctor-card-meta">${doc.exp} • ${doc.languages}</p>
         <p class="doctor-card-meta" style="color: var(--text-muted); font-size: 11px;"><i class="fa-solid fa-hospital"></i> ${doc.clinic}</p>
+        <p class="doctor-card-meta doctor-trust-line"><i class="fa-solid fa-id-card"></i> Medical registration verified · clinic timings available</p>
       </div>
       <div class="doctor-card-right">
         <div class="doctor-card-fee">₹${doc.fee}</div>
@@ -680,8 +750,10 @@ function renderPatientDoctorsList() {
         <button class="btn btn-primary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${doc.id}')">Book Appointment</button>
       </div>
     </div>
-  `).join('');
+  `).join('') : `<div class="card"><div class="card-body health-guide-empty"><div class="health-guide-icon"><i class="fa-solid fa-user-doctor"></i></div><strong>No doctors found</strong><p>Try a doctor name, specialty, or clinic name.</p><button class="btn btn-secondary btn-sm" type="button" onclick="clearPatientDoctorSearch()">Clear search</button></div></div>`;
 }
+window.handlePatientDocSearch = function() { renderPatientDoctorsList(); };
+window.clearPatientDoctorSearch = function() { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
 
 function renderPatientDashboardPrescriptions() {
   const container = document.getElementById('patient-recent-rx-list');
@@ -700,6 +772,19 @@ function renderPatientDashboardPrescriptions() {
     </div>
   `).join('');
 }
+
+window.searchDoctorsFromDashboard = function() {
+  const term = document.getElementById('dashboard-doctor-search')?.value.trim().toLowerCase() || '';
+  switchPatientPage('doctors');
+  const search = document.getElementById('pt-doc-search-input');
+  if (search) {
+    search.value = term;
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+};
+window.showEmergencyHelp = function() {
+  showToast('For a life-threatening emergency, call your local emergency number immediately. This app does not replace emergency services.', 'warning');
+};
 
 // ---------------------------------------------------------------------------
 // RENDERING - APPOINTMENTS LIST

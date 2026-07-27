@@ -105,9 +105,9 @@
         </nav>
         <div class="sidebar-footer">
           <div class="sidebar-user">
-            <div class="avatar">NK</div>
+            <div id="patient-sidebar-avatar" class="avatar" aria-label="Patient profile image">RV</div>
             <div class="sidebar-user-info">
-              <div class="sidebar-user-name">Rahul Verma</div>
+              <div id="patient-sidebar-name" class="sidebar-user-name">Rahul Verma</div>
               <div class="sidebar-user-role">Patient Account</div>
             </div>
           </div>
@@ -126,7 +126,7 @@
           <div class="header-icons">
             <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
             <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i><span id="notification-dot" class="notif-dot hidden"></span></button>
-            <div class="header-avatar">RV</div>
+            <div id="patient-header-avatar" class="header-avatar" aria-label="Patient profile image">RV</div>
           </div>
         </header>
 
@@ -137,7 +137,7 @@
           <div id="patient-page-dashboard" class="page active">
             <div class="page-header-row">
               <div>
-                <h2 class="page-heading">Good Morning, Rahul 👋</h2>
+                <h2 class="page-heading">Good Morning, <span id="patient-dashboard-name">Rahul</span> 👋</h2>
                 <p class="page-subheading">Take charge of your health today!</p>
               </div>
               <div class="date-label"><i class="fa-solid fa-calendar-days"></i> <span class="current-date-str"></span></div>
@@ -146,6 +146,12 @@
             <div class="grid-col-2-1 mb-4">
               <!-- Left Side -->
               <div class="flex flex-col gap-4">
+                <section class="care-finder card" aria-label="Find a doctor">
+                  <div class="card-body">
+                    <div class="care-finder-heading"><div><span class="eyebrow"><i class="fa-solid fa-shield-heart"></i> Verified care network</span><h3>Find the right care, faster</h3><p>Search by doctor name, speciality, or clinic.</p></div><button class="sos-button" type="button" onclick="showEmergencyHelp()"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</button></div>
+                    <div class="care-search-row"><label class="sr-only" for="dashboard-doctor-search">Search doctors</label><input id="dashboard-doctor-search" class="form-control" placeholder="Search doctors, specialties, or clinics" onkeydown="if(event.key==='Enter') searchDoctorsFromDashboard()"><button class="btn btn-primary" type="button" onclick="searchDoctorsFromDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Search doctors</button></div>
+                  </div>
+                </section>
                 <!-- Upcoming Appointment Card -->
                 <div class="card">
                   <div class="card-header">
@@ -164,6 +170,11 @@
                       <button class="btn btn-secondary btn-sm" onclick="switchPatientPage('appointments')">View Details</button>
                     </div>
                   </div>
+                </div>
+
+                <div class="grid-col-2 care-context-grid">
+                  <div class="card compact-care-card"><div class="card-header"><span class="card-title"><i class="fa-solid fa-hospital"></i> Nearby care</span><button class="btn btn-secondary btn-xs" onclick="switchPatientPage('doctors')">Explore</button></div><div class="card-body"><strong>Apollo Hospital, Mumbai</strong><p>Verified hospital · Cardiology, general medicine, diagnostics</p><span class="care-live"><i class="fa-solid fa-circle"></i> Open now · appointments available</span></div></div>
+                  <div class="card compact-care-card"><div class="card-header"><span class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Continue care</span><button class="btn btn-secondary btn-xs" onclick="switchPatientPage('appointments')">History</button></div><div class="card-body"><strong>Recent care in one place</strong><p>Review past visits, prescriptions, reports, and follow-up recommendations.</p><button class="text-action" type="button" onclick="switchPatientPage('health-records')">Open health records <i class="fa-solid fa-arrow-right"></i></button></div></div>
                 </div>
 
                 <!-- Quick Action Buttons -->
@@ -206,27 +217,27 @@
                     <div class="health-summary-grid mb-3">
                       <div class="health-metric">
                         <div class="health-metric-icon" style="color: #ef4444;"><i class="fa-solid fa-heart"></i></div>
-                        <div class="health-metric-val">72</div>
+                        <div class="health-metric-val" id="dashboard-heart-rate">72</div>
                         <div class="health-metric-unit">bpm</div>
                         <div class="health-metric-label">Heart Rate</div>
                       </div>
                       <div class="health-metric">
                         <div class="health-metric-icon" style="color: #3b82f6;"><i class="fa-solid fa-gauge-simple-high"></i></div>
-                        <div class="health-metric-val">120/80</div>
+                        <div class="health-metric-val" id="dashboard-blood-pressure">120/80</div>
                         <div class="health-metric-unit">mmHg</div>
                         <div class="health-metric-label">Blood Pressure</div>
                       </div>
                       <div class="health-metric">
                         <div class="health-metric-icon" style="color: #10b981;"><i class="fa-solid fa-weight-scale"></i></div>
-                        <div class="health-metric-val">72</div>
+                        <div class="health-metric-val" id="dashboard-weight">—</div>
                         <div class="health-metric-unit">kg</div>
                         <div class="health-metric-label">Weight</div>
                       </div>
                       <div class="health-metric">
                         <div class="health-metric-icon" style="color: #8b5cf6;"><i class="fa-solid fa-bed"></i></div>
-                        <div class="health-metric-val">7.5</div>
+                        <div class="health-metric-val" id="dashboard-bmi">—</div>
                         <div class="health-metric-unit">hrs</div>
-                        <div class="health-metric-label">Sleep</div>
+                        <div class="health-metric-label" id="dashboard-bmi-label">BMI</div>
                       </div>
                     </div>
                   </div>
@@ -259,6 +270,20 @@
               <form class="card" id="health-profile-form" onsubmit="saveHealthProfile(event)">
                 <div class="card-header"><span class="card-title">About you</span><span class="text-muted text-sm">Private to your patient dashboard</span></div>
                 <div class="card-body">
+                  <div class="profile-photo-editor">
+                    <div id="patient-profile-photo-preview" class="profile-photo-preview" aria-label="Profile photo preview">RV</div>
+                    <div class="profile-photo-content">
+                      <strong>Profile photo</strong>
+                      <p>Use your camera or choose an image from your device. It stays with this patient profile.</p>
+                      <div class="profile-photo-actions">
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="chooseProfilePhoto('camera')"><i class="fa-solid fa-camera"></i> Take photo</button>
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="chooseProfilePhoto('gallery')"><i class="fa-solid fa-image"></i> Choose image</button>
+                        <button class="btn btn-danger btn-sm" type="button" onclick="removeProfilePhoto()"><i class="fa-solid fa-trash"></i> Remove</button>
+                      </div>
+                    </div>
+                    <input id="profile-photo-camera" class="hidden" type="file" accept="image/*" capture="user" onchange="saveProfilePhoto(this.files[0])">
+                    <input id="profile-photo-gallery" class="hidden" type="file" accept="image/*" onchange="saveProfilePhoto(this.files[0])">
+                  </div>
                   <div class="form-row">
                     <div class="form-group"><label class="form-label" for="profile-name">Full name <span class="req">*</span></label><input class="form-control" id="profile-name" maxlength="80" required placeholder="Your full name"></div>
                     <div class="form-group"><label class="form-label" for="profile-age">Age <span class="req">*</span></label><input class="form-control" id="profile-age" type="number" min="18" max="120" required placeholder="e.g. 30"></div>
