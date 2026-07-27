@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class DoctorDashboard extends StatelessWidget {
   const DoctorDashboard({super.key});
@@ -20,6 +21,8 @@ class DoctorDashboard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildTodaySummary(context),
+            const SizedBox(height: 24),
+            _buildPersonalCareCard(context),
             const SizedBox(height: 24),
             _buildCurrentPatient(context),
             const SizedBox(height: 24),
@@ -45,6 +48,38 @@ class DoctorDashboard extends StatelessWidget {
           BottomNavigationBarItem(
               icon: Icon(Icons.settings), label: 'Settings'),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalCareCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const CircleAvatar(child: Icon(Icons.person_outline)),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Your personal care',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                  SizedBox(height: 2),
+                  Text(
+                      'Book an appointment for yourself with another specialist.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Book personal appointment',
+              onPressed: () => context.push('/patient/search'),
+              icon: const Icon(Icons.calendar_month_outlined),
+            ),
+          ],
+        ),
       ),
     );
   }

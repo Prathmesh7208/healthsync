@@ -32,8 +32,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LoginRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      await _client.dio
-          .post('/auth/login', data: {'mobileNumber': event.mobileNumber});
+      await _client.dio.post('/auth/login', data: {
+        'mobileNumber': event.mobileNumber,
+        if (event.fullName != null) 'fullName': event.fullName,
+        if (event.requestedRole != null) 'requestedRole': event.requestedRole,
+      });
       emit(OtpSent(event.mobileNumber));
     } on DioException catch (error) {
       emit(AuthError(_safeMessage(error)));
@@ -49,6 +52,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final response = await _client.dio.post('/auth/verify', data: {
         'mobileNumber': event.mobileNumber,
         'otpCode': event.otp,
+        if (event.fullName != null) 'fullName': event.fullName,
+        if (event.requestedRole != null) 'requestedRole': event.requestedRole,
       });
       final data = Map<String, dynamic>.from(response.data as Map);
       final user = Map<String, dynamic>.from(data['user'] as Map? ?? const {});

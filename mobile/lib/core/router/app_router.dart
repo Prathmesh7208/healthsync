@@ -24,8 +24,13 @@ class AppRouter {
       GoRoute(
         path: '/otp',
         builder: (context, state) {
-          final mobile = state.extra as String;
-          return OtpScreen(mobileNumber: mobile);
+          final details =
+              Map<String, String>.from(state.extra as Map? ?? const {});
+          return OtpScreen(
+            mobileNumber: details['mobileNumber'] ?? '',
+            fullName: details['fullName'],
+            requestedRole: details['requestedRole'],
+          );
         },
       ),
       GoRoute(

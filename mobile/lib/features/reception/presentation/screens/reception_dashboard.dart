@@ -19,6 +19,16 @@ class ReceptionDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Card(
+              child: ListTile(
+                leading: const CircleAvatar(
+                    child: Icon(Icons.medical_services_outlined)),
+                title: const Text('Assigned clinician'),
+                subtitle: const Text('Dr. Amit Shah · Orthopedics'),
+                trailing: const Chip(label: Text('On duty')),
+              ),
+            ),
+            const SizedBox(height: 16),
             _buildTodaySummary(context),
             const SizedBox(height: 24),
             Row(

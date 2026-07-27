@@ -6,7 +6,13 @@ import 'package:healthsync_mobile/features/auth/presentation/bloc/auth_bloc.dart
 
 class OtpScreen extends StatefulWidget {
   final String mobileNumber;
-  const OtpScreen({super.key, required this.mobileNumber});
+  final String? fullName;
+  final String? requestedRole;
+  const OtpScreen(
+      {super.key,
+      required this.mobileNumber,
+      this.fullName,
+      this.requestedRole});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -81,6 +87,8 @@ class _OtpScreenState extends State<OtpScreen> {
                                         OtpVerified(
                                           widget.mobileNumber,
                                           _otpController.text,
+                                          fullName: widget.fullName,
+                                          requestedRole: widget.requestedRole,
                                         ),
                                       );
                                 }
@@ -96,9 +104,11 @@ class _OtpScreenState extends State<OtpScreen> {
                   Center(
                     child: TextButton(
                       onPressed: () {
-                        context
-                            .read<AuthBloc>()
-                            .add(LoginRequested(widget.mobileNumber));
+                        context.read<AuthBloc>().add(LoginRequested(
+                              widget.mobileNumber,
+                              fullName: widget.fullName,
+                              requestedRole: widget.requestedRole,
+                            ));
                       },
                       child: const Text('Resend OTP'),
                     ),
