@@ -116,6 +116,7 @@ img { max-width: 100%; display: block; }
   padding: 8px 12px; border-radius: var(--radius-sm);
   cursor: pointer;
 }
+.profile-trigger { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
 .sidebar-user:hover { background: var(--page-bg); }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%;
@@ -175,6 +176,8 @@ img { max-width: 100%; display: block; }
   background: var(--red); border: 1.5px solid #fff;
 }
 .header-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--blue-primary); color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.header-avatar.profile-trigger { border: 0; padding: 0; text-align: center; }
+.profile-menu { position: fixed; right: 18px; top: 62px; z-index: 12000; width: min(270px, calc(100vw - 32px)); padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; box-shadow: 0 16px 40px rgba(15,23,42,.18); }.profile-menu-name { color: var(--text-dark); font-size: 14px; font-weight: 750; }.profile-menu-role { margin: 2px 0 10px; color: var(--text-muted); font-size: 11px; }.profile-menu button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text-medium); font: 600 13px inherit; text-align: left; cursor: pointer; }.profile-menu button:hover { background: var(--page-bg); }.profile-menu .profile-logout { margin-top: 4px; color: #b91c1c; }.profile-menu .profile-logout:hover { background: #fef2f2; }
 
 /* ─── Page Content ─── */
 .page-content {

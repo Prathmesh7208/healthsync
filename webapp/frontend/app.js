@@ -301,7 +301,30 @@ window.verifyOtp = async function(event) {
   } catch (error) { authMessage(error.message, true); }
   finally { setAuthBusy('verify-otp-btn', false, 'Verify and sign in'); }
 };
-function finishLogin() { document.getElementById('language-screen')?.classList.add('hidden'); document.getElementById('auth-screen').classList.add('hidden'); if (currentUser?.role === 'DOCTOR') switchGlobalRole('doctor'); renderPatientHealthProfile(); fetchNotifications(); }
+function finishLogin() {
+  document.getElementById('language-screen')?.classList.add('hidden');
+  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('app')?.classList.remove('hidden');
+  const role = String(currentUser?.role || 'PATIENT').toUpperCase();
+  switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : 'patient');
+  renderPatientHealthProfile();
+  fetchNotifications();
+  syncAllData();
+}
+function panelForCurrentUser() { const role = String(currentUser?.role || '').toUpperCase(); return role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : 'patient'; }
+window.toggleProfileMenu = function(role) {
+  const menu = document.getElementById('profile-menu');
+  if (!menu) return;
+  if (!menu.classList.contains('hidden') && menu.dataset.role === role) { menu.classList.add('hidden'); return; }
+  const fallback = role === 'doctor' ? 'Dr. Priya Sharma' : role === 'reception' ? 'Receptionist Desk' : 'Patient';
+  const name = role === panelForCurrentUser() ? (currentUser?.name || fallback) : fallback;
+  const title = role === 'doctor' ? 'Doctor account' : role === 'reception' ? 'Reception desk' : 'Patient account';
+  menu.dataset.role = role;
+  menu.innerHTML = `<div class="profile-menu-name">${escapeHtml(name)}</div><div class="profile-menu-role">${title}</div><button type="button" role="menuitem" onclick="openProfileSettings('${role}')"><i class="fa-solid fa-gear"></i> Account settings</button><button type="button" class="profile-logout" role="menuitem" onclick="logoutCurrentUser()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>`;
+  menu.classList.remove('hidden');
+};
+window.openProfileSettings = function(role) { document.getElementById('profile-menu')?.classList.add('hidden'); if (role === panelForCurrentUser()) openPortalTool(role, 'settings'); else showToast('Switch to this workspace to manage its settings.', 'info'); };
+document.addEventListener('click', event => { if (!event.target.closest('.profile-trigger') && !event.target.closest('#profile-menu')) document.getElementById('profile-menu')?.classList.add('hidden'); });
 
 async function fetchNotifications() { if (!currentUser) return; try { const res=await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data=await res.json(); renderNotifications(data.notifications || []); } catch {} }
 function renderNotifications(items) { const unread=items.filter(item=>item.status==='UNREAD').length; const count=document.getElementById('notification-count'); const dot=document.getElementById('notification-dot'); if(count) count.textContent=unread; if(dot) dot.classList.toggle('hidden', !unread); const list=document.getElementById('notification-list'); if(list) list.innerHTML=items.length ? items.map(item=>`<div class="notification-item ${item.status==='UNREAD'?'unread':''}" onclick="markNotificationRead('${item.id}')">${escapeHtml(item.message)}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>'; }

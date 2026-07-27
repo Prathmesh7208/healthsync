@@ -104,13 +104,13 @@
           </div>
         </nav>
         <div class="sidebar-footer">
-          <div class="sidebar-user">
+          <button class="sidebar-user profile-trigger" type="button" onclick="toggleProfileMenu('patient')" aria-label="Open patient profile menu">
             <div id="patient-sidebar-avatar" class="avatar" aria-label="Patient profile image">RV</div>
             <div class="sidebar-user-info">
               <div id="patient-sidebar-name" class="sidebar-user-name">Rahul Verma</div>
               <div class="sidebar-user-role">Patient Account</div>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -126,7 +126,7 @@
           <div class="header-icons">
             <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
             <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i><span id="notification-dot" class="notif-dot hidden"></span></button>
-            <div id="patient-header-avatar" class="header-avatar" aria-label="Patient profile image">RV</div>
+            <button id="patient-header-avatar" class="header-avatar profile-trigger" type="button" onclick="toggleProfileMenu('patient')" aria-label="Open patient profile menu">RV</button>
           </div>
         </header>
 
@@ -461,13 +461,13 @@
           </div>
         </nav>
         <div class="sidebar-footer">
-          <div class="sidebar-user">
+          <button class="sidebar-user profile-trigger" type="button" onclick="toggleProfileMenu('doctor')" aria-label="Open doctor profile menu">
             <div class="avatar">AP</div>
             <div class="sidebar-user-info">
               <div class="sidebar-user-name">Dr. Priya Sharma</div>
               <div class="sidebar-user-role">Cardiologist</div>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -483,7 +483,7 @@
           <div class="header-icons">
             <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
             <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
-            <div class="header-avatar">PS</div>
+            <button class="header-avatar profile-trigger" type="button" onclick="toggleProfileMenu('doctor')" aria-label="Open doctor profile menu">PS</button>
           </div>
         </header>
 
@@ -779,13 +779,13 @@
           </div>
         </nav>
         <div class="sidebar-footer">
-          <div class="sidebar-user">
+          <button class="sidebar-user profile-trigger" type="button" onclick="toggleProfileMenu('reception')" aria-label="Open receptionist profile menu">
             <div class="avatar">R</div>
             <div class="sidebar-user-info">
               <div class="sidebar-user-name">Receptionist Desk</div>
               <div class="sidebar-user-role">Main Clinic Pune</div>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -801,7 +801,7 @@
           <div class="header-icons">
             <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
             <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
-            <div class="header-avatar">R</div>
+            <button class="header-avatar profile-trigger" type="button" onclick="toggleProfileMenu('reception')" aria-label="Open receptionist profile menu">R</button>
           </div>
         </header>
 
@@ -1205,6 +1205,8 @@
       <div class="modal-footer"><button class="btn btn-secondary" onclick="clearNotifications()">Clear history</button><button class="btn btn-primary" onclick="closeAllModals()">Done</button></div>
     </div>
   </div>
+
+  <div id="profile-menu" class="profile-menu hidden" role="menu" aria-label="User profile menu"></div>
 
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-root"></div>
