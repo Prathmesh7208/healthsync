@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthsync_mobile/core/di/service_locator.dart';
 import 'package:healthsync_mobile/core/router/app_router.dart';

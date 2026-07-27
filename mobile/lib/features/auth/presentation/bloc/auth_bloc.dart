@@ -22,7 +22,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthCheckRequested event, Emitter<AuthState> emit) async {
     final role = await _storage.read(key: 'user_role');
     final token = await _storage.read(key: 'access_token');
-    if (token == null || role == null) return emit(Unauthenticated());
+    if (token == null || role == null) {
+      return emit(Unauthenticated());
+    }
     _emitRole(role, emit);
   }
 
@@ -53,9 +55,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final role = (user['role'] ?? '').toString().toUpperCase();
       final token = data['token']?.toString();
       final refreshToken = data['refreshToken']?.toString();
-      if (token == null || role.isEmpty)
+      if (token == null || role.isEmpty) {
         return emit(const AuthError(
             'We could not complete sign-in. Please try again.'));
+      }
       await _storage.write(key: 'access_token', value: token);
       await _storage.write(key: 'refresh_token', value: refreshToken);
       await _storage.write(key: 'user_role', value: role);
@@ -88,11 +91,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   String _safeMessage(DioException error) {
     final data = error.response?.data;
-    if (data is Map && data['message'] is String)
+    if (data is Map && data['message'] is String) {
       return data['message'] as String;
+    }
     if (error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.connectionError)
+        error.type == DioExceptionType.connectionError) {
       return 'Unable to reach HealthSync. Check your connection and try again.';
+    }
     return 'Something went wrong. Please try again.';
   }
 }

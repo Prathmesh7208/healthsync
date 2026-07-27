@@ -12,7 +12,10 @@ class PatientDashboard extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.sizeOf(context).width < 360 ? 16 : 20,
+              vertical: 20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -79,7 +82,7 @@ class PatientDashboard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -121,7 +124,7 @@ class PatientDashboard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child:
@@ -147,8 +150,10 @@ class PatientDashboard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 10,
                 children: [
                   _buildWhiteButton('Track Queue', Icons.linear_scale),
                   _buildWhiteButton('Reschedule', Icons.edit),
@@ -176,16 +181,27 @@ class PatientDashboard extends StatelessWidget {
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildActionItem(
-            context, 'Appointments', Icons.book_online, Colors.orange),
-        _buildActionItem(context, 'Records', Icons.folder_shared, Colors.green),
-        _buildActionItem(
-            context, 'Prescriptions', Icons.medication, Colors.purple),
-        _buildActionItem(context, 'Vitals', Icons.favorite, Colors.red),
-      ],
+    final actions = [
+      _buildActionItem(
+          context, 'Appointments', Icons.book_online, Colors.orange),
+      _buildActionItem(context, 'Records', Icons.folder_shared, Colors.green),
+      _buildActionItem(
+          context, 'Prescriptions', Icons.medication, Colors.purple),
+      _buildActionItem(context, 'Vitals', Icons.favorite, Colors.red),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = constraints.maxWidth < 380
+            ? (constraints.maxWidth - 12) / 2
+            : (constraints.maxWidth - 36) / 4;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 14,
+          children: actions
+              .map((action) => SizedBox(width: itemWidth, child: action))
+              .toList(),
+        );
+      },
     );
   }
 
@@ -202,7 +218,7 @@ class PatientDashboard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color),
@@ -273,7 +289,7 @@ class PatientDashboard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.3),
+            color: Colors.red.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

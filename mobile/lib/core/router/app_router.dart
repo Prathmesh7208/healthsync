@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:healthsync_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:healthsync_mobile/features/auth/presentation/screens/otp_screen.dart';

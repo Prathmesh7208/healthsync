@@ -52,71 +52,80 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 60),
-                  Text(
-                    'Welcome to HealthSync',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 60),
+                      Text(
+                        'Welcome to HealthSync',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Login with your mobile number to continue',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey,
+                            ),
+                      ),
+                      const SizedBox(height: 48),
+                      TextFormField(
+                        controller: _mobileController,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.telephoneNumber],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        maxLength: 10,
+                        decoration: const InputDecoration(
+                          labelText: 'Mobile Number',
+                          prefixText: '+91 ',
+                          hintText: 'Enter 10 digit number',
+                          counterText: '',
                         ),
+                        validator: (value) {
+                          if (value == null ||
+                              !RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+                            return 'Please enter a valid 10-digit number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      BlocBuilder<AuthBloc, AuthState>(
+                        builder: (context, state) {
+                          return ElevatedButton(
+                            onPressed: state is AuthLoading
+                                ? null
+                                : () {
+                                    if (_formKey.currentState!.validate()) {
+                                      context.read<AuthBloc>().add(
+                                            LoginRequested(
+                                                _mobileController.text),
+                                          );
+                                    }
+                                  },
+                            child: state is AuthLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white)
+                                : const Text('Send OTP'),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Login with your mobile number to continue',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey,
-                        ),
-                  ),
-                  const SizedBox(height: 48),
-                  TextFormField(
-                    controller: _mobileController,
-                    keyboardType: TextInputType.phone,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const [AutofillHints.telephoneNumber],
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    maxLength: 10,
-                    decoration: const InputDecoration(
-                      labelText: 'Mobile Number',
-                      prefixText: '+91 ',
-                      hintText: 'Enter 10 digit number',
-                      counterText: '',
-                    ),
-                    validator: (value) {
-                      if (value == null || !RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
-                        return 'Please enter a valid 10-digit number';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      return ElevatedButton(
-                        onPressed: state is AuthLoading
-                            ? null
-                            : () {
-                                if (_formKey.currentState!.validate()) {
-                                  context.read<AuthBloc>().add(
-                                        LoginRequested(_mobileController.text),
-                                      );
-                                }
-                              },
-                        child: state is AuthLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Send OTP'),
-                      );
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

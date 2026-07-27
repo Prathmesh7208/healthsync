@@ -72,7 +72,7 @@ class MockRepository {
       ],
       instructions:
           'Avoid heavy lifting for 1 week. Apply heat pack 3 times a day.',
-      follow_up_date: DateTime.now().add(const Duration(days: 7)),
+      followUpDate: DateTime.now().add(const Duration(days: 7)),
     ),
   ];
 }
