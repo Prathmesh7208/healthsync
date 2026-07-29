@@ -26,7 +26,15 @@
   </section>
 
   <section id="auth-screen" class="auth-screen hidden" aria-labelledby="auth-title">
-    <div class="auth-card">
+    <div class="auth-card auth-split-card">
+      <aside class="auth-showcase" aria-label="HealthSync care illustration">
+        <div class="auth-showcase-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
+        <div class="auth-doctor-art"><div class="doctor-halo"></div><div class="doctor-illustration"><i class="fa-solid fa-user-doctor"></i></div><div class="doctor-clipboard"><i class="fa-solid fa-clipboard-list"></i></div></div>
+        <div class="auth-stat stat-top"><i class="fa-solid fa-shield-heart"></i><span><strong>Private care</strong><small>Secure health records</small></span></div>
+        <div class="auth-stat stat-bottom"><i class="fa-solid fa-circle-check"></i><span><strong>Verified network</strong><small>Doctors and clinics</small></span></div>
+        <div class="auth-showcase-copy"><span class="eyebrow">HealthSync care</span><h2>Care that stays connected.</h2><p>Appointments, records, prescriptions, and clinic updates in one secure place.</p></div>
+      </aside>
+      <div class="auth-form-panel">
       <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
       <h1 id="auth-title">Welcome to better care</h1>
       <p id="auth-subtitle" class="auth-subtitle">Sign in securely with your mobile number.</p>
@@ -53,6 +61,7 @@
       </form>
       <p id="auth-message" class="auth-message" aria-live="polite"></p>
       <button class="demo-entry-link" type="button" onclick="DemoPortal.open()"><i class="fa-solid fa-display"></i> Open Demo Portal</button>
+      </div>
     </div>
   </section>
 
