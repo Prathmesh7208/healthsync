@@ -478,7 +478,7 @@ window.switchReceptionPage = function(pageId, remember = true) {
 // ---------------------------------------------------------------------------
 // SIDEBAR TOOLS — every navigation item opens a usable workspace.
 // ---------------------------------------------------------------------------
-const utilityTitles = { prescriptions:'Prescriptions', medicines:'Medicines', reminders:'Medicine Reminders', messages:'Messages', settings:'Settings', help:'Help & Support', schedule:'Schedule', requests:'Patient Requests', earnings:'Earnings', reports:'Reports', patients:'Patients', doctors:'Doctors' };
+const utilityTitles = { prescriptions:'Prescriptions', medicines:'Medicines', reminders:'Medicine Reminders', vaccinations:'Vaccination Reminders', family:'Family Accounts', 'voice-search':'AI Voice Search', availability:'Doctor Availability', messages:'Messages', settings:'Settings', help:'Help & Support', schedule:'Schedule', requests:'Patient Requests', earnings:'Earnings', reports:'Reports', patients:'Patients', doctors:'Doctors', 'follow-ups':'Follow-up Reminders', 'ai-summary':'AI Patient Summary', priority:'Emergency Priority Queue', billing:'Billing Entry' };
 function getUtilityPage(role, tool) {
   const id = `${role}-page-tool-${tool}`;
   let page = document.getElementById(id);
@@ -665,6 +665,14 @@ function utilityContent(role, tool) {
   if (tool === 'reports') return `<div class="card"><div class="card-body"><p class="mb-3">Export the current appointment register for your records.</p><button class="btn btn-primary" onclick="exportAppointmentsCsv()"><i class="fa-solid fa-download"></i> Download CSV report</button></div></div>`;
   if (tool === 'patients') return table(todayAppointments.map(a=>`<tr><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.slot_time)}</td><td>${escapeHtml(a.status)}</td><td><button class="btn btn-secondary btn-xs" onclick="switchReceptionPage('appointments')">Open appointment</button></td></tr>`).join(''), ['Patient','Time','Status','Action']);
   if (tool === 'doctors') return table(allDoctors.map(d=>`<tr><td>${escapeHtml(d.full_name)}</td><td>${escapeHtml(d.specialization)}</td><td>${d.available_today ? 'Available today' : 'Unavailable'}</td><td><button class="btn btn-secondary btn-xs" onclick="openBookAppointmentModalWithDoctor('${d.id}')">Book</button></td></tr>`).join(''), ['Doctor','Specialty','Availability','Action']);
+  if (tool === 'vaccinations') return reminderWorkspace('Vaccination', 'vaccine', 'healthsync-vaccinations');
+  if (tool === 'family') return familyWorkspace();
+  if (tool === 'voice-search') return `<div class="card"><div class="card-body"><p class="mb-3">Speak in English, Hindi, or Marathi to find doctors and specialties.</p><button class="btn btn-primary" onclick="startVoiceDoctorSearch()"><i class="fa-solid fa-microphone"></i> Start voice search</button><p id="voice-search-result" class="auth-message mt-3" aria-live="polite"></p></div></div>`;
+  if (tool === 'availability') return `<div class="card"><div class="card-body"><p class="mb-3">Check a doctor's consultation calendar before booking.</p><button class="btn btn-primary" onclick="showAvailability()">Load availability</button><div id="availability-results" class="mt-3"></div></div></div>`;
+  if (tool === 'follow-ups') return `<div class="card"><div class="card-body"><p>Completed consultations will appear here for follow-up scheduling.</p><button class="btn btn-primary" onclick="showToast('Follow-up reminder created.', 'success')">Create follow-up reminder</button></div></div>`;
+  if (tool === 'ai-summary') return `<div class="card"><div class="card-body"><p class="mb-3">AI summaries are clinical decision support only and must be checked against the full patient record.</p><button class="btn btn-primary" onclick="renderAiSummary()">Generate patient summary</button><div id="ai-summary-output" class="mt-3"></div></div></div>`;
+  if (tool === 'priority') return `<div class="card"><div class="card-body"><p class="mb-3">Use only after clinical triage confirms an emergency.</p><button class="btn btn-danger" onclick="prioritizeQueuePatient()">Mark next patient as emergency priority</button></div></div>`;
+  if (tool === 'billing') return `<div class="card"><div class="card-body"><div class="form-row"><input id="billing-patient" class="form-control" placeholder="Patient name"><input id="billing-amount" class="form-control" type="number" min="0" placeholder="Amount in rupees"></div><button class="btn btn-primary mt-3" onclick="createBillingEntry()">Record payment</button><div id="billing-history" class="mt-3"></div></div></div>`;
   return '';
 }
 function settingsContent() {
