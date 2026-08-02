@@ -767,8 +767,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .app-history-nav { gap: 2px; padding-right: 5px; }
   .app-nav-button { min-height: 28px; padding: 0 7px; gap: 4px; font-size: 11px; }
   .icon-btn, .header-avatar { width: 34px; height: 34px; }
-  .role-tab-bar { max-width: 48vw; overflow-x: auto; flex-wrap: nowrap; }
-  .role-tab { padding: 6px 10px; white-space: nowrap; }
+  .role-tab-bar { max-width: calc(100vw - 120px); overflow-x: auto; flex-wrap: nowrap; }
+  .role-tab { padding: 6px 10px; white-space: nowrap; flex: 0 0 auto; }
 
   .page-content { padding: 16px; overscroll-behavior: contain; }
   .page-header-row { align-items: flex-start; gap: 12px; margin-bottom: 16px; }
@@ -777,6 +777,17 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .page-subheading { font-size: 12px; }
   .card-header, .card-body, .card-footer { padding-left: 14px; padding-right: 14px; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 12px; }
+  
+  /* Override any hardcoded inline grid-template-columns from index.html */
+  [style*="grid-template-columns: repeat(4, 1fr)"],
+  [style*="grid-template-columns: 2fr 1fr"],
+  [style*="grid-template-columns: 1.5fr 1fr"],
+  [style*="grid-template-columns: 1fr 2fr"],
+  [style*="grid-template-columns: 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
   .quick-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .health-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .form-row, .form-row-3 { grid-template-columns: 1fr; gap: 12px; }
@@ -811,7 +822,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .nav-item { padding: 7px 8px; font-size: 11px; }
   .main-area { height: calc(100dvh - 54px); }
   .top-header { padding: 0 12px; }
-  .role-tab-bar { max-width: 44vw; }
+  .role-tab-bar { max-width: calc(100vw - 100px); }
   .page-content { padding: 12px; }
   .page-header-row { flex-wrap: wrap; }
   .page-header-row > :last-child:not(:first-child) { width: 100%; }
