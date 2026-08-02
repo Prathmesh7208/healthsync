@@ -142,6 +142,7 @@
             <div class="role-tab active" onclick="switchGlobalRole('patient')">Patient View</div>
             <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
             <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
           </div>
           <div class="header-icons">
             <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
@@ -168,7 +169,15 @@
               <div class="flex flex-col gap-4">
                 <section class="care-finder card" aria-label="Find a doctor">
                   <div class="card-body">
-                    <div class="care-finder-heading"><div><span class="eyebrow"><i class="fa-solid fa-shield-heart"></i> Verified care network</span><h3>Find the right care, faster</h3><p>Search by doctor name, speciality, or clinic.</p></div><button class="sos-button" type="button" onclick="showEmergencyHelp()"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</button></div>
+                    <div class="care-finder-heading"><div><span class="eyebrow"><i class="fa-solid fa-shield-heart"></i> Verified care network</span><h3>Find the right care, faster</h3><p>Search by doctor name, speciality, or clinic.</p></div>
+                      <div class="sos-container" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                        <button id="patient-sos-btn" class="sos-button" style="position: relative; overflow: hidden;" type="button" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()" onmouseleave="cancelSOSCountdown()" ontouchstart="startSOSCountdown()" ontouchend="cancelSOSCountdown()"><i class="fa-solid fa-phone-volume"></i> <span id="sos-btn-text">Hold 3s for SOS</span><div id="sos-progress" style="position: absolute; bottom: 0; left: 0; height: 4px; background: #fff; width: 0%; transition: width 0.1s linear;"></div></button>
+                        <div id="sos-status-panel" class="hidden" style="background: #fee2e2; padding: 12px; border-radius: 8px; border: 1px solid #f87171; max-width: 300px;">
+                          <h4 style="color: #b91c1c; margin-top:0; font-size: 14px;"><i class="fa-solid fa-truck-medical"></i> <span id="sos-status-text">SOS Sent... Pending Assignment</span></h4>
+                          <a id="sos-maps-link" href="#" target="_blank" style="font-size: 13px; color: #1d4ed8; text-decoration: underline;">View Live Location</a>
+                        </div>
+                      </div>
+                    </div>
                     <div class="care-search-row"><label class="sr-only" for="dashboard-doctor-search">Search doctors</label><input id="dashboard-doctor-search" class="form-control" placeholder="Search doctors, specialties, or clinics" onkeydown="if(event.key==='Enter') searchDoctorsFromDashboard()"><button class="btn btn-primary" type="button" onclick="searchDoctorsFromDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Search doctors</button></div>
                   </div>
                 </section>
@@ -822,6 +831,7 @@
             <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
             <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
             <div class="role-tab active" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
           </div>
           <div class="header-icons">
             <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
@@ -876,6 +886,14 @@
                 </div>
                 <div class="kpi-number" id="rec-kpi-done">26</div>
                 <div class="kpi-label">Completed</div>
+              </div>
+            </div>
+
+            <!-- Emergency Alerts Panel -->
+            <div id="rec-emergency-panel" class="hidden mb-4" style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px;">
+              <h3 style="color: #b91c1c; margin-top:0; font-size:18px;"><i class="fa-solid fa-triangle-exclamation"></i> Active Emergency Alert</h3>
+              <div id="rec-emergency-list" class="flex flex-col gap-3 mt-2">
+                <!-- Injected via JS -->
               </div>
             </div>
 
@@ -1121,6 +1139,69 @@
       </div>
     </div>
 
+    <!-- ======================================= -->
+    <!-- AMBULANCE ROLE VIEW PANEL               -->
+    <!-- ======================================= -->
+    <div id="panel-ambulance" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-truck-medical"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Ambulance Dashboard</div>
+          <div class="nav-item active">
+            <span class="nav-icon"><i class="fa-solid fa-map-location-dot"></i></span> Live Dispatch
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-user profile-trigger" type="button" aria-label="Ambulance profile menu">
+            <div class="avatar">AD</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Ambulance Driver</div>
+              <div class="sidebar-user-role">Vehicle MH12 AB 1234</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <span class="page-title">Ambulance Live Dispatch</span>
+          <div class="role-tab-bar">
+            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab active" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
+          </div>
+          <div class="header-icons">
+            <button class="icon-btn" onclick="openNotifications()"><i class="fa-solid fa-bell"></i></button>
+            <button class="header-avatar profile-trigger" type="button">AD</button>
+          </div>
+        </header>
+
+        <div class="page-content">
+          <div class="page active">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Dispatch Dashboard</h2>
+                <p class="page-subheading">Waiting for emergency assignments...</p>
+              </div>
+            </div>
+
+            <div id="amb-dispatch-list" class="grid-4 mb-4" style="grid-template-columns: 1fr;">
+              <div class="card p-4 text-center text-muted empty-state">
+                <i class="fa-solid fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
+                <p>No active dispatches. You are available.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 
@@ -1236,6 +1317,7 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-root"></div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="country-codes.js"></script>
   <script src="app.js"></script>
   <script src="demo.js"></script>

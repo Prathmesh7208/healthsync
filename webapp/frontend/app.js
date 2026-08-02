@@ -162,6 +162,213 @@ function applyLanguage(language = selectedLanguage) {
   document.querySelectorAll('.language-choice').forEach(button => button.classList.toggle('active', button.dataset.language === language));
 }
 
+window.toggleCheckin = function(queueId, action) {
+  // Simplified for phase 1 frontend logic
+  showToast(action === 'checkin' ? 'Patient checked in successfully' : 'Patient marked as no-show');
+  syncAllData();
+};
+
+// ---------------------------------------------------------------------------
+// SOS & SOCKET.IO REAL-TIME LOGIC
+// ---------------------------------------------------------------------------
+let appSocket = null;
+let sosTimer = null;
+let sosWatchId = null;
+let currentEmergencyCaseId = null;
+
+window.connectSocket = function() {
+  if (appSocket) { appSocket.disconnect(); }
+  if (currentUser && currentUser.token && typeof io !== 'undefined') {
+    appSocket = io({ auth: { token: currentUser.token } });
+    
+    appSocket.on('connect', () => console.log('Socket connected'));
+    
+    appSocket.on('sos_acknowledged', (data) => {
+      currentEmergencyCaseId = data.caseId;
+      document.getElementById('sos-status-panel')?.classList.remove('hidden');
+      const textEl = document.getElementById('sos-status-text');
+      if (textEl) textEl.innerText = 'SOS Sent... Pending Assignment';
+      const linkEl = document.getElementById('sos-maps-link');
+      if (linkEl) linkEl.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+      startLocationTracking(currentEmergencyCaseId);
+    });
+
+    appSocket.on('sos_status_update', (data) => {
+      if (data.status === 'Ambulance Dispatched') {
+        const p = document.getElementById('sos-status-text');
+        if (p) p.innerText = 'Ambulance Dispatched! ETA: 5-10 mins';
+      } else if (data.status === 'Resolved') {
+        const p = document.getElementById('sos-status-text');
+        if (p) p.innerText = 'Emergency Resolved';
+        stopLocationTracking();
+        setTimeout(() => document.getElementById('sos-status-panel')?.classList.add('hidden'), 5000);
+        const btn = document.getElementById('patient-sos-btn');
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    appSocket.on('sos_alert', (data) => {
+      if (currentUser.role === 'RECEPTIONIST') {
+        document.getElementById('rec-emergency-panel')?.classList.remove('hidden');
+        const list = document.getElementById('rec-emergency-list');
+        if (!list) return;
+        const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+        list.innerHTML += `
+          <div id="emerg-${data.caseId}" style="background: white; border: 1px solid #f87171; padding: 12px; border-radius: 8px;">
+            <div style="display:flex; justify-content:space-between;">
+              <strong>${escapeHtml(data.patientName)} (${escapeHtml(data.phone)})</strong>
+              <span style="font-size:12px; color:#b91c1c;">${new Date(data.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <p style="font-size:13px; margin: 4px 0;">Live Address: ${escapeHtml(data.address || 'Unknown')}</p>
+            <div style="display:flex; gap: 8px; margin-top: 8px;">
+              <a href="${mapsLink}" target="_blank" class="btn btn-secondary btn-sm" id="map-link-${data.caseId}">View Live Location</a>
+              <button class="btn btn-primary btn-sm" id="btn-dispatch-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')">Dispatch Ambulance</button>
+              <button class="btn btn-secondary btn-sm" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    appSocket.on('emergency_location_update', (data) => {
+      // Update google maps link on receptionist / ambulance side dynamically
+      const link = document.getElementById(`map-link-${data.caseId}`);
+      if (link) link.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+    });
+
+    appSocket.on('ambulance_dispatched', (data) => {
+      if (currentUser.role === 'AMBULANCE') {
+        const list = document.getElementById('amb-dispatch-list');
+        if (!list) return;
+        const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+        if (list.querySelector('.empty-state')) list.innerHTML = '';
+        list.innerHTML += `
+          <div id="amb-disp-${data.id}" class="card p-4" style="border: 2px solid #ef4444;">
+            <h3 style="color: #b91c1c; margin-top:0;"><i class="fa-solid fa-truck-medical"></i> Dispatch Assigned</h3>
+            <p style="margin: 4px 0;"><strong>Patient:</strong> ${escapeHtml(data.patient_name)}</p>
+            <p style="margin: 4px 0;"><strong>Phone:</strong> ${escapeHtml(data.phone_number)}</p>
+            <p style="margin: 4px 0;"><strong>Address:</strong> ${escapeHtml(data.address)}</p>
+            <a href="${mapsLink}" id="map-link-${data.id}" target="_blank" class="btn btn-primary w-full mt-3"><i class="fa-solid fa-location-arrow"></i> Navigate to Patient Live Location</a>
+            <button class="btn btn-secondary w-full mt-2" onclick="resolveEmergency('${data.id}')">Mark as Completed</button>
+          </div>
+        `;
+      }
+    });
+  }
+};
+
+window.dispatchAmbulance = function(caseId) {
+  if (appSocket) {
+    appSocket.emit('dispatch_ambulance', { caseId, hospitalId: 'local_hospital' });
+    const btn = document.getElementById(`btn-dispatch-${caseId}`);
+    if (btn) { btn.disabled = true; btn.innerText = 'Dispatched'; }
+    showToast('Ambulance Dispatched Successfully');
+  }
+};
+
+window.resolveEmergency = function(caseId) {
+  if (appSocket) {
+    appSocket.emit('resolve_emergency', { caseId });
+    const el1 = document.getElementById(`emerg-${caseId}`);
+    if (el1) el1.remove();
+    const el2 = document.getElementById(`amb-disp-${caseId}`);
+    if (el2) el2.remove();
+    
+    // Check if panels should be hidden
+    const recList = document.getElementById('rec-emergency-list');
+    if (recList && recList.children.length === 0) {
+      document.getElementById('rec-emergency-panel')?.classList.add('hidden');
+    }
+    const ambList = document.getElementById('amb-dispatch-list');
+    if (ambList && ambList.children.length === 0) {
+      ambList.innerHTML = '<div class="card p-4 text-center text-muted empty-state"><i class="fa-solid fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i><p>No active dispatches. You are available.</p></div>';
+    }
+    showToast('Emergency resolved');
+  }
+};
+
+window.startSOSCountdown = function() {
+  const bar = document.getElementById('sos-progress');
+  if (!bar) return;
+  bar.style.width = '0%';
+  setTimeout(() => { bar.style.width = '100%'; bar.style.transition = 'width 3s linear'; }, 50);
+  
+  const textEl = document.getElementById('sos-btn-text');
+  if (textEl) textEl.innerText = 'Keep holding...';
+
+  sosTimer = setTimeout(async () => {
+    if (textEl) textEl.innerText = 'Triggering SOS...';
+    // Get live location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        let address = 'Live coordinates acquired';
+        try {
+          // Use OpenStreetMap Nominatim for Reverse Geocoding
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+          const data = await res.json();
+          if (data && data.display_name) address = data.display_name;
+        } catch (e) {
+          console.error("Geocoding failed", e);
+        }
+
+        if (appSocket) {
+          appSocket.emit('sos_trigger', {
+            patientId: currentUser.id,
+            patientName: currentUser.name,
+            phone: currentUser.mobile || 'Unknown',
+            lat,
+            lng,
+            address
+          });
+          const btn = document.getElementById('patient-sos-btn');
+          if (btn) btn.disabled = true;
+          if (textEl) textEl.innerText = 'SOS Sent';
+          if (bar) bar.style.width = '100%';
+        } else {
+          showToast('Real-time connection not available.');
+        }
+      }, (err) => {
+        showToast('Location access required for SOS.');
+        cancelSOSCountdown();
+      });
+    } else {
+      showToast('Geolocation not supported by this browser.');
+      cancelSOSCountdown();
+    }
+  }, 3000);
+};
+
+window.cancelSOSCountdown = function() {
+  const btn = document.getElementById('patient-sos-btn');
+  if (btn && btn.disabled) return; // already sent
+  const bar = document.getElementById('sos-progress');
+  if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+  const textEl = document.getElementById('sos-btn-text');
+  if (textEl) textEl.innerText = 'Hold 3s for SOS';
+  if (sosTimer) clearTimeout(sosTimer);
+};
+
+function startLocationTracking(caseId) {
+  if (navigator.geolocation) {
+    sosWatchId = navigator.geolocation.watchPosition((pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      if (appSocket) {
+        appSocket.emit('location_update', { caseId, lat, lng });
+      }
+    }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+  }
+}
+
+function stopLocationTracking() {
+  if (sosWatchId !== null) {
+    navigator.geolocation.clearWatch(sosWatchId);
+    sosWatchId = null;
+  }
+}
+
 window.selectAppLanguage = function(language) { applyLanguage(language); };
 window.continueToLogin = function() {
   applyLanguage(selectedLanguage);
@@ -335,12 +542,13 @@ function finishLogin() {
   document.getElementById('auth-screen')?.classList.add('hidden');
   document.getElementById('app')?.classList.remove('hidden');
   const role = String(currentUser?.role || 'PATIENT').toUpperCase();
-  switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : 'patient');
+  switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient');
   renderPatientHealthProfile();
   fetchNotifications();
   syncAllData();
+  connectSocket();
 }
-function panelForCurrentUser() { const role = String(currentUser?.role || '').toUpperCase(); return role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : 'patient'; }
+function panelForCurrentUser() { const role = String(currentUser?.role || '').toUpperCase(); return role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient'; }
 window.toggleProfileMenu = function(role) {
   const menu = document.getElementById('profile-menu');
   if (!menu) return;

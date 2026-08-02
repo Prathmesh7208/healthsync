@@ -16,6 +16,7 @@ const http     = require('http');
 const fs       = require('fs');
 const path     = require('path');
 const sqlite3  = require('sqlite3').verbose();
+const { Server } = require('socket.io');
 
 // ─── Database ───────────────────────────────────────────────────────────────
 // DB file lives next to server.js  (c:\HealthSync\webapp\healthsync.db)
@@ -209,6 +210,17 @@ db.serialize(() => {
     entity_id TEXT, metadata_json TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS emergency_cases (
+    id TEXT PRIMARY KEY, patient_id TEXT, patient_name TEXT, phone_number TEXT,
+    lat REAL, lng REAL, address TEXT, status TEXT DEFAULT 'Pending',
+    hospital_id TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS ambulance_drivers (
+    id TEXT PRIMARY KEY, user_id TEXT REFERENCES users(id),
+    full_name TEXT NOT NULL, vehicle_number TEXT, status TEXT DEFAULT 'Available',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   // ── Seed only when DB is fresh ──────────────────────────────────────────
   db.get('SELECT COUNT(*) AS c FROM doctors', (err, row) => {
     if (row && row.c === 0) {
@@ -284,6 +296,16 @@ db.serialize(() => {
       });
 
       console.log('✅ Seeded demo patient, queue, and prescription');
+    }
+  });
+
+  db.get('SELECT COUNT(*) AS c FROM ambulance_drivers', (err, row) => {
+    if (row && row.c === 0) {
+      db.serialize(() => {
+        db.run(`INSERT INTO users (id, mobile_number, role) VALUES ('u-amb1', '9080706050', 'AMBULANCE')`);
+        db.run(`INSERT INTO ambulance_drivers (id, user_id, full_name, vehicle_number) VALUES ('amb1', 'u-amb1', 'Ramesh Driver', 'MH12 AB 1234')`);
+      });
+      console.log('✅ Seeded demo ambulance driver');
     }
   });
 });
@@ -565,6 +587,14 @@ function apiRouter(req, res, pathname, url, body) {
                 user: { id:user.id, receptionistId:receptionist ? receptionist.id : '', name:receptionist ? receptionist.full_name : 'Receptionist', mobile, role:'RECEPTIONIST' }
               });
             });
+          } else if (user.role === 'AMBULANCE') {
+            db.get('SELECT * FROM ambulance_drivers WHERE user_id = ?', [user.id], (err, driver) => {
+              json(res, 200, {
+                success: true,
+                token, refreshToken, sessionId: sessId,
+                user: { id:user.id, driverId:driver ? driver.id : '', name:driver ? driver.full_name : 'Driver', mobile, role:'AMBULANCE' }
+              });
+            });
           } else {
             db.get('SELECT * FROM patients WHERE user_id = ?', [user.id], (err, pat) => {
               json(res, 200, {
@@ -578,7 +608,7 @@ function apiRouter(req, res, pathname, url, body) {
       } else {
         // Register a new account only after OTP verification.
         const newUserId = 'u-' + uid();
-        const requestedRole = ['PATIENT','DOCTOR','RECEPTIONIST'].includes(String(body.requestedRole || '').toUpperCase()) ? String(body.requestedRole).toUpperCase() : 'PATIENT';
+        const requestedRole = ['PATIENT','DOCTOR','RECEPTIONIST','AMBULANCE'].includes(String(body.requestedRole || '').toUpperCase()) ? String(body.requestedRole).toUpperCase() : 'PATIENT';
         const name = String(body.fullName || '').trim() || (requestedRole === 'DOCTOR' ? 'New Doctor' : requestedRole === 'RECEPTIONIST' ? 'New Receptionist' : 'New Patient');
         const createSession = (user, extra = {}) => {
           const token = jwtSign({ userId: newUserId, role: requestedRole });
@@ -596,6 +626,10 @@ function apiRouter(req, res, pathname, url, body) {
           if (requestedRole === 'RECEPTIONIST') {
             const receptionistId = 'r-' + uid();
             return db.run('INSERT INTO receptionists (id, user_id, full_name, clinic_name) VALUES (?, ?, ?, ?)', [receptionistId, newUserId, name, String(body.clinicName || 'HealthSync Clinic')], () => createSession({ id:newUserId }, { receptionistId }));
+          }
+          if (requestedRole === 'AMBULANCE') {
+            const driverId = 'amb-' + uid();
+            return db.run('INSERT INTO ambulance_drivers (id, user_id, full_name, vehicle_number) VALUES (?, ?, ?, ?)', [driverId, newUserId, name, String(body.vehicleNumber || 'Unknown Vehicle')], () => createSession({ id:newUserId }, { driverId }));
           }
           const newPatId = 'p-' + uid();
           const hsid = 'HS-2026-' + Math.floor(100000 + Math.random() * 900000);
@@ -1063,6 +1097,82 @@ server.listen(PORT, () => {
   console.log(`⚡  http://localhost:${PORT}/v1/health (API Health)`);
   console.log(`🗄️   DB: ${DB_PATH}`);
   console.log(`====================================================\n`);
+});
+
+// ─── Socket.IO ───────────────────────────────────────────────────────────────
+const io = new Server(server, { cors: { origin: '*' } });
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) return next(new Error('Authentication error: No token'));
+  const payload = jwtVerify(token);
+  if (!payload) return next(new Error('Authentication error: Invalid token'));
+  socket.userId = payload.userId;
+  socket.role = payload.role;
+  next();
+});
+
+io.on('connection', (socket) => {
+  console.log(`🔌 Client connected: ${socket.id} (User: ${socket.userId}, Role: ${socket.role})`);
+  
+  // Join role-based rooms
+  if (socket.role) {
+    socket.join(socket.role);
+  }
+  socket.join(socket.userId);
+
+  socket.on('sos_trigger', (data) => {
+    const { patientId, patientName, lat, lng, address, phone } = data;
+    const caseId = 'sos-' + uid();
+    
+    db.run(
+      `INSERT INTO emergency_cases (id, patient_id, patient_name, phone_number, lat, lng, address) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [caseId, patientId, patientName, phone, lat, lng, address],
+      () => {
+        const emergencyData = { caseId, patientId, patientName, phone, lat, lng, address, status: 'Pending', timestamp: new Date().toISOString() };
+        // Broadcast to receptionists
+        io.to('RECEPTIONIST').emit('sos_alert', emergencyData);
+        // Acknowledge back to patient
+        socket.emit('sos_acknowledged', emergencyData);
+      }
+    );
+  });
+
+  socket.on('location_update', (data) => {
+    const { caseId, lat, lng } = data;
+    db.run(`UPDATE emergency_cases SET lat = ?, lng = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [lat, lng, caseId]);
+    // Broadcast location update to receptionist and ambulance
+    io.to('RECEPTIONIST').emit('emergency_location_update', data);
+    io.to('AMBULANCE').emit('emergency_location_update', data);
+  });
+
+  socket.on('dispatch_ambulance', (data) => {
+    const { caseId, hospitalId } = data;
+    db.run(`UPDATE emergency_cases SET status = 'Ambulance Dispatched', hospital_id = ? WHERE id = ?`, [hospitalId, caseId], () => {
+      db.get('SELECT * FROM emergency_cases WHERE id = ?', [caseId], (err, caseData) => {
+        io.to('AMBULANCE').emit('ambulance_dispatched', caseData);
+        // Notify patient
+        io.to(caseData.patient_id).emit('sos_status_update', { caseId, status: 'Ambulance Dispatched' });
+        // Update receptionist
+        io.to('RECEPTIONIST').emit('sos_status_update', { caseId, status: 'Ambulance Dispatched' });
+      });
+    });
+  });
+
+  socket.on('resolve_emergency', (data) => {
+    const { caseId } = data;
+    db.run(`UPDATE emergency_cases SET status = 'Resolved' WHERE id = ?`, [caseId], () => {
+      io.to('RECEPTIONIST').emit('sos_status_update', { caseId, status: 'Resolved' });
+      io.to('AMBULANCE').emit('sos_status_update', { caseId, status: 'Resolved' });
+      db.get('SELECT patient_id FROM emergency_cases WHERE id = ?', [caseId], (err, caseData) => {
+        if (caseData) io.to(caseData.patient_id).emit('sos_status_update', { caseId, status: 'Resolved' });
+      });
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`🔌 Client disconnected: ${socket.id}`);
+  });
 });
 
 process.on('SIGTERM', () => { db.close(); server.close(); });
