@@ -1112,23 +1112,32 @@ function renderPatientDoctorsList() {
   const term = document.getElementById('pt-doc-search-input')?.value.trim().toLowerCase() || '';
   const doctors = allDoctors.filter(doc => !term || [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
   container.innerHTML = doctors.length ? doctors.map(doc => `
-    <div class="doctor-search-card">
-      <div class="doc-avatar">👨‍⚕️</div>
-      <div class="doctor-card-info">
-        <h4 class="doctor-card-name">${doc.name} <span class="verified-doctor" title="Verified HealthSync doctor"><i class="fa-solid fa-circle-check"></i> Verified</span></h4>
-        <p class="doctor-card-spec">${doc.specialization}</p>
-        <p class="doctor-card-meta">${doc.exp} • ${doc.languages}</p>
-        <p class="doctor-card-meta" style="color: var(--text-muted); font-size: 11px;"><i class="fa-solid fa-hospital"></i> ${doc.clinic}</p>
-        <p class="doctor-card-meta doctor-trust-line"><i class="fa-solid fa-id-card"></i> Medical registration verified · clinic timings available</p>
+    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; gap: 16px;">
+        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+          <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=random&color=fff&size=100" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h4 style="margin: 0; font-size: 16px; font-weight: bold; color: #111827;">
+              <i class="fa-solid fa-thumbs-up" style="color: #4b5563; font-size: 14px; margin-right: 4px;"></i> ${escapeHtml(doc.name)}
+            </h4>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;"><i class="fa-solid fa-shield-check"></i> Top rated</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 8px;">
+            <span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 13px;">${doc.rating} ★</span>
+            <span style="color: #6b7280; font-size: 13px;">${doc.reviews} Ratings</span>
+          </div>
+          <p style="color: #6b7280; font-size: 13px; margin: 4px 0;">${escapeHtml(doc.clinic)} • ${escapeHtml(doc.specialization)}</p>
+          <p style="color: #16a34a; font-size: 13px; font-weight: 500; margin: 4px 0;"><i class="fa-regular fa-clock"></i> Open 24 Hrs</p>
+        </div>
       </div>
-      <div class="doctor-card-right">
-        <div class="doctor-card-fee">₹${doc.fee}</div>
-        <div class="doctor-card-rating">★ ${doc.rating} <span style="color: var(--text-muted); font-size: 10px;">(${doc.reviews})</span></div>
-        <div class="doctor-card-avail">${doc.availability}</div>
-        <button class="btn btn-primary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${doc.id}')">Book Appointment</button>
+      <div style="display: flex; gap: 12px; margin-top: 16px; border-top: 1px solid #f3f4f6; padding-top: 16px;">
+        <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')"><i class="fa-solid fa-phone"></i> Call to Book</button>
+        <button style="flex: 1; background: white; color: #0066cc; border: 1px solid #0066cc; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="showToast('Enquiry sent to ${escapeHtml(doc.name)}!')">Send Enquiry</button>
       </div>
     </div>
-  `).join('') : `<div class="card"><div class="card-body health-guide-empty"><div class="health-guide-icon"><i class="fa-solid fa-user-doctor"></i></div><strong>No doctors found</strong><p>Try a doctor name, specialty, or clinic name.</p><button class="btn btn-secondary btn-sm" type="button" onclick="clearPatientDoctorSearch()">Clear search</button></div></div>`;
+  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px; margin-top: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found matching your criteria</p><button class="btn btn-secondary mt-3" onclick="clearPatientDoctorSearch()">Clear Search</button></div>`;
 }
 window.handlePatientDocSearch = function() { renderPatientDoctorsList(); };
 window.clearPatientDoctorSearch = function() { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
