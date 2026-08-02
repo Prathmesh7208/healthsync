@@ -11,7 +11,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
+  <!-- Sidebar overlay for mobile/collapsed menu -->
+  <div id="sidebar-overlay" onclick="toggleSidebar(true)"></div>
   <section id="language-screen" class="auth-screen language-screen" aria-labelledby="language-title">
     <div class="auth-card language-card">
       <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
@@ -138,6 +139,7 @@
       <!-- Main Area -->
       <div class="main-area">
         <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
           <span class="page-title">Patient Dashboard</span>
           <div class="role-tab-bar">
             <div class="role-tab active" onclick="switchGlobalRole('patient')">Patient View</div>
@@ -585,6 +587,7 @@
       <!-- Main Area -->
       <div class="main-area">
         <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
           <span class="page-title">Doctor Dashboard</span>
           <div class="role-tab-bar">
             <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
@@ -914,7 +917,8 @@
       <!-- Main Area -->
       <div class="main-area">
         <header class="top-header">
-          <span class="page-title">Reception Dashboard</span>
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+          <span class="page-title">Receptionist Dashboard</span>
           <div class="role-tab-bar">
             <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
             <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
@@ -1257,6 +1261,7 @@
       <!-- Main Area -->
       <div class="main-area">
         <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
           <span class="page-title">Ambulance Live Dispatch</span>
           <div class="role-tab-bar">
             <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>

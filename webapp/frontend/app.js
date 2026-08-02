@@ -733,10 +733,25 @@ window.switchGlobalRole = function(role, remember = true) {
   }
 };
 
+window.toggleSidebar = function(forceClose = false) {
+  const activeSidebar = document.querySelector('.role-panel.active .sidebar') || document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (activeSidebar) {
+    if (forceClose) {
+      activeSidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('open');
+    } else {
+      activeSidebar.classList.toggle('open');
+      if (overlay) overlay.classList.toggle('open');
+    }
+  }
+};
+
 // ---------------------------------------------------------------------------
 // NAVIGATION ROUTING
 // ---------------------------------------------------------------------------
 window.switchPatientPage = function(pageId, remember = true) {
+  toggleSidebar(true);
   // Navigation active state
   document.querySelectorAll('#panel-patient .nav-item').forEach(item => {
     item.classList.remove('active');
@@ -754,6 +769,7 @@ window.switchPatientPage = function(pageId, remember = true) {
 };
 
 window.switchDoctorPage = function(pageId, remember = true) {
+  toggleSidebar(true);
   document.querySelectorAll('#panel-doctor .nav-item').forEach(item => {
     item.classList.remove('active');
     if (item.getAttribute('onclick')?.includes(pageId)) {
@@ -768,6 +784,7 @@ window.switchDoctorPage = function(pageId, remember = true) {
 };
 
 window.switchReceptionPage = function(pageId, remember = true) {
+  toggleSidebar(true);
   document.querySelectorAll('#panel-reception .nav-item').forEach(item => {
     item.classList.remove('active');
     if (item.getAttribute('onclick')?.includes(pageId)) {
