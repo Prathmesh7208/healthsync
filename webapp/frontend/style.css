@@ -795,10 +795,11 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .page-heading { font-size: 18px; }
   .page-subheading { font-size: 12px; }
   .card-header, .card-body, .card-footer { padding-left: 14px; padding-right: 14px; }
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 12px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 12px; }
+  .grid-4 { grid-template-columns: 1fr 1fr; gap: 12px; }
   
   /* Override any hardcoded inline grid-template-columns from index.html */
-  [style*="grid-template-columns: repeat(4, 1fr)"],
+  [style*="grid-template-columns: repeat(4, 1fr)"] { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
   [style*="grid-template-columns: 2fr 1fr"],
   [style*="grid-template-columns: 1.5fr 1fr"],
   [style*="grid-template-columns: 1fr 2fr"],

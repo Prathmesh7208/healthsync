@@ -265,7 +265,7 @@ window.connectSocket = function() {
         if (!list) return;
         const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
         list.innerHTML += `
-          <div id="emerg-${data.caseId}" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
+          <div id="emerg-${data.caseId}" class="grid-3" style="align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
             <div style="display: flex; gap: 12px; align-items: center;">
               <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
               <div>
@@ -290,28 +290,32 @@ window.connectSocket = function() {
                 </div>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;" id="map-link-${data.caseId}">Maps</a>
-                <button style="flex: 1; padding: 8px; border: none; background: #ef4444; color: white; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" id="btn-dispatch-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')">Dispatch</button>
+                <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;" id="map-link-${prefix}-${data.caseId}">Maps</a>
+                <button style="flex: 1; padding: 8px; border: none; background: #ef4444; color: white; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" id="btn-dispatch-${prefix}-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')">Dispatch</button>
                 <button style="flex: 1; padding: 8px; border: 1px solid var(--border); background: #f1f5f9; color: #1e293b; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
               </div>
             </div>
           </div>
         `;
         setTimeout(() => {
-          mapInstances[data.caseId] = initMap(`${prefix}-map-${data.caseId}`, data.lat, data.lng, 'patient');
+          mapInstances[`${prefix}_${data.caseId}`] = initMap(`${prefix}-map-${data.caseId}`, data.lat, data.lng, 'patient');
         }, 100);
       });
     });
 
     appSocket.on('emergency_location_update', (data) => {
       // Update google maps link on receptionist / doctor / ambulance side dynamically
-      const link = document.getElementById(`map-link-${data.caseId}`);
-      if (link) link.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
-      updateMapMarker(mapInstances[data.caseId], data.lat, data.lng, 'patient');
+      ['rec', 'doc'].forEach(prefix => {
+        const link = document.getElementById(`map-link-${prefix}-${data.caseId}`);
+        if (link) link.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+        if (mapInstances[`${prefix}_${data.caseId}`]) {
+          updateMapMarker(mapInstances[`${prefix}_${data.caseId}`], data.lat, data.lng, 'patient');
+        }
+      });
     });
 
     appSocket.on('ambulance_location_update', (data) => {
-      if (currentUser.role === 'PATIENT' && data.caseId === currentEmergencyCaseId) {
+      if (data.caseId === currentEmergencyCaseId) {
         const linkEl = document.getElementById('sos-maps-link');
         if (linkEl) {
           linkEl.innerText = 'Track Ambulance Live';
@@ -326,9 +330,14 @@ window.connectSocket = function() {
             updateMapMarker(mapInstances['patient_tracking'], data.lat, data.lng, 'ambulance');
           }
         }
-      } else {
-        updateMapMarker(mapInstances[data.caseId], data.lat, data.lng, 'ambulance');
       }
+      
+      ['rec', 'doc', 'amb'].forEach(prefix => {
+        const mapKey = prefix === 'amb' ? `amb_${data.caseId}` : `${prefix}_${data.caseId}`;
+        if (mapInstances[mapKey]) {
+          updateMapMarker(mapInstances[mapKey], data.lat, data.lng, 'ambulance');
+        }
+      });
     });
 
     appSocket.on('ambulance_dispatched', (data) => {
@@ -337,7 +346,7 @@ window.connectSocket = function() {
       const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
       if (list.querySelector('.empty-state')) list.innerHTML = '';
       list.innerHTML += `
-          <div id="amb-disp-${data.id}" style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 24px;">
+          <div id="amb-disp-${data.id}" class="grid-col-1-2">
             <!-- Left Column: Details -->
             <div style="display: flex; flex-direction: column; gap: 16px;">
               <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;">
@@ -387,7 +396,7 @@ window.connectSocket = function() {
           </div>
         `;
         setTimeout(() => {
-          mapInstances[data.id] = initMap(`amb-map-${data.id}`, data.lat, data.lng, 'patient');
+          mapInstances[`amb_${data.id}`] = initMap(`amb-map-${data.id}`, data.lat, data.lng, 'patient');
         }, 100);
         startAmbulanceLocationTracking(data.id);
     });
