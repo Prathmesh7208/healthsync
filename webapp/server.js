@@ -895,6 +895,33 @@ function apiRouter(req, res, pathname, url, body) {
     return;
   }
 
+  // ── Emergency SOS Endpoint ─────────────────────────────────────────────
+  if (pathname === '/v1/emergency/trigger' && method === 'POST') {
+    const patId = body.patientId || 'pat1';
+    const lat = body.latitude || 18.5204;
+    const lng = body.longitude || 73.8567;
+    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
+    db.get('SELECT full_name FROM patients WHERE id = ?', [patId], (err, pat) => {
+      const name = pat ? pat.full_name : 'Emergency Patient';
+      const msg = `🚨 EMERGENCY SOS: ${name} needs help! Live Location: ${mapsUrl}`;
+
+      db.all("SELECT id FROM users WHERE role IN ('DOCTOR', 'RECEPTIONIST')", (err2, users) => {
+        if (users && users.length) {
+          db.serialize(() => {
+            const stmt = db.prepare('INSERT INTO notifications (id, user_id, message, status) VALUES (?, ?, ?, ?)');
+            users.forEach(u => {
+              stmt.run('notif-' + uid(), u.id, msg, 'UNREAD');
+            });
+            stmt.finalize();
+          });
+        }
+        json(res, 200, { success: true, message: 'Emergency SOS sent to nearby hospital.', googleMapsUrl: mapsUrl });
+      });
+    });
+    return;
+  }
+
   // ── Real Notifications Endpoints ───────────────────────────────────────
   if (pathname === '/v1/notifications' && method === 'GET') {
     const userId = url.searchParams.get('userId') || 'pat1';

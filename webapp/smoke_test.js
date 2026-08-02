@@ -62,7 +62,16 @@ async function run() {
   });
   console.log('6. Create Prescription:', rx.body.success ? '✅ PASS' : '❌ FAIL', rx.body);
 
+  // 7. Emergency SOS trigger
+  const sos = await post('/v1/emergency/trigger', {
+    patientId: 'pat1',
+    latitude: 18.5204,
+    longitude: 73.8567
+  });
+  console.log('7. Trigger Emergency SOS:', sos.body.success && sos.body.googleMapsUrl ? '✅ PASS' : '❌ FAIL', sos.body);
+
   console.log('\n=== All Tests Complete ===\n');
 }
 
 run().catch(e => console.error('Test Error:', e));
+

@@ -356,7 +356,7 @@ window.openProfileSettings = function(role) { document.getElementById('profile-m
 document.addEventListener('click', event => { if (!event.target.closest('.profile-trigger') && !event.target.closest('#profile-menu')) document.getElementById('profile-menu')?.classList.add('hidden'); });
 
 async function fetchNotifications() { if (!currentUser) return; try { const res=await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data=await res.json(); renderNotifications(data.notifications || []); } catch {} }
-function renderNotifications(items) { const unread=items.filter(item=>item.status==='UNREAD').length; const count=document.getElementById('notification-count'); const dot=document.getElementById('notification-dot'); if(count) count.textContent=unread; if(dot) dot.classList.toggle('hidden', !unread); const list=document.getElementById('notification-list'); if(list) list.innerHTML=items.length ? items.map(item=>`<div class="notification-item ${item.status==='UNREAD'?'unread':''}" onclick="markNotificationRead('${item.id}')">${escapeHtml(item.message)}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>'; }
+function renderNotifications(items) { const unread=items.filter(item=>item.status==='UNREAD').length; const count=document.getElementById('notification-count'); const dot=document.getElementById('notification-dot'); if(count) count.textContent=unread; if(dot) dot.classList.toggle('hidden', !unread); const list=document.getElementById('notification-list'); if(list) list.innerHTML=items.length ? items.map(item=>{ let msg=escapeHtml(item.message); msg=msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #ef4444; font-weight: bold; text-decoration: underline;" onclick="event.stopPropagation()">$1</a>'); return `<div class="notification-item ${item.status==='UNREAD'?'unread':''}" onclick="markNotificationRead('${item.id}')">${msg}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`; }).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>'; }
 window.openNotifications = async function() { await fetchNotifications(); openModal('modal-notifications'); };
 window.markNotificationRead = async function(id) { await fetch(`${API_BASE}/notifications/${id}/read`,{method:'POST'}); fetchNotifications(); };
 window.clearNotifications = async function() { if(!currentUser)return; await fetch(`${API_BASE}/notifications/clear`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:currentUser.id})}); fetchNotifications(); };
@@ -855,8 +855,52 @@ window.searchDoctorsFromDashboard = function() {
   }
 };
 window.showEmergencyHelp = function() {
-  showToast('For a life-threatening emergency, call your local emergency number immediately. This app does not replace emergency services.', 'warning');
+  showToast('Gathering exact live coordinates for Emergency SOS...', 'info');
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        await triggerEmergencySOS(lat, lng);
+      },
+      async (error) => {
+        console.warn('Geolocation failed or denied. Using default Pune location.', error);
+        // Fallback to default Pune coordinates
+        await triggerEmergencySOS(18.5204, 73.8567);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  } else {
+    // Geolocation not supported
+    triggerEmergencySOS(18.5204, 73.8567);
+  }
 };
+
+async function triggerEmergencySOS(lat, lng) {
+  try {
+    const res = await fetch(`${API_BASE}/emergency/trigger`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': currentUser?.token ? `Bearer ${currentUser.token}` : ''
+      },
+      body: JSON.stringify({
+        patientId: currentUser?.patientId || 'pat1',
+        latitude: lat,
+        longitude: lng
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Emergency SOS triggered! Live location link sent to nearby hospital.', 'success');
+    } else {
+      showToast(data.message || 'Failed to trigger SOS alert.', 'error');
+    }
+  } catch (err) {
+    showToast('Could not connect to server to trigger SOS alert.', 'error');
+  }
+}
+
 
 // ---------------------------------------------------------------------------
 // RENDERING - APPOINTMENTS LIST
