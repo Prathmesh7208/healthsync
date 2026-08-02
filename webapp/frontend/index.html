@@ -511,6 +511,7 @@
             <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
             <div class="role-tab active" onclick="switchGlobalRole('doctor')">Doctor View</div>
             <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
           </div>
           <div class="header-icons">
             <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
@@ -565,6 +566,14 @@
                 </div>
                 <div class="kpi-number" id="doc-kpi-requests">3</div>
                 <div class="kpi-label">New Requests</div>
+              </div>
+            </div>
+
+            <!-- Doctor Emergency Alerts Panel -->
+            <div id="doc-emergency-panel" class="hidden mb-4" style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px;">
+              <h3 style="color: #b91c1c; margin-top:0; font-size:18px;"><i class="fa-solid fa-triangle-exclamation"></i> Active Emergency Alert</h3>
+              <div id="doc-emergency-list" class="flex flex-col gap-3 mt-2">
+                <!-- Injected via JS -->
               </div>
             </div>
 

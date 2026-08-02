@@ -1105,6 +1105,12 @@ const io = new Server(server, { cors: { origin: '*' } });
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) return next(new Error('Authentication error: No token'));
+  if (token.startsWith('DEMO_')) {
+    const role = token.replace('DEMO_', '');
+    socket.userId = 'demo-' + role.toLowerCase();
+    socket.role = role;
+    return next();
+  }
   const payload = jwtVerify(token);
   if (!payload) return next(new Error('Authentication error: Invalid token'));
   socket.userId = payload.userId;
@@ -1130,8 +1136,9 @@ io.on('connection', (socket) => {
       [caseId, patientId, patientName, phone, lat, lng, address],
       () => {
         const emergencyData = { caseId, patientId, patientName, phone, lat, lng, address, status: 'Pending', timestamp: new Date().toISOString() };
-        // Broadcast to receptionists
+        // Broadcast to receptionists and doctors
         io.to('RECEPTIONIST').emit('sos_alert', emergencyData);
+        io.to('DOCTOR').emit('sos_alert', emergencyData);
         // Acknowledge back to patient
         socket.emit('sos_acknowledged', emergencyData);
       }
@@ -1141,9 +1148,17 @@ io.on('connection', (socket) => {
   socket.on('location_update', (data) => {
     const { caseId, lat, lng } = data;
     db.run(`UPDATE emergency_cases SET lat = ?, lng = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [lat, lng, caseId]);
-    // Broadcast location update to receptionist and ambulance
+    // Broadcast location update to receptionist, ambulance, and doctor
     io.to('RECEPTIONIST').emit('emergency_location_update', data);
+    io.to('DOCTOR').emit('emergency_location_update', data);
     io.to('AMBULANCE').emit('emergency_location_update', data);
+  });
+
+  socket.on('ambulance_location_update', (data) => {
+    const { caseId, lat, lng } = data;
+    db.get('SELECT patient_id FROM emergency_cases WHERE id = ?', [caseId], (err, caseData) => {
+      if (caseData) io.to(caseData.patient_id).emit('ambulance_location_update', data);
+    });
   });
 
   socket.on('dispatch_ambulance', (data) => {

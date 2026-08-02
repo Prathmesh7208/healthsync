@@ -178,8 +178,9 @@ let currentEmergencyCaseId = null;
 
 window.connectSocket = function() {
   if (appSocket) { appSocket.disconnect(); }
-  if (currentUser && currentUser.token && typeof io !== 'undefined') {
-    appSocket = io({ auth: { token: currentUser.token } });
+  if (currentUser && (currentUser.token || currentUser.demo) && typeof io !== 'undefined') {
+    const tokenStr = currentUser.demo ? `DEMO_${currentUser.role}` : currentUser.token;
+    appSocket = io({ auth: { token: tokenStr } });
     
     appSocket.on('connect', () => console.log('Socket connected'));
     
@@ -189,7 +190,7 @@ window.connectSocket = function() {
       const textEl = document.getElementById('sos-status-text');
       if (textEl) textEl.innerText = 'SOS Sent... Pending Assignment';
       const linkEl = document.getElementById('sos-maps-link');
-      if (linkEl) linkEl.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+      if (linkEl) { linkEl.innerText = 'View Live Location'; linkEl.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`; }
       startLocationTracking(currentEmergencyCaseId);
     });
 
@@ -208,9 +209,10 @@ window.connectSocket = function() {
     });
 
     appSocket.on('sos_alert', (data) => {
-      if (currentUser.role === 'RECEPTIONIST') {
-        document.getElementById('rec-emergency-panel')?.classList.remove('hidden');
-        const list = document.getElementById('rec-emergency-list');
+      if (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'DOCTOR') {
+        const prefix = currentUser.role === 'RECEPTIONIST' ? 'rec' : 'doc';
+        document.getElementById(`${prefix}-emergency-panel`)?.classList.remove('hidden');
+        const list = document.getElementById(`${prefix}-emergency-list`);
         if (!list) return;
         const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
         list.innerHTML += `
@@ -231,9 +233,19 @@ window.connectSocket = function() {
     });
 
     appSocket.on('emergency_location_update', (data) => {
-      // Update google maps link on receptionist / ambulance side dynamically
+      // Update google maps link on receptionist / doctor / ambulance side dynamically
       const link = document.getElementById(`map-link-${data.caseId}`);
       if (link) link.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+    });
+
+    appSocket.on('ambulance_location_update', (data) => {
+      if (currentUser.role === 'PATIENT' && data.caseId === currentEmergencyCaseId) {
+        const linkEl = document.getElementById('sos-maps-link');
+        if (linkEl) {
+          linkEl.innerText = 'Track Ambulance Live';
+          linkEl.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+        }
+      }
     });
 
     appSocket.on('ambulance_dispatched', (data) => {
@@ -252,6 +264,7 @@ window.connectSocket = function() {
             <button class="btn btn-secondary w-full mt-2" onclick="resolveEmergency('${data.id}')">Mark as Completed</button>
           </div>
         `;
+        startAmbulanceLocationTracking(data.id);
       }
     });
   }
@@ -269,19 +282,22 @@ window.dispatchAmbulance = function(caseId) {
 window.resolveEmergency = function(caseId) {
   if (appSocket) {
     appSocket.emit('resolve_emergency', { caseId });
-    const el1 = document.getElementById(`emerg-${caseId}`);
-    if (el1) el1.remove();
-    const el2 = document.getElementById(`amb-disp-${caseId}`);
-    if (el2) el2.remove();
+    document.getElementById(`emerg-${caseId}`)?.remove();
+    document.getElementById(`amb-disp-${caseId}`)?.remove();
     
     // Check if panels should be hidden
     const recList = document.getElementById('rec-emergency-list');
     if (recList && recList.children.length === 0) {
       document.getElementById('rec-emergency-panel')?.classList.add('hidden');
     }
+    const docList = document.getElementById('doc-emergency-list');
+    if (docList && docList.children.length === 0) {
+      document.getElementById('doc-emergency-panel')?.classList.add('hidden');
+    }
     const ambList = document.getElementById('amb-dispatch-list');
     if (ambList && ambList.children.length === 0) {
       ambList.innerHTML = '<div class="card p-4 text-center text-muted empty-state"><i class="fa-solid fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i><p>No active dispatches. You are available.</p></div>';
+      stopLocationTracking();
     }
     showToast('Emergency resolved');
   }
@@ -368,6 +384,18 @@ function stopLocationTracking() {
     sosWatchId = null;
   }
 }
+
+window.startAmbulanceLocationTracking = function(caseId) {
+  if (navigator.geolocation) {
+    sosWatchId = navigator.geolocation.watchPosition((pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      if (appSocket) {
+        appSocket.emit('ambulance_location_update', { caseId, lat, lng });
+      }
+    }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+  }
+};
 
 window.selectAppLanguage = function(language) { applyLanguage(language); };
 window.continueToLogin = function() {
