@@ -175,6 +175,56 @@ let appSocket = null;
 let sosTimer = null;
 let sosWatchId = null;
 let currentEmergencyCaseId = null;
+const mapInstances = {};
+
+function initMap(containerId, lat, lng, type) {
+  if (typeof L === 'undefined') return null;
+  const container = document.getElementById(containerId);
+  if (!container) return null;
+  
+  const map = L.map(containerId).setView([lat, lng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  const isAmb = type === 'ambulance';
+  const color = isAmb ? '#3b82f6' : '#ef4444'; // blue for ambulance, red for patient
+  
+  // Custom SVG marker for better visibility without needing external image assets
+  const svgIcon = L.divIcon({
+    html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
+    className: '',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
+  });
+
+  const marker = L.marker([lat, lng], {icon: svgIcon}).addTo(map)
+    .bindPopup(isAmb ? 'Ambulance' : 'Patient');
+    
+  setTimeout(() => { map.invalidateSize(); }, 200);
+  return { map, marker, svgIcon, ambMarker: null };
+}
+
+function updateMapMarker(mapData, lat, lng, type) {
+  if (!mapData || !mapData.map) return;
+  if (type === 'patient' && mapData.marker) {
+    mapData.marker.setLatLng([lat, lng]);
+  } else if (type === 'ambulance') {
+    if (!mapData.ambMarker) {
+      const svgIcon = L.divIcon({
+        html: `<div style="background-color: #3b82f6; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
+        className: '',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+      mapData.ambMarker = L.marker([lat, lng], {icon: svgIcon}).addTo(mapData.map)
+        .bindPopup('Ambulance');
+    } else {
+      mapData.ambMarker.setLatLng([lat, lng]);
+    }
+  }
+}
 
 window.connectSocket = function() {
   if (appSocket) { appSocket.disconnect(); }
@@ -223,12 +273,16 @@ window.connectSocket = function() {
             </div>
             <p style="font-size:13px; margin: 4px 0;">Live Address: ${escapeHtml(data.address || 'Unknown')}</p>
             <div style="display:flex; gap: 8px; margin-top: 8px;">
-              <a href="${mapsLink}" target="_blank" class="btn btn-secondary btn-sm" id="map-link-${data.caseId}">View Live Location</a>
+              <a href="${mapsLink}" target="_blank" class="btn btn-secondary btn-sm" id="map-link-${data.caseId}">View on Google Maps</a>
               <button class="btn btn-primary btn-sm" id="btn-dispatch-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')">Dispatch Ambulance</button>
               <button class="btn btn-secondary btn-sm" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
             </div>
+            <div id="${prefix}-map-${data.caseId}" style="height: 180px; width: 100%; margin-top: 12px; border-radius: 6px; z-index: 1;"></div>
           </div>
         `;
+        setTimeout(() => {
+          mapInstances[data.caseId] = initMap(`${prefix}-map-${data.caseId}`, data.lat, data.lng, 'patient');
+        }, 100);
       }
     });
 
@@ -236,6 +290,7 @@ window.connectSocket = function() {
       // Update google maps link on receptionist / doctor / ambulance side dynamically
       const link = document.getElementById(`map-link-${data.caseId}`);
       if (link) link.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+      updateMapMarker(mapInstances[data.caseId], data.lat, data.lng, 'patient');
     });
 
     appSocket.on('ambulance_location_update', (data) => {
@@ -245,6 +300,17 @@ window.connectSocket = function() {
           linkEl.innerText = 'Track Ambulance Live';
           linkEl.href = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
         }
+        const mapEl = document.getElementById('patient-tracking-map');
+        if (mapEl) {
+          mapEl.style.display = 'block';
+          if (!mapInstances['patient_tracking']) {
+            mapInstances['patient_tracking'] = initMap('patient-tracking-map', data.lat, data.lng, 'ambulance');
+          } else {
+            updateMapMarker(mapInstances['patient_tracking'], data.lat, data.lng, 'ambulance');
+          }
+        }
+      } else {
+        updateMapMarker(mapInstances[data.caseId], data.lat, data.lng, 'ambulance');
       }
     });
 
@@ -260,10 +326,14 @@ window.connectSocket = function() {
             <p style="margin: 4px 0;"><strong>Patient:</strong> ${escapeHtml(data.patient_name)}</p>
             <p style="margin: 4px 0;"><strong>Phone:</strong> ${escapeHtml(data.phone_number)}</p>
             <p style="margin: 4px 0;"><strong>Address:</strong> ${escapeHtml(data.address)}</p>
-            <a href="${mapsLink}" id="map-link-${data.id}" target="_blank" class="btn btn-primary w-full mt-3"><i class="fa-solid fa-location-arrow"></i> Navigate to Patient Live Location</a>
+            <a href="${mapsLink}" id="map-link-${data.id}" target="_blank" class="btn btn-primary w-full mt-3"><i class="fa-solid fa-location-arrow"></i> Google Maps Navigation</a>
             <button class="btn btn-secondary w-full mt-2" onclick="resolveEmergency('${data.id}')">Mark as Completed</button>
+            <div id="amb-map-${data.id}" style="height: 180px; width: 100%; margin-top: 12px; border-radius: 6px; z-index: 1;"></div>
           </div>
         `;
+        setTimeout(() => {
+          mapInstances[data.id] = initMap(`amb-map-${data.id}`, data.lat, data.lng, 'patient');
+        }, 100);
         startAmbulanceLocationTracking(data.id);
       }
     });
