@@ -536,6 +536,22 @@ window.backToLanguageSelection = function() {
 // INITIALIZATION
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+  // Inject mobile role selector into all sidebars for easy prototyping
+  document.querySelectorAll('.sidebar-nav').forEach((nav) => {
+    const selectorHtml = `
+      <div class="mobile-role-selector-container">
+        <label style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 4px; display: block;">Switch Interface</label>
+        <select class="form-control" onchange="switchGlobalRole(this.value); toggleSidebar(true);" style="width: 100%; font-size: 13px; height: 36px; min-height: 36px;">
+          <option value="patient">Patient Dashboard</option>
+          <option value="doctor">Doctor Dashboard</option>
+          <option value="reception">Receptionist Dashboard</option>
+          <option value="ambulance">Ambulance Dashboard</option>
+        </select>
+      </div>
+    `;
+    nav.insertAdjacentHTML('afterbegin', selectorHtml);
+  });
+
   applyLanguage(selectedLanguage);
   populateCountryCodeSelects();
   updateAppHistoryButtons();
@@ -776,6 +792,11 @@ window.switchGlobalRole = function(role, remember = true) {
 
   // Activate matching headers
   document.querySelectorAll(`.role-tab[onclick*="${role}"]`).forEach(t => t.classList.add('active'));
+
+  // Sync mobile role selectors
+  document.querySelectorAll('.mobile-role-selector-container select').forEach(s => {
+    s.value = role === 'reception' ? 'reception' : role;
+  });
 
   // Sync data immediately when switching
   syncAllData();
