@@ -266,18 +266,36 @@ window.connectSocket = function() {
         if (!list) return;
         const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
         list.innerHTML += `
-          <div id="emerg-${data.caseId}" style="background: white; border: 1px solid #f87171; padding: 12px; border-radius: 8px;">
-            <div style="display:flex; justify-content:space-between;">
-              <strong>${escapeHtml(data.patientName)} (${escapeHtml(data.phone)})</strong>
-              <span style="font-size:12px; color:#b91c1c;">${new Date(data.timestamp).toLocaleTimeString()}</span>
+          <div id="emerg-${data.caseId}" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
+              <div>
+                <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">${escapeHtml(data.patientName)}</h4>
+                <p style="margin: 2px 0; font-size: 12px; color: var(--text-muted);">${escapeHtml(data.phone)}</p>
+              </div>
             </div>
-            <p style="font-size:13px; margin: 4px 0;">Live Address: ${escapeHtml(data.address || 'Unknown')}</p>
-            <div style="display:flex; gap: 8px; margin-top: 8px;">
-              <a href="${mapsLink}" target="_blank" class="btn btn-secondary btn-sm" id="map-link-${data.caseId}">View on Google Maps</a>
-              <button class="btn btn-primary btn-sm" id="btn-dispatch-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')">Dispatch Ambulance</button>
-              <button class="btn btn-secondary btn-sm" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
+            <div>
+              <h5 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">Live Location</h5>
+              <p style="margin: 0; font-size: 11px; color: var(--text-muted); line-height: 1.3;">${escapeHtml(data.address || 'Unknown')}</p>
+              <div id="${prefix}-map-${data.caseId}" style="height: 100px; width: 100%; margin-top: 8px; border-radius: 4px; z-index: 1;"></div>
             </div>
-            <div id="${prefix}-map-${data.caseId}" style="height: 180px; width: 100%; margin-top: 12px; border-radius: 6px; z-index: 1;"></div>
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <div>
+                  <h5 style="margin: 0; font-size: 13px; font-weight: 700;">--</h5>
+                  <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Distance</p>
+                </div>
+                <div>
+                  <h5 style="margin: 0; font-size: 13px; font-weight: 700;">${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</h5>
+                  <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Time of Request</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;" id="map-link-${data.caseId}">Maps</a>
+                <button style="flex: 1; padding: 8px; border: none; background: #ef4444; color: white; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" id="btn-dispatch-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')">Dispatch</button>
+                <button style="flex: 1; padding: 8px; border: 1px solid var(--border); background: #f1f5f9; color: #1e293b; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
+              </div>
+            </div>
           </div>
         `;
         setTimeout(() => {
