@@ -259,8 +259,7 @@ window.connectSocket = function() {
     });
 
     appSocket.on('sos_alert', (data) => {
-      if (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'DOCTOR') {
-        const prefix = currentUser.role === 'RECEPTIONIST' ? 'rec' : 'doc';
+      ['rec', 'doc'].forEach(prefix => {
         document.getElementById(`${prefix}-emergency-panel`)?.classList.remove('hidden');
         const list = document.getElementById(`${prefix}-emergency-list`);
         if (!list) return;
@@ -301,7 +300,7 @@ window.connectSocket = function() {
         setTimeout(() => {
           mapInstances[data.caseId] = initMap(`${prefix}-map-${data.caseId}`, data.lat, data.lng, 'patient');
         }, 100);
-      }
+      });
     });
 
     appSocket.on('emergency_location_update', (data) => {
@@ -333,12 +332,11 @@ window.connectSocket = function() {
     });
 
     appSocket.on('ambulance_dispatched', (data) => {
-      if (currentUser.role === 'AMBULANCE') {
-        const list = document.getElementById('amb-dispatch-list');
-        if (!list) return;
-        const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
-        if (list.querySelector('.empty-state')) list.innerHTML = '';
-        list.innerHTML += `
+      const list = document.getElementById('amb-dispatch-list');
+      if (!list) return;
+      const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+      if (list.querySelector('.empty-state')) list.innerHTML = '';
+      list.innerHTML += `
           <div id="amb-disp-${data.id}" style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 24px;">
             <!-- Left Column: Details -->
             <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -392,7 +390,6 @@ window.connectSocket = function() {
           mapInstances[data.id] = initMap(`amb-map-${data.id}`, data.lat, data.lng, 'patient');
         }, 100);
         startAmbulanceLocationTracking(data.id);
-      }
     });
   }
 };
