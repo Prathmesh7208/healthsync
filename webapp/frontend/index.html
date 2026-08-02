@@ -159,135 +159,174 @@
 
           <!-- 1. Patient Dashboard Page -->
           <div id="patient-page-dashboard" class="page active">
-            <div class="page-header-row">
+            <div class="page-header-row mb-4">
               <div>
-                <h2 class="page-heading">Good Morning, <span id="patient-dashboard-name">Rahul</span> 👋</h2>
-                <p class="page-subheading">Take charge of your health today!</p>
+                <h2 class="page-heading">Hello, <span id="patient-dashboard-name">Priya</span> 👋</h2>
+                <p class="page-subheading text-muted">How can we help you today?</p>
               </div>
-              <div class="date-label"><i class="fa-solid fa-calendar-days"></i> <span class="current-date-str"></span></div>
             </div>
 
-            <div class="grid-col-2-1 mb-4">
-              <!-- Left Side -->
-              <div class="flex flex-col gap-4">
-                <section class="care-finder card" aria-label="Find a doctor">
-                  <div class="card-body">
-                    <div class="care-finder-heading"><div><span class="eyebrow"><i class="fa-solid fa-shield-heart"></i> Verified care network</span><h3>Find the right care, faster</h3><p>Search by doctor name, speciality, or clinic.</p></div>
-                      <div class="sos-container" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-                        <button id="patient-sos-btn" class="sos-button" style="position: relative; overflow: hidden;" type="button" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()" onmouseleave="cancelSOSCountdown()" ontouchstart="startSOSCountdown()" ontouchend="cancelSOSCountdown()"><i class="fa-solid fa-phone-volume"></i> <span id="sos-btn-text">Hold 3s for SOS</span><div id="sos-progress" style="position: absolute; bottom: 0; left: 0; height: 4px; background: #fff; width: 0%; transition: width 0.1s linear;"></div></button>
-                        <div id="sos-status-panel" class="hidden" style="background: #fee2e2; padding: 12px; border-radius: 8px; border: 1px solid #f87171; min-width: 320px; width: 100%; max-width: 400px; z-index: 100;">
-                          <h4 style="color: #b91c1c; margin-top:0; font-size: 14px;"><i class="fa-solid fa-truck-medical"></i> <span id="sos-status-text">SOS Sent... Pending Assignment</span></h4>
-                          <a id="sos-maps-link" href="#" target="_blank" style="font-size: 13px; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 8px;">View Live Location</a>
-                          <div id="patient-tracking-map" style="height: 200px; width: 100%; border-radius: 6px; display: none;"></div>
+            <!-- Top Row: 4 Main Action Cards -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);" onclick="switchPatientPage('doctors')">
+                <div style="background: #e0e7ff; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                  <i class="fa-solid fa-calendar-plus" style="color: #4f46e5; font-size: 18px;"></i>
+                </div>
+                <div>
+                  <h4 style="font-weight: 700; margin-bottom: 4px; font-size: 15px; color: #1e293b;">Book Appointment</h4>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">Find doctors & book appointments</p>
+                </div>
+              </div>
+
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);" onclick="switchPatientPage('appointments')">
+                <div style="background: #dcfce7; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                  <i class="fa-solid fa-calendar-check" style="color: #16a34a; font-size: 18px;"></i>
+                </div>
+                <div>
+                  <h4 style="font-weight: 700; margin-bottom: 4px; font-size: 15px; color: #1e293b;">My Appointments</h4>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">View your upcoming appointments</p>
+                </div>
+              </div>
+
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);" onclick="switchPatientPage('health-records')">
+                <div style="background: #f3e8ff; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                  <i class="fa-solid fa-file-medical" style="color: #9333ea; font-size: 18px;"></i>
+                </div>
+                <div>
+                  <h4 style="font-weight: 700; margin-bottom: 4px; font-size: 15px; color: #1e293b;">Health Records</h4>
+                  <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">View your medical history</p>
+                </div>
+              </div>
+
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 12px; background: #fef2f2; border: 1px solid #fecaca; box-shadow: var(--shadow-sm);" onclick="startSOSCountdown()" onmouseleave="cancelSOSCountdown()">
+                <div style="background: #fee2e2; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: #dc2626; font-weight: 800; font-size: 14px;">
+                  SOS
+                </div>
+                <div>
+                  <h4 style="font-weight: 700; margin-bottom: 4px; font-size: 15px; color: #991b1b;">Emergency SOS</h4>
+                  <p style="font-size: 12px; color: #b91c1c; line-height: 1.4;">Get instant help in emergency</p>
+                </div>
+                <div id="sos-progress" style="height: 4px; background: #dc2626; width: 0%; transition: width 0.1s linear; margin-top: 8px; border-radius: 2px;"></div>
+              </div>
+            </div>
+
+            <!-- SOS Status Panel Overlay (Hidden by default) -->
+            <div id="sos-status-panel" class="hidden" style="margin-bottom: 24px; background: #fee2e2; padding: 16px; border-radius: 8px; border: 1px solid #f87171;">
+              <h4 style="color: #b91c1c; margin-top:0; font-size: 14px;"><i class="fa-solid fa-truck-medical"></i> <span id="sos-status-text">SOS Sent... Pending Assignment</span></h4>
+              <a id="sos-maps-link" href="#" target="_blank" style="font-size: 13px; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 12px;">View Live Location</a>
+              <div id="patient-tracking-map" style="height: 250px; width: 100%; border-radius: 8px; display: none;"></div>
+            </div>
+
+            <!-- Middle Row -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+              
+              <!-- Upcoming Appointment -->
+              <div>
+                <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Upcoming Appointment</h3>
+                <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
+                  <div style="display: flex; gap: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px;">👩‍⚕️</div>
+                    <div style="flex: 1;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                          <h4 style="font-weight: 700; font-size: 15px; margin: 0; color: #0f172a;">Dr. Anjali Mehta</h4>
+                          <p style="font-size: 13px; color: var(--text-muted); margin: 2px 0;">Cardiologist</p>
                         </div>
+                        <span style="background: #dcfce7; color: #16a34a; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: 600;">Confirmed</span>
+                      </div>
+                      <div style="margin-top: 12px; font-size: 13px; color: var(--text-medium);">
+                        <p style="margin: 4px 0;"><i class="fa-regular fa-clock" style="color: var(--text-muted); width: 16px;"></i> 20 May 2025 • 11:30 AM</p>
+                        <p style="margin: 4px 0;"><i class="fa-solid fa-location-dot" style="color: var(--text-muted); width: 16px;"></i> City Heart Clinic</p>
+                      </div>
+                      <div style="margin-top: 16px; text-align: right;">
+                        <button style="background: transparent; border: 1px solid #e2e8f0; color: #4f46e5; font-weight: 600; padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;">View Details</button>
                       </div>
                     </div>
-                    <div class="care-search-row"><label class="sr-only" for="dashboard-doctor-search">Search doctors</label><input id="dashboard-doctor-search" class="form-control" placeholder="Search doctors, specialties, or clinics" onkeydown="if(event.key==='Enter') searchDoctorsFromDashboard()"><button class="btn btn-primary" type="button" onclick="searchDoctorsFromDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Search doctors</button></div>
                   </div>
-                </section>
-                <!-- Upcoming Appointment Card -->
-                <div class="card">
-                  <div class="card-header">
-                    <span class="card-title">Upcoming Appointment</span>
-                    <span class="badge badge-confirmed">Confirmed</span>
+                </div>
+              </div>
+
+              <!-- Health Tip -->
+              <div>
+                <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Health Tip of the Day</h3>
+                <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); height: calc(100% - 26px); display: flex; flex-direction: column;">
+                  <div style="display: flex; gap: 16px; flex: 1;">
+                    <p style="font-size: 14px; color: var(--text-medium); line-height: 1.5; flex: 1; margin: 0;">Drink plenty of water and stay hydrated.</p>
+                    <div style="width: 80px; text-align: center; font-size: 40px; align-self: center;">💧</div>
                   </div>
-                  <div class="card-body flex items-center gap-4">
-                    <div class="doc-avatar">👨‍⚕️</div>
-                    <div class="flex-1">
-                      <h4 class="font-bold text-dark">Dr. Priya Sharma</h4>
-                      <p class="text-muted text-sm">Cardiologist</p>
-                      <p class="text-sm mt-1" style="font-weight: 500;"><i class="fa-solid fa-clock"></i> 20 May 2026 | 10:30 AM</p>
-                      <p class="text-muted text-xs mt-1"><i class="fa-solid fa-location-dot"></i> Apollo Hospital, Mumbai</p>
+                  <div style="margin-top: 16px;">
+                    <button style="background: transparent; border: 1px solid #e2e8f0; color: #4f46e5; font-weight: 600; padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;">Learn More</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Row -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+              
+              <!-- Quick Actions -->
+              <div>
+                <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Quick Actions</h3>
+                <div class="card" style="padding: 24px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; gap: 24px; justify-content: space-around; text-align: center;">
+                  
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;" onclick="switchPatientPage('doctors')">
+                    <div style="background: #eff6ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #2563eb;">
+                      <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Find Doctors</span>
+                  </div>
+
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="background: #f5f3ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #8b5cf6;">
+                      <i class="fa-regular fa-file-lines"></i>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Upload Report</span>
+                  </div>
+
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;" onclick="openPortalTool('patient', 'reminders')">
+                    <div style="background: #f5f3ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #8b5cf6;">
+                      <i class="fa-solid fa-pills"></i>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Medicine Reminder</span>
+                  </div>
+
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="background: #f5f3ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #8b5cf6;">
+                      <i class="fa-solid fa-briefcase-medical"></i>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Health Packages</span>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Recent Prescriptions -->
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0;">Recent Prescriptions</h3>
+                  <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchPatientPage('health-records')">View All</a>
+                </div>
+                <div class="card" style="border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);" id="patient-recent-rx-list">
+                  
+                  <div style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start;">
+                    <i class="fa-regular fa-circle-check" style="color: #64748b; margin-top: 4px;"></i>
                     <div>
-                      <button class="btn btn-secondary btn-sm" onclick="switchPatientPage('appointments')">View Details</button>
+                      <p style="font-size: 13px; font-weight: 600; margin: 0; color: #0f172a;">Paracetamol 500mg</p>
+                      <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0;">1-0-1 After Food</p>
                     </div>
                   </div>
-                </div>
 
-                <div class="grid-col-2 care-context-grid">
-                  <div class="card compact-care-card"><div class="card-header"><span class="card-title"><i class="fa-solid fa-hospital"></i> Nearby care</span><button class="btn btn-secondary btn-xs" onclick="switchPatientPage('doctors')">Explore</button></div><div class="card-body"><strong>Apollo Hospital, Mumbai</strong><p>Verified hospital · Cardiology, general medicine, diagnostics</p><span class="care-live"><i class="fa-solid fa-circle"></i> Open now · appointments available</span></div></div>
-                  <div class="card compact-care-card"><div class="card-header"><span class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Continue care</span><button class="btn btn-secondary btn-xs" onclick="switchPatientPage('appointments')">History</button></div><div class="card-body"><strong>Recent care in one place</strong><p>Review past visits, prescriptions, reports, and follow-up recommendations.</p><button class="text-action" type="button" onclick="switchPatientPage('health-records')">Open health records <i class="fa-solid fa-arrow-right"></i></button></div></div>
-                </div>
+                  <div style="padding: 16px; display: flex; gap: 12px; align-items: flex-start;">
+                    <i class="fa-regular fa-circle" style="color: #64748b; margin-top: 4px;"></i>
+                    <div>
+                      <p style="font-size: 13px; font-weight: 600; margin: 0; color: #0f172a;">Vitamin D3</p>
+                      <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0;">0-0-1 After Breakfast</p>
+                    </div>
+                  </div>
 
-                <!-- Quick Action Buttons -->
-                <div class="quick-action-grid">
-                  <div class="quick-action" onclick="openBookAppointmentModal()">
-                    <span class="qa-icon" style="color: #3b82f6;"><i class="fa-solid fa-calendar-plus"></i></span>
-                    Book Appointment
-                  </div>
-                  <div class="quick-action" onclick="switchPatientPage('health-records')">
-                    <span class="qa-icon" style="color: #10b981;"><i class="fa-solid fa-file-medical"></i></span>
-                    Health Records
-                  </div>
-                  <div class="quick-action" onclick="openPortalTool('patient', 'reminders')" role="button" tabindex="0" onkeydown="if(event.key==='Enter') openPortalTool('patient', 'reminders')">
-                    <span class="qa-icon" style="color: #f59e0b;"><i class="fa-solid fa-pills"></i></span>
-                    Medicine Reminder
-                  </div>
-                  <div class="quick-action" onclick="openOnlineConsultation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter') openOnlineConsultation()">
-                    <span class="qa-icon" style="color: #8b5cf6;"><i class="fa-solid fa-comment-medical"></i></span>
-                    Consult Online
-                  </div>
-                </div>
-
-                <!-- Health Tips -->
-                <div id="patient-health-tip-card" class="tip-card" aria-live="polite">
-                  <div class="tip-header">
-                    <span id="patient-health-tip-icon">💡</span> <span id="patient-health-tip-title">Health Tip</span>
-                  </div>
-                  <p id="patient-health-tip-text" class="tip-text"></p>
-                  <a id="patient-health-tip-source" class="tip-source-link" href="#" target="_blank" rel="noopener noreferrer">View health source <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                 </div>
               </div>
 
-              <!-- Right Side (Health Summary) -->
-              <div class="flex flex-col gap-4">
-                <div class="card">
-                  <div class="card-header">
-                    <span class="card-title">Health Summary</span>
-                  </div>
-                  <div class="card-body">
-                    <div class="health-summary-grid mb-3">
-                      <div class="health-metric">
-                        <div class="health-metric-icon" style="color: #ef4444;"><i class="fa-solid fa-heart"></i></div>
-                        <div class="health-metric-val" id="dashboard-heart-rate">72</div>
-                        <div class="health-metric-unit">bpm</div>
-                        <div class="health-metric-label">Heart Rate</div>
-                      </div>
-                      <div class="health-metric">
-                        <div class="health-metric-icon" style="color: #3b82f6;"><i class="fa-solid fa-gauge-simple-high"></i></div>
-                        <div class="health-metric-val" id="dashboard-blood-pressure">120/80</div>
-                        <div class="health-metric-unit">mmHg</div>
-                        <div class="health-metric-label">Blood Pressure</div>
-                      </div>
-                      <div class="health-metric">
-                        <div class="health-metric-icon" style="color: #10b981;"><i class="fa-solid fa-weight-scale"></i></div>
-                        <div class="health-metric-val" id="dashboard-weight">—</div>
-                        <div class="health-metric-unit">kg</div>
-                        <div class="health-metric-label">Weight</div>
-                      </div>
-                      <div class="health-metric">
-                        <div class="health-metric-icon" style="color: #8b5cf6;"><i class="fa-solid fa-bed"></i></div>
-                        <div class="health-metric-val" id="dashboard-bmi">—</div>
-                        <div class="health-metric-unit">hrs</div>
-                        <div class="health-metric-label" id="dashboard-bmi-label">BMI</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div id="patient-health-guide" class="card health-guide-card" aria-live="polite"></div>
-
-                <div class="card">
-                  <div class="card-header">
-                    <span class="card-title">Recent Prescriptions</span>
-                    <button class="btn btn-secondary btn-xs" onclick="openPortalTool('patient', 'prescriptions')">View All</button>
-                  </div>
-                  <div class="card-body" id="patient-recent-rx-list">
-                    <p class="text-muted text-sm empty-state">Loading prescriptions...</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -607,47 +646,44 @@
 
           <!-- 1. Doctor Dashboard Page -->
           <div id="doctor-page-dashboard" class="page active">
-            <div class="page-header-row">
+            <div class="page-header-row mb-4">
               <div>
-                <h2 class="page-heading">Welcome Back, Dr. Priya Sharma</h2>
-                <p class="page-subheading">Here's your clinical overview for today</p>
+                <h2 class="page-heading">Dashboard</h2>
               </div>
-              <div class="date-label"><i class="fa-solid fa-calendar"></i> <span class="current-date-str"></span></div>
             </div>
 
             <!-- KPIs Row -->
-            <div class="grid-4 mb-4">
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon blue"><i class="fa-solid fa-hospital-user" style="color: #3b82f6;"></i></div>
-                  <span class="kpi-change">Today</span>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-total">12</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Today's Appointments</p>
                 </div>
-                <div class="kpi-number" id="doc-kpi-total">12</div>
-                <div class="kpi-label">Today's Appointments</div>
+                <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-regular fa-calendar"></i></div>
               </div>
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon green"><i class="fa-solid fa-check-circle" style="color: #10b981;"></i></div>
-                  <span class="kpi-change">Active</span>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #fffcf2;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-pending">2</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Pending Appointments</p>
                 </div>
-                <div class="kpi-number" id="doc-kpi-done">8</div>
-                <div class="kpi-label">Completed</div>
+                <div style="width: 48px; height: 48px; background: #fef3c7; color: #f59e0b; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-hourglass-half"></i></div>
               </div>
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon yellow"><i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i></div>
-                  <span class="kpi-change">Waiting</span>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #f0fdf4;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-done">8</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Patients Seen</p>
                 </div>
-                <div class="kpi-number" id="doc-kpi-pending">4</div>
-                <div class="kpi-label">Pending</div>
+                <div style="width: 48px; height: 48px; background: #dcfce7; color: #10b981; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-clipboard-user"></i></div>
               </div>
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon purple"><i class="fa-solid fa-file-circle-plus" style="color: #8b5cf6;"></i></div>
-                  <span class="kpi-change">New</span>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #f5f3ff;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-earnings">₹18,500</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Today's Earnings</p>
                 </div>
-                <div class="kpi-number" id="doc-kpi-requests">3</div>
-                <div class="kpi-label">New Requests</div>
+                <div style="width: 48px; height: 48px; background: #ede9fe; color: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-indian-rupee-sign"></i></div>
               </div>
             </div>
 
@@ -659,49 +695,59 @@
               </div>
             </div>
 
-            <div class="grid-col-2-1 mb-4">
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-bottom: 24px;">
               <!-- Left Column: Today's Appointments -->
-              <div class="card">
-                <div class="card-header">
-                  <span class="card-title">Today's Appointments</span>
-                  <button class="btn btn-primary btn-xs" onclick="handleCallNext()">📢 Advance Queue</button>
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                <div class="card-header" style="border-bottom: 1px solid var(--border); padding: 20px;">
+                  <span class="card-title" style="font-size: 16px; font-weight: 700;">Today's Appointments</span>
                 </div>
-                <div class="card-body" id="doc-today-appointments-list">
-                  <!-- List item template -->
+                <div class="card-body" style="padding: 0;" id="doc-today-appointments-list">
+                  <!-- List item template injected via JS -->
+                </div>
+                <div style="padding: 16px; text-align: center; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 0 0 12px 12px;">
+                  <a href="#" style="color: #4f46e5; font-size: 13px; font-weight: 600;" onclick="switchDoctorPage('patients')">View All</a>
                 </div>
               </div>
 
-              <!-- Right Column: Graphs / Overview & Recent Patients -->
+              <!-- Right Column: Patient Details / Action Panel -->
               <div class="flex flex-col gap-4">
-                <div class="card">
-                  <div class="card-header">
-                    <span class="card-title">Appointment Overview</span>
-                    <span class="text-muted text-xs">Weekly Stats</span>
-                  </div>
-                  <div class="card-body">
-                    <div class="chart-area">
-                      <div class="chart-bars">
-                        <div class="chart-bar" style="height: 40%;"></div>
-                        <div class="chart-bar" style="height: 65%;"></div>
-                        <div class="chart-bar" style="height: 50%;"></div>
-                        <div class="chart-bar" style="height: 85%;"></div>
-                        <div class="chart-bar" style="height: 70%;"></div>
-                        <div class="chart-bar" style="height: 90%;"></div>
-                        <div class="chart-bar" style="height: 55%;"></div>
-                      </div>
+                
+                <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;" id="doc-selected-patient-panel">
+                  <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Patient Details</h3>
+                  
+                  <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
+                    <div style="width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">
+                      <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                      <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;" id="doc-sel-pat-name">Select Patient</h4>
+                      <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);" id="doc-sel-pat-meta">--</p>
+                      <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);" id="doc-sel-pat-phone">--</p>
                     </div>
                   </div>
+                  
+                  <div style="text-align: right; margin-bottom: 24px;">
+                    <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchDoctorPage('patients')">View Full Profile</a>
+                  </div>
+
+                  <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 24px;">
+
+                  <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Appointment Details</h3>
+                  
+                  <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 24px;">
+                    <div style="font-size: 13px; color: var(--text-muted);">Date & Time</div>
+                    <div style="font-size: 13px; color: #0f172a; font-weight: 500;" id="doc-sel-apt-time">--</div>
+
+                    <div style="font-size: 13px; color: var(--text-muted);">Type</div>
+                    <div style="font-size: 13px; color: #0f172a; font-weight: 500;" id="doc-sel-apt-type">--</div>
+
+                    <div style="font-size: 13px; color: var(--text-muted);">Fees</div>
+                    <div style="font-size: 13px; color: #0f172a; font-weight: 500;" id="doc-sel-apt-fee">--</div>
+                  </div>
+
+                  <button style="width: 100%; background: #5b21b6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;" onclick="switchDoctorPage('prescription')" id="doc-sel-btn">Start Consultation</button>
                 </div>
 
-                <div class="card">
-                  <div class="card-header">
-                    <span class="card-title">Recent Patients</span>
-                    <button class="btn btn-secondary btn-xs" onclick="switchDoctorPage('patients')">View All</button>
-                  </div>
-                  <div class="card-body" id="doc-recent-patients-list">
-                    <!-- Loaded dynamically -->
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -937,74 +983,104 @@
 
           <!-- 1. Reception Dashboard Page -->
           <div id="reception-page-dashboard" class="page active">
-            <div class="page-header-row">
+            <div class="page-header-row mb-4">
               <div>
-                <h2 class="page-heading">Welcome, Receptionist 👋</h2>
-                <p class="page-subheading">Here's what is happening today in the clinic</p>
+                <h2 class="page-heading">Dashboard</h2>
               </div>
-              <div class="date-label"><i class="fa-solid fa-clock"></i> <span class="current-date-str"></span></div>
             </div>
 
             <!-- KPIs Row -->
-            <div class="grid-4 mb-4">
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon blue"><i class="fa-solid fa-users" style="color: #3b82f6;"></i></div>
-                  <span class="kpi-change">Today</span>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="rec-kpi-appointments">18</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Today's Appointments</p>
                 </div>
-                <div class="kpi-number" id="rec-kpi-total">56</div>
-                <div class="kpi-label">Total Tokens Today</div>
+                <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-regular fa-calendar-check"></i></div>
               </div>
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon yellow"><i class="fa-solid fa-clock" style="color: #f59e0b;"></i></div>
-                  <span class="kpi-change">Waiting</span>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #f5f3ff;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="rec-kpi-walkin">6</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Walk-in Patients</p>
                 </div>
-                <div class="kpi-number" id="rec-kpi-waiting">18</div>
-                <div class="kpi-label">Waiting</div>
+                <div style="width: 48px; height: 48px; background: #ede9fe; color: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-person-walking"></i></div>
               </div>
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon purple"><i class="fa-solid fa-user-md" style="color: #8b5cf6;"></i></div>
-                  <span class="kpi-change">Consulting</span>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #eff6ff;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="rec-kpi-total">25</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Total Patients</p>
                 </div>
-                <div class="kpi-number" id="rec-kpi-consulting">12</div>
-                <div class="kpi-label">In Consultation</div>
+                <div style="width: 48px; height: 48px; background: #dbeafe; color: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-users"></i></div>
               </div>
-              <div class="kpi-card">
-                <div class="kpi-icon-row">
-                  <div class="kpi-icon green"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i></div>
-                  <span class="kpi-change">Done</span>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid #fecaca; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #fef2f2;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #dc2626;" id="rec-kpi-alerts">1</h3>
+                  <p style="font-size: 13px; color: #b91c1c; margin: 4px 0 0 0;">Emergency Alerts</p>
                 </div>
-                <div class="kpi-number" id="rec-kpi-done">26</div>
-                <div class="kpi-label">Completed</div>
+                <div style="width: 48px; height: 48px; background: #fee2e2; color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-bell"></i></div>
               </div>
             </div>
 
-            <!-- Emergency Alerts Panel -->
-            <div id="rec-emergency-panel" class="hidden mb-4" style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px;">
-              <h3 style="color: #b91c1c; margin-top:0; font-size:18px;"><i class="fa-solid fa-triangle-exclamation"></i> Active Emergency Alert</h3>
-              <div id="rec-emergency-list" class="flex flex-col gap-3 mt-2">
-                <!-- Injected via JS -->
+            <!-- Emergency Alerts Panel (Full Width) -->
+            <div id="rec-emergency-panel" class="hidden" style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i>
+                <h3 style="color: #b91c1c; margin: 0; font-size: 14px; font-weight: 700; text-transform: uppercase;">New Emergency Alert</h3>
+              </div>
+              <div id="rec-emergency-list">
+                <!-- Injected via JS. Example fallback structure if needed: -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm);">
+                  <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
+                    <div>
+                      <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">Rohit Sharma</h4>
+                      <p style="margin: 2px 0; font-size: 12px; color: var(--text-muted);">32 Years, Male</p>
+                      <p style="margin: 0; font-size: 12px; color: var(--text-muted);">9876543210</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">Live Location</h5>
+                    <div style="height: 60px; background: #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-location-dot" style="color: #dc2626;"></i></div>
+                  </div>
+                  <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                      <div>
+                        <h5 style="margin: 0; font-size: 13px; font-weight: 700;">2.3 km</h5>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Distance from Hospital</p>
+                      </div>
+                      <div>
+                        <h5 style="margin: 0; font-size: 13px; font-weight: 700;">10:24 AM</h5>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Time of Request</p>
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                      <button style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px;">View Live Location</button>
+                      <button style="flex: 1; padding: 8px; border: none; background: #ef4444; color: white; border-radius: 6px; font-weight: 600; font-size: 12px;">Dispatch Ambulance</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="grid-col-2-1 mb-4">
-              <!-- Left Side: Live Queue Table -->
-              <div class="card">
-                <div class="card-header">
-                  <span class="card-title">Current Queue</span>
-                  <span class="badge badge-dot badge-confirmed">Live Updates</span>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+              <!-- Left Side: Recent Appointments Table -->
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                <div class="card-header" style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                  <span class="card-title" style="font-size: 16px; font-weight: 700;">Recent Appointments</span>
+                  <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchReceptionPage('appointments')">View All</a>
                 </div>
-                <div class="card-body table-wrap">
-                  <table class="hs-table" id="rec-dashboard-queue-table">
+                <div class="card-body table-wrap" style="padding: 0;">
+                  <table class="hs-table" id="rec-schedule-appointments-table" style="width: 100%; border-collapse: collapse;">
                     <thead>
-                      <tr>
-                        <th>Token No.</th>
-                        <th>Patient Name</th>
-                        <th>Doctor</th>
-                        <th>Status</th>
-                        <th>Time</th>
+                      <tr style="border-bottom: 1px solid var(--border); background: #f8fafc; text-align: left;">
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Time</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Patient Name</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Doctor</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Type</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1014,27 +1090,35 @@
                 </div>
               </div>
 
-              <!-- Right Side: Quick Actions & Today's Schedule -->
-              <div class="flex flex-col gap-4">
-                <div class="card">
-                  <div class="card-header"><span class="card-title">Quick Actions</span></div>
-                  <div class="card-body flex flex-col gap-2">
-                    <button class="btn btn-secondary w-full" onclick="switchReceptionPage('walk-in')"><i class="fa-solid fa-user-plus"></i> Walk-In Registration</button>
-                    <button class="btn btn-secondary w-full" onclick="openReceptionIssueTokenModal()"><i class="fa-solid fa-ticket"></i> Generate Token</button>
-                    <button class="btn btn-secondary w-full" onclick="openBookAppointmentModal()"><i class="fa-solid fa-calendar-days"></i> Appointment Booking</button>
-                    <button class="btn btn-secondary w-full" onclick="switchReceptionPage('queue-mgmt')"><i class="fa-solid fa-magnifying-glass"></i> Patient Search</button>
+              <!-- Right Side: Queue Overview & Generate Token -->
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Queue Overview</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;" id="rec-queue-overview-list">
+                  <!-- Fallback items, to be injected via JS -->
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">1.</span> Priya Sharma</span>
+                    <span style="color: var(--text-muted);">Token No. 18</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">2.</span> Amit Kumar</span>
+                    <span style="color: var(--text-muted);">Token No. 19</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">3.</span> Neha Singh</span>
+                    <span style="color: var(--text-muted);">Token No. 20</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">4.</span> Rahul Verma</span>
+                    <span style="color: var(--text-muted);">Token No. 21</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">5.</span> Sunita Patel</span>
+                    <span style="color: var(--text-muted);">Token No. 22</span>
                   </div>
                 </div>
 
-                <div class="card">
-                  <div class="card-header">
-                    <span class="card-title">Today's Appointments</span>
-                    <button class="btn btn-secondary btn-xs" onclick="switchReceptionPage('appointments')">View All</button>
-                  </div>
-                  <div class="card-body" id="rec-dashboard-appointments-list">
-                    <!-- Loader -->
-                  </div>
-                </div>
+                <button style="width: 100%; background: #e0e7ff; color: #4f46e5; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer;" onclick="openReceptionIssueTokenModal()">Generate Token</button>
               </div>
             </div>
           </div>
@@ -1276,16 +1360,15 @@
         </header>
 
         <div class="page-content">
-          <div class="page active">
-            <div class="page-header-row">
+          <div id="ambulance-page-dashboard" class="page active">
+            <div class="page-header-row mb-4">
               <div>
-                <h2 class="page-heading">Dispatch Dashboard</h2>
-                <p class="page-subheading">Waiting for emergency assignments...</p>
+                <h2 class="page-heading">Emergency Ride</h2>
               </div>
             </div>
 
-            <div id="amb-dispatch-list" class="grid-4 mb-4" style="grid-template-columns: 1fr;">
-              <div class="card p-4 text-center text-muted empty-state">
+            <div id="amb-dispatch-list">
+              <div class="card p-4 text-center text-muted empty-state" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
                 <i class="fa-solid fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
                 <p>No active dispatches. You are available.</p>
               </div>

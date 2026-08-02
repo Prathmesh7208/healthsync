@@ -321,14 +321,53 @@ window.connectSocket = function() {
         const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
         if (list.querySelector('.empty-state')) list.innerHTML = '';
         list.innerHTML += `
-          <div id="amb-disp-${data.id}" class="card p-4" style="border: 2px solid #ef4444;">
-            <h3 style="color: #b91c1c; margin-top:0;"><i class="fa-solid fa-truck-medical"></i> Dispatch Assigned</h3>
-            <p style="margin: 4px 0;"><strong>Patient:</strong> ${escapeHtml(data.patient_name)}</p>
-            <p style="margin: 4px 0;"><strong>Phone:</strong> ${escapeHtml(data.phone_number)}</p>
-            <p style="margin: 4px 0;"><strong>Address:</strong> ${escapeHtml(data.address)}</p>
-            <a href="${mapsLink}" id="map-link-${data.id}" target="_blank" class="btn btn-primary w-full mt-3"><i class="fa-solid fa-location-arrow"></i> Google Maps Navigation</a>
-            <button class="btn btn-secondary w-full mt-2" onclick="resolveEmergency('${data.id}')">Mark as Completed</button>
-            <div id="amb-map-${data.id}" style="height: 180px; width: 100%; margin-top: 12px; border-radius: 6px; z-index: 1;"></div>
+          <div id="amb-disp-${data.id}" style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 24px;">
+            <!-- Left Column: Details -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Patient Details</h3>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                  <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
+                  <div>
+                    <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">${escapeHtml(data.patient_name)}</h4>
+                    <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">${escapeHtml(data.phone_number)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 8px 0; color: #1e293b;">Emergency Address</h3>
+                <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">${escapeHtml(data.address)}</p>
+                <a href="${mapsLink}" id="map-link-${data.id}" target="_blank" style="display: block; width: 100%; background: #16a34a; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 13px; text-align: center; text-decoration: none;">Open in Maps</a>
+              </div>
+
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Emergency Info</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                  <div style="font-size: 13px; color: var(--text-muted);">Request Time</div>
+                  <div style="font-size: 13px; color: #0f172a; font-weight: 500;">Now</div>
+                  <div style="font-size: 13px; color: var(--text-muted);">Distance</div>
+                  <div style="font-size: 13px; color: #0f172a; font-weight: 500;">Calculating...</div>
+                  <div style="font-size: 13px; color: var(--text-muted);">Status</div>
+                  <div style="font-size: 13px; color: #3b82f6; font-weight: 600; background: #eff6ff; padding: 2px 8px; border-radius: 4px; display: inline-block;">En Route</div>
+                </div>
+                <button style="width: 100%; background: white; color: #ef4444; border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; margin-top: 8px;" onclick="resolveEmergency('${data.id}')">Mark as Completed</button>
+              </div>
+            </div>
+
+            <!-- Right Column: Map -->
+            <div style="position: relative;">
+              <div id="amb-map-${data.id}" style="height: 100%; min-height: 500px; width: 100%; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 1;"></div>
+              
+              <!-- ETA Floating Card -->
+              <div style="position: absolute; bottom: 24px; right: 24px; background: white; padding: 20px; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1000; display: flex; align-items: center; gap: 16px; border: 1px solid var(--border);">
+                <div>
+                  <p style="margin: 0; font-size: 12px; font-weight: 600; color: #4f46e5; text-transform: uppercase;">ETA to Patient</p>
+                  <h2 style="margin: 4px 0 0 0; font-size: 24px; font-weight: 700; color: #0f172a;">8 Minutes</h2>
+                </div>
+                <i class="fa-solid fa-truck-medical" style="font-size: 32px; color: #ef4444;"></i>
+              </div>
+            </div>
           </div>
         `;
         setTimeout(() => {
@@ -1299,18 +1338,16 @@ function renderAppointmentsList() {
   const docList = document.getElementById('doc-today-appointments-list');
   if (docList) {
     const listHtml = todayAppointments.length === 0
-      ? `<p class="text-muted text-sm empty-state">No appointments today.</p>`
+      ? `<p class="text-muted text-sm empty-state" style="padding: 20px;">No appointments today.</p>`
       : todayAppointments.map(appt => `
-        <div class="today-appt-item">
-          <div class="appt-time-col">${appt.slot_time}</div>
-          <div class="patient-avatar">RV</div>
-          <div class="appt-patient-info">
-            <div class="appt-patient-name">${appt.patient_name}</div>
-            <div class="appt-patient-type">${appt.token_number} • General Checkup</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'" onclick="selectDoctorAppointment('${appt.id}')">
+          <div style="font-size: 13px; font-weight: 600; color: #1e293b; width: 90px;">${appt.slot_time}</div>
+          <div style="flex: 1;">
+            <h4 style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0; text-transform: uppercase;">${appt.patient_name}</h4>
+            <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0; text-transform: uppercase;">Consultation</p>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="badge ${getBadgeClass(appt.status)}">${appt.status}</span>
-            ${appt.status === 'CONFIRMED' || appt.status === 'Waiting' ? `<button class="btn btn-primary btn-xs" onclick="startConsultation('${appt.id}')">Start</button>` : ''}
+          <div>
+            <span style="background: ${appt.status === 'CONFIRMED' || appt.status === 'Waiting' ? '#e0e7ff' : (appt.status === 'COMPLETED' ? '#dcfce7' : '#fef3c7')}; color: ${appt.status === 'CONFIRMED' || appt.status === 'Waiting' ? '#4f46e5' : (appt.status === 'COMPLETED' ? '#16a34a' : '#d97706')}; font-size: 11px; padding: 4px 10px; border-radius: 100px; font-weight: 600;">${appt.status === 'CONFIRMED' || appt.status === 'Waiting' ? 'Upcoming' : appt.status}</span>
           </div>
         </div>
       `).join('');
@@ -1927,4 +1964,15 @@ window.onclick = function(event) {
   if (event.target.classList.contains('modal-backdrop')) {
     closeAllModals();
   }
+};
+
+window.selectDoctorAppointment = function(id) {
+  const appt = window.globalAppointments.find(a => a.id === id);
+  if (!appt) return;
+  document.getElementById('doc-sel-pat-name').innerText = appt.patient_name;
+  document.getElementById('doc-sel-pat-meta').innerText = 'Patient';
+  document.getElementById('doc-sel-pat-phone').innerText = 'Token ' + appt.token_number;
+  document.getElementById('doc-sel-apt-time').innerText = appt.slot_time;
+  document.getElementById('doc-sel-apt-type').innerText = 'Consultation';
+  document.getElementById('doc-sel-apt-fee').innerText = '₹800';
 };
