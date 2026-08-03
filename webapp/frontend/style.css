@@ -764,7 +764,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     z-index: 2000; transition: transform 0.3s ease;
     border-right: 1px solid var(--border); border-bottom: 0;
   }
-  .sidebar.open { transform: translateX(280px); }
+  .sidebar.open { left: -280px; transform: translateX(280px); }
   .sidebar-brand { padding: 16px 20px; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
   .sidebar-logo { width: 32px; height: 32px; font-size: 14px; }
   .sidebar-brand-name { display: block; }
