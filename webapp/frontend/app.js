@@ -259,7 +259,7 @@ window.connectSocket = function() {
     });
 
     appSocket.on('sos_alert', (data) => {
-      ['rec', 'doc'].forEach(prefix => {
+      ['rec', 'doc', 'amb'].forEach(prefix => {
         document.getElementById(`${prefix}-emergency-panel`)?.classList.remove('hidden');
         const list = document.getElementById(`${prefix}-emergency-list`);
         if (!list) return;

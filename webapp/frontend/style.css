@@ -834,25 +834,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .auth-screen { padding: 16px; align-items: center; }
   .auth-card { width: 100%; max-width: 420px; padding: 28px 22px; }
 }
-
-@media (max-width: 420px) {
-  .sidebar { max-height: 54px; }
-  .sidebar-brand { padding: 10px; }
-  .sidebar-logo { width: 28px; height: 28px; }
-  .nav-item { padding: 7px 8px; font-size: 11px; }
-  .main-area { height: calc(100dvh - 54px); }
-  .top-header { padding: 0 12px; }
-  .role-tab-bar { max-width: calc(100vw - 100px); }
-  .page-content { padding: 12px; }
-  .page-header-row { flex-wrap: wrap; }
-  .page-header-row > :last-child:not(:first-child) { width: 100%; }
-  .page-header-row .btn { width: 100%; }
-  .quick-action-grid { gap: 8px; }
-  .quick-action { padding: 12px 6px; }
-  .kpi-card { padding: 14px; }
-  .auth-card { padding: 26px 20px; }
-  .auth-card h1 { font-size: 22px; }
-}
 ::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
 
 /* ─── Page transitions ─── */

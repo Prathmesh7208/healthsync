@@ -1136,9 +1136,10 @@ io.on('connection', (socket) => {
       [caseId, patientId, patientName, phone, lat, lng, address],
       () => {
         const emergencyData = { caseId, patientId, patientName, phone, lat, lng, address, status: 'Pending', timestamp: new Date().toISOString() };
-        // Broadcast to receptionists and doctors
+        // Broadcast to receptionists, doctors, and ambulances
         io.to('RECEPTIONIST').emit('sos_alert', emergencyData);
         io.to('DOCTOR').emit('sos_alert', emergencyData);
+        io.to('AMBULANCE').emit('sos_alert', emergencyData);
         // Acknowledge back to patient
         socket.emit('sos_acknowledged', emergencyData);
       }
