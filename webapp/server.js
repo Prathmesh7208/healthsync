@@ -239,6 +239,14 @@ db.serialize(() => {
       userStmt.run('u-doc8', '9000000008', 'DOCTOR');
       userStmt.run('u-doc9', '9000000009', 'DOCTOR');
       userStmt.run('u-doc10', '9000000010', 'DOCTOR');
+      userStmt.run('u-doc11', '9000000011', 'DOCTOR');
+      userStmt.run('u-doc12', '9000000012', 'DOCTOR');
+      userStmt.run('u-doc13', '9000000013', 'DOCTOR');
+      userStmt.run('u-doc14', '9000000014', 'DOCTOR');
+      userStmt.run('u-doc15', '9000000015', 'DOCTOR');
+      userStmt.run('u-doc16', '9000000016', 'DOCTOR');
+      userStmt.run('u-doc17', '9000000017', 'DOCTOR');
+      userStmt.run('u-doc18', '9000000018', 'DOCTOR');
       userStmt.finalize();
       const stmt = db.prepare(`
         INSERT INTO doctors
@@ -255,9 +263,17 @@ db.serialize(() => {
       stmt.run('doc8','u-doc8','Dr. Charudutt Apte','Neurosurgeon','MCh (Neurosurgery)','Sahyadri Super Speciality Hospital, Pune (ALS Ambulance)',1500,'30+ Years Exp.','English, Marathi',4.9,1500);
       stmt.run('doc9','u-doc9','Dr. S. S. Bhalerao','General Surgeon','MS (Surgery)','Jehangir Hospital, Pune (Trauma Ambulance)',800,'18+ Years Exp.','English, Hindi, Marathi',4.7,850);
       stmt.run('doc10','u-doc10','Dr. Ashish Pathak','Pediatrician','MD (Peds)','Aditya Birla Memorial Hospital, Pune (Pediatric Ambulance)',750,'15+ Years Exp.','English, Hindi, Marathi',4.8,620);
+      stmt.run('doc11','u-doc11','Dr. Sumit Agrawal','Internal Medicine (Swine Flu, Fever)','MD (Internal Medicine)','Sahyadri Hospital, Pune (Ambulance)',900,'14+ Years Exp.','English, Hindi, Marathi',4.8,850);
+      stmt.run('doc12','u-doc12','Dr. Ritesh Agrawal','Gastroenterologist (Gastric, Colic Pain)','MD (Gastroenterology)','Ruby Hall Clinic, Pune (Ambulance)',1100,'16+ Years Exp.','English, Hindi',4.9,1020);
+      stmt.run('doc13','u-doc13','Dr. Avinash Bhondwe','General Physician (Body Aches)','MBBS, MD','Bhondwe Clinic, Pune',500,'35+ Years Exp.','English, Marathi',4.7,2100);
+      stmt.run('doc14','u-doc14','Dr. Sundeep Salvi','Pulmonologist (Dust Allergy)','MD, PhD','Chest Research Foundation, Pune',1200,'25+ Years Exp.','English, Hindi, Marathi',4.9,3400);
+      stmt.run('doc15','u-doc15','Dr. Sudhir Kothari','Neurologist (Migraine)','MD, DM (Neurology)','Poona Hospital, Pune (Ambulance)',1300,'28+ Years Exp.','English, Hindi',4.8,1150);
+      stmt.run('doc16','u-doc16','Dr. Shirish Hiremath','Cardiologist (Heart Diseases)','MD, DM (Cardiology)','Ruby Hall Clinic, Pune (Ambulance)',1500,'32+ Years Exp.','English, Marathi',4.9,2500);
+      stmt.run('doc17','u-doc17','Dr. Dhanashree Bhide','Dermatologist (Skin Allergy)','MD (Dermatology)','Deenanath Mangeshkar Hospital, Pune',800,'18+ Years Exp.','English, Marathi',4.7,920);
+      stmt.run('doc18','u-doc18','Dr. Salil Bhalerao','Ophthalmologist (Eye Infections)','MS (Ophthalmology)','Aditya Birla Hospital, Pune',950,'15+ Years Exp.','English, Hindi',4.8,680);
       stmt.finalize();
       });
-      console.log('✅ Seeded 10 doctors');
+      console.log('✅ Seeded 18 doctors');
     }
   });
 
