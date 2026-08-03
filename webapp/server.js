@@ -228,52 +228,32 @@ db.serialize(() => {
       // This callback runs after the outer schema sequence, so explicitly
       // serialize these dependent writes before inserting doctor profiles.
       db.serialize(() => {
-      const userStmt = db.prepare('INSERT OR IGNORE INTO users (id, mobile_number, role) VALUES (?, ?, ?)', () => {});
-      userStmt.run('u-doc1', '9000000001', 'DOCTOR');
-      userStmt.run('u-doc2', '9000000002', 'DOCTOR');
-      userStmt.run('u-doc3', '9000000003', 'DOCTOR');
-      userStmt.run('u-doc4', '9000000004', 'DOCTOR');
-      userStmt.run('u-doc5', '9000000005', 'DOCTOR');
-      userStmt.run('u-doc6', '9000000006', 'DOCTOR');
-      userStmt.run('u-doc7', '9000000007', 'DOCTOR');
-      userStmt.run('u-doc8', '9000000008', 'DOCTOR');
-      userStmt.run('u-doc9', '9000000009', 'DOCTOR');
-      userStmt.run('u-doc10', '9000000010', 'DOCTOR');
-      userStmt.run('u-doc11', '9000000011', 'DOCTOR');
-      userStmt.run('u-doc12', '9000000012', 'DOCTOR');
-      userStmt.run('u-doc13', '9000000013', 'DOCTOR');
-      userStmt.run('u-doc14', '9000000014', 'DOCTOR');
-      userStmt.run('u-doc15', '9000000015', 'DOCTOR');
-      userStmt.run('u-doc16', '9000000016', 'DOCTOR');
-      userStmt.run('u-doc17', '9000000017', 'DOCTOR');
-      userStmt.run('u-doc18', '9000000018', 'DOCTOR');
-      userStmt.finalize();
-      const stmt = db.prepare(`
-        INSERT INTO doctors
-          (id, user_id, full_name, specialization, qualification, clinic_name,
-           consultation_fee, experience, languages, rating, reviews_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-      stmt.run('doc1','u-doc1','Dr. Amit Patil','Orthopedic Surgeon','MS (Ortho)','HealthSync Clinic, Pune',500,'12+ Years Exp.','Marathi, Hindi, English',4.9,320);
-      stmt.run('doc2','u-doc2','Dr. Sneha Joshi','Gynecologist','MD (OB-GYN)','Care Clinic, Pune',600,'10+ Years Exp.','Marathi, Hindi',4.7,210);
-      stmt.run('doc3','u-doc3','Dr. Rahul Mehta','Cardiologist','DM (Cardiology)','HeartCare Center, Pune',800,'15+ Years Exp.','Hindi, English',4.9,450);
-      stmt.run('doc4','u-doc4','Dr. Priya Kulkarni','Pediatrician','MD (Peds)','Kids Clinic, Pune',400,'8+ Years Exp.','Marathi, Hindi, English',4.8,180);
-      stmt.run('doc5','u-doc5','Dr. Sanjay Desai','Dermatologist','MD (DVL)','SkinCare Center, Pune',550,'9+ Years Exp.','Hindi, English',4.6,145);
-      stmt.run('doc6','u-doc6','Dr. Parvez Grant','Cardiologist','MD (Cardiology)','Ruby Hall Clinic, Pune (24/7 ICU Ambulance)',1000,'25+ Years Exp.','English, Hindi, Marathi',4.9,1250);
-      stmt.run('doc7','u-doc7','Dr. Dhananjay Kelkar','Surgical Oncologist','MS (Surgery)','Deenanath Mangeshkar Hospital, Pune (Emergency Ambulance)',1200,'20+ Years Exp.','English, Marathi',4.8,980);
-      stmt.run('doc8','u-doc8','Dr. Charudutt Apte','Neurosurgeon','MCh (Neurosurgery)','Sahyadri Super Speciality Hospital, Pune (ALS Ambulance)',1500,'30+ Years Exp.','English, Marathi',4.9,1500);
-      stmt.run('doc9','u-doc9','Dr. S. S. Bhalerao','General Surgeon','MS (Surgery)','Jehangir Hospital, Pune (Trauma Ambulance)',800,'18+ Years Exp.','English, Hindi, Marathi',4.7,850);
-      stmt.run('doc10','u-doc10','Dr. Ashish Pathak','Pediatrician','MD (Peds)','Aditya Birla Memorial Hospital, Pune (Pediatric Ambulance)',750,'15+ Years Exp.','English, Hindi, Marathi',4.8,620);
-      stmt.run('doc11','u-doc11','Dr. Sumit Agrawal','Internal Medicine (Swine Flu, Fever)','MD (Internal Medicine)','Sahyadri Hospital, Pune (Ambulance)',900,'14+ Years Exp.','English, Hindi, Marathi',4.8,850);
-      stmt.run('doc12','u-doc12','Dr. Ritesh Agrawal','Gastroenterologist (Gastric, Colic Pain)','MD (Gastroenterology)','Ruby Hall Clinic, Pune (Ambulance)',1100,'16+ Years Exp.','English, Hindi',4.9,1020);
-      stmt.run('doc13','u-doc13','Dr. Avinash Bhondwe','General Physician (Body Aches)','MBBS, MD','Bhondwe Clinic, Pune',500,'35+ Years Exp.','English, Marathi',4.7,2100);
-      stmt.run('doc14','u-doc14','Dr. Sundeep Salvi','Pulmonologist (Dust Allergy)','MD, PhD','Chest Research Foundation, Pune',1200,'25+ Years Exp.','English, Hindi, Marathi',4.9,3400);
-      stmt.run('doc15','u-doc15','Dr. Sudhir Kothari','Neurologist (Migraine)','MD, DM (Neurology)','Poona Hospital, Pune (Ambulance)',1300,'28+ Years Exp.','English, Hindi',4.8,1150);
-      stmt.run('doc16','u-doc16','Dr. Shirish Hiremath','Cardiologist (Heart Diseases)','MD, DM (Cardiology)','Ruby Hall Clinic, Pune (Ambulance)',1500,'32+ Years Exp.','English, Marathi',4.9,2500);
-      stmt.run('doc17','u-doc17','Dr. Dhanashree Bhide','Dermatologist (Skin Allergy)','MD (Dermatology)','Deenanath Mangeshkar Hospital, Pune',800,'18+ Years Exp.','English, Marathi',4.7,920);
-      stmt.run('doc18','u-doc18','Dr. Salil Bhalerao','Ophthalmologist (Eye Infections)','MS (Ophthalmology)','Aditya Birla Hospital, Pune',950,'15+ Years Exp.','English, Hindi',4.8,680);
-      stmt.finalize();
+        const seedDataPath = path.join(__dirname, 'seed_doctors.json');
+        let docData = [];
+        try {
+          docData = JSON.parse(fs.readFileSync(seedDataPath, 'utf8'));
+        } catch (e) {
+          console.error('Failed to load seed_doctors.json:', e);
+        }
+
+        const userStmt = db.prepare('INSERT OR IGNORE INTO users (id, mobile_number, role) VALUES (?, ?, ?)', () => {});
+        const stmt = db.prepare(`
+          INSERT INTO doctors
+            (id, user_id, full_name, specialization, qualification, clinic_name,
+             consultation_fee, experience, languages, rating, reviews_count)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+        docData.forEach((doc, idx) => {
+          const userId = 'u-' + doc.id;
+          const mobile = '900' + String(idx+1).padStart(7, '0');
+          userStmt.run(userId, mobile, 'DOCTOR');
+          stmt.run(doc.id, userId, doc.name, doc.specialization, doc.qual, doc.clinic, doc.fee, doc.exp, doc.lang, doc.rating, doc.revs);
+        });
+
+        userStmt.finalize();
+        stmt.finalize();
+        console.log('✅ Seeded ' + docData.length + ' doctors from JSON');
       });
-      console.log('✅ Seeded 18 doctors');
     }
   });
 
