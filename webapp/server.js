@@ -234,6 +234,11 @@ db.serialize(() => {
       userStmt.run('u-doc3', '9000000003', 'DOCTOR');
       userStmt.run('u-doc4', '9000000004', 'DOCTOR');
       userStmt.run('u-doc5', '9000000005', 'DOCTOR');
+      userStmt.run('u-doc6', '9000000006', 'DOCTOR');
+      userStmt.run('u-doc7', '9000000007', 'DOCTOR');
+      userStmt.run('u-doc8', '9000000008', 'DOCTOR');
+      userStmt.run('u-doc9', '9000000009', 'DOCTOR');
+      userStmt.run('u-doc10', '9000000010', 'DOCTOR');
       userStmt.finalize();
       const stmt = db.prepare(`
         INSERT INTO doctors
@@ -245,9 +250,14 @@ db.serialize(() => {
       stmt.run('doc3','u-doc3','Dr. Rahul Mehta','Cardiologist','DM (Cardiology)','HeartCare Center, Pune',800,'15+ Years Exp.','Hindi, English',4.9,450);
       stmt.run('doc4','u-doc4','Dr. Priya Kulkarni','Pediatrician','MD (Peds)','Kids Clinic, Pune',400,'8+ Years Exp.','Marathi, Hindi, English',4.8,180);
       stmt.run('doc5','u-doc5','Dr. Sanjay Desai','Dermatologist','MD (DVL)','SkinCare Center, Pune',550,'9+ Years Exp.','Hindi, English',4.6,145);
+      stmt.run('doc6','u-doc6','Dr. Parvez Grant','Cardiologist','MD (Cardiology)','Ruby Hall Clinic, Pune (24/7 ICU Ambulance)',1000,'25+ Years Exp.','English, Hindi, Marathi',4.9,1250);
+      stmt.run('doc7','u-doc7','Dr. Dhananjay Kelkar','Surgical Oncologist','MS (Surgery)','Deenanath Mangeshkar Hospital, Pune (Emergency Ambulance)',1200,'20+ Years Exp.','English, Marathi',4.8,980);
+      stmt.run('doc8','u-doc8','Dr. Charudutt Apte','Neurosurgeon','MCh (Neurosurgery)','Sahyadri Super Speciality Hospital, Pune (ALS Ambulance)',1500,'30+ Years Exp.','English, Marathi',4.9,1500);
+      stmt.run('doc9','u-doc9','Dr. S. S. Bhalerao','General Surgeon','MS (Surgery)','Jehangir Hospital, Pune (Trauma Ambulance)',800,'18+ Years Exp.','English, Hindi, Marathi',4.7,850);
+      stmt.run('doc10','u-doc10','Dr. Ashish Pathak','Pediatrician','MD (Peds)','Aditya Birla Memorial Hospital, Pune (Pediatric Ambulance)',750,'15+ Years Exp.','English, Hindi, Marathi',4.8,620);
       stmt.finalize();
       });
-      console.log('✅ Seeded 5 doctors');
+      console.log('✅ Seeded 10 doctors');
     }
   });
 
