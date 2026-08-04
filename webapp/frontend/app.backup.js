@@ -1294,9 +1294,16 @@ function renderPatientDashboardPrescriptions() {
         <div class="rx-mini-date">${rx.date} — Diagnosis: <strong>${rx.diagnosis}</strong></div>
       </div>
       <button class="btn btn-secondary btn-xs" onclick="viewPrescriptionDetailsModal('${rx.id}')">View</button>
+      <button class="btn btn-secondary btn-xs" style="margin-left: 4px;" onclick="downloadPrescriptionPdf('${rx.id}')">PDF</button>
     </div>
   `).join('');
 }
+
+window.downloadPrescriptionPdf = function(rxId) {
+  if (!currentUser?.token) return showToast('You must be logged in', 'error');
+  const url = `${API_BASE}/prescriptions/pdf/${rxId}?token=${currentUser.token}`;
+  window.open(url, '_blank');
+};
 
 window.searchDoctorsFromDashboard = function() {
   const term = document.getElementById('dashboard-doctor-search')?.value.trim().toLowerCase() || '';
@@ -1538,7 +1545,10 @@ function renderDoctorPatientPrescriptions() {
     <div class="card">
       <div class="card-header">
         <span class="card-title">Prescription — ${rx.date}</span>
-        <span class="badge badge-confirmed">Signed</span>
+        <div>
+          <button class="btn btn-secondary btn-xs" onclick="downloadPrescriptionPdf('${rx.id}')" style="margin-right: 8px;">PDF</button>
+          <span class="badge badge-confirmed">Signed</span>
+        </div>
       </div>
       <div class="card-body">
         <p><strong>Diagnosis:</strong> ${rx.diagnosis}</p>

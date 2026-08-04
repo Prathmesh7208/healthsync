@@ -457,13 +457,20 @@ const server = http.createServer(async (req, res) => {
     const isPublicRoute = pathname.startsWith('/v1/auth') || pathname.startsWith('/v1/doctors/search') || pathname === '/v1/health';
     
     if (!isPublicRoute) {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      let authHeader = req.headers.authorization;
+      let token = null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      } else if (url.searchParams.get('token')) {
+        token = url.searchParams.get('token');
+      }
+
+      if (!token) {
         res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, code: 'AUTH_MISSING', message: 'Unauthorized. Missing token.' }));
         return;
       }
-      const token = authHeader.split(' ')[1];
+      
       const payload = jwtVerify(token);
       if (!payload) {
         res.writeHead(401, { 'Content-Type': 'application/json' });
@@ -899,6 +906,57 @@ function apiRouter(req, res, pathname, url, body) {
           instructions: r.instructions
         }))
       });
+    });
+    return;
+  }
+
+  // ── GET Prescription PDF ───────────────────────────────────────────────
+  if (pathname.match(/^\/v1\/prescriptions\/pdf\/([a-zA-Z0-9-]+)$/) && method === 'GET') {
+    const rxId = pathname.split('/').pop();
+    db.get('SELECT * FROM prescriptions WHERE id = ?', [rxId], (err, rx) => {
+      if (!rx) return json(res, 404, { success: false, message: 'Prescription not found' });
+      
+      try {
+        const PDFDocument = require('pdfkit');
+        const doc = new PDFDocument({ margin: 50 });
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Prescription_${rxId}.pdf`);
+        doc.pipe(res);
+        
+        doc.fontSize(24).fillColor('#2563eb').text('HealthSync Hospital', { align: 'center' });
+        doc.fontSize(10).fillColor('#64748b').text('123 Medical Hub, Pune, Maharashtra 411001', { align: 'center' });
+        doc.moveDown();
+        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+        doc.moveDown();
+        
+        doc.fontSize(14).fillColor('#0f172a').text('PRESCRIPTION', { align: 'center', underline: true });
+        doc.moveDown();
+        
+        doc.fontSize(12).text(`Patient Name: ${rx.patient_name}`);
+        doc.text(`Doctor Name: ${rx.doctor_name}`);
+        doc.text(`Date: ${rx.created_at || 'Today'}`);
+        doc.text(`Diagnosis: ${rx.diagnosis}`);
+        doc.moveDown();
+        
+        doc.fontSize(14).text('Medications:');
+        const meds = JSON.parse(rx.medications_json || '[]');
+        meds.forEach(m => {
+          doc.fontSize(12).text(`• ${m.name} - ${m.dosage} (${m.duration})`);
+        });
+        
+        doc.moveDown();
+        doc.fontSize(12).text('Instructions:');
+        doc.fontSize(10).text(rx.instructions || 'None');
+        
+        doc.moveDown(4);
+        doc.fontSize(12).text('_________________________', { align: 'right' });
+        doc.text('Doctor Signature', { align: 'right' });
+        
+        doc.end();
+      } catch (err) {
+        json(res, 500, { success: false, message: 'Failed to generate PDF' });
+      }
     });
     return;
   }
