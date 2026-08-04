@@ -960,6 +960,27 @@ function apiRouter(req, res, pathname, url, body) {
       });
     });
     return;
+    return;
+  }
+
+  if (pathname === '/v1/emergency/pending' && method === 'GET') {
+    db.all("SELECT * FROM emergency_cases WHERE status != 'Resolved' ORDER BY created_at DESC", (err, rows) => {
+      json(res, 200, {
+        success: true,
+        cases: (rows || []).map(r => ({
+          caseId: r.id,
+          patientId: r.patient_id,
+          patientName: r.patient_name,
+          phone: r.phone_number,
+          lat: r.lat,
+          lng: r.lng,
+          address: r.address,
+          status: r.status,
+          timestamp: r.created_at
+        }))
+      });
+    });
+    return;
   }
 
   // ── Real Notifications Endpoints ───────────────────────────────────────

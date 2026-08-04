@@ -259,48 +259,7 @@ window.connectSocket = function() {
     });
 
     appSocket.on('sos_alert', (data) => {
-      ['rec', 'doc', 'amb'].forEach(prefix => {
-        document.getElementById(`${prefix}-emergency-panel`)?.classList.remove('hidden');
-        const list = document.getElementById(`${prefix}-emergency-list`);
-        if (!list) return;
-        const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
-        list.innerHTML += `
-          <div id="emerg-${data.caseId}" class="grid-3" style="align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
-            <div style="display: flex; gap: 12px; align-items: center;">
-              <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
-              <div>
-                <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">${escapeHtml(data.patientName)}</h4>
-                <p style="margin: 2px 0; font-size: 12px; color: var(--text-muted);">${escapeHtml(data.phone)}</p>
-              </div>
-            </div>
-            <div>
-              <h5 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">Live Location</h5>
-              <p style="margin: 0; font-size: 11px; color: var(--text-muted); line-height: 1.3;">${escapeHtml(data.address || 'Unknown')}</p>
-              <div id="${prefix}-map-${data.caseId}" style="height: 100px; width: 100%; margin-top: 8px; border-radius: 4px; z-index: 1;"></div>
-            </div>
-            <div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                <div>
-                  <h5 style="margin: 0; font-size: 13px; font-weight: 700;">--</h5>
-                  <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Distance</p>
-                </div>
-                <div>
-                  <h5 style="margin: 0; font-size: 13px; font-weight: 700;">${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</h5>
-                  <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Time of Request</p>
-                </div>
-              </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;" id="map-link-${prefix}-${data.caseId}">Maps</a>
-                <button style="flex: 1; padding: 8px; border: none; background: #ef4444; color: white; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" id="btn-dispatch-${prefix}-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')">Dispatch</button>
-                <button style="flex: 1; padding: 8px; border: 1px solid var(--border); background: #f1f5f9; color: #1e293b; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
-              </div>
-            </div>
-          </div>
-        `;
-        setTimeout(() => {
-          mapInstances[`${prefix}_${data.caseId}`] = initMap(`${prefix}-map-${data.caseId}`, data.lat, data.lng, 'patient');
-        }, 100);
-      });
+      renderEmergencyAlertToDOM(data);
     });
 
     appSocket.on('emergency_location_update', (data) => {
@@ -722,6 +681,9 @@ function finishLogin() {
   switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient');
   renderPatientHealthProfile();
   fetchNotifications();
+  if (role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') {
+    fetchPendingEmergencies();
+  }
   syncAllData();
   connectSocket();
 }
@@ -741,6 +703,71 @@ window.openProfileSettings = function(role) { document.getElementById('profile-m
 document.addEventListener('click', event => { if (!event.target.closest('.profile-trigger') && !event.target.closest('#profile-menu')) document.getElementById('profile-menu')?.classList.add('hidden'); });
 
 async function fetchNotifications() { if (!currentUser) return; try { const res=await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data=await res.json(); renderNotifications(data.notifications || []); } catch {} }
+
+async function fetchPendingEmergencies() {
+  try {
+    const res = await fetch(`${API_BASE}/emergency/pending`);
+    const data = await res.json();
+    if (data.success && data.cases) {
+      data.cases.forEach(c => renderEmergencyAlertToDOM(c));
+    }
+  } catch (err) {
+    console.error('Failed to fetch pending emergencies', err);
+  }
+}
+
+function renderEmergencyAlertToDOM(data) {
+  ['rec', 'doc', 'amb'].forEach(prefix => {
+    const panel = document.getElementById(`${prefix}-emergency-panel`);
+    if (panel) panel.classList.remove('hidden');
+    const list = document.getElementById(`${prefix}-emergency-list`);
+    if (!list) return;
+    if (document.getElementById(`emerg-${data.caseId}`)) return; // Prevent duplicates
+
+    const mapsLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+    const isDispatched = data.status === 'Ambulance Dispatched';
+    const dispatchText = isDispatched ? 'Dispatched' : 'Dispatch';
+    const dispatchStyle = isDispatched ? 'background: #9ca3af; cursor: not-allowed;' : 'background: #ef4444; cursor: pointer;';
+    const dispatchDisabled = isDispatched ? 'disabled' : '';
+
+    list.innerHTML += `
+      <div id="emerg-${data.caseId}" class="grid-3" style="align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
+          <div>
+            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">${escapeHtml(data.patientName)}</h4>
+            <p style="margin: 2px 0; font-size: 12px; color: var(--text-muted);">${escapeHtml(data.phone)}</p>
+          </div>
+        </div>
+        <div>
+          <h5 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">Live Location</h5>
+          <p style="margin: 0; font-size: 11px; color: var(--text-muted); line-height: 1.3;">${escapeHtml(data.address || 'Unknown')}</p>
+          <div id="${prefix}-map-${data.caseId}" style="height: 100px; width: 100%; margin-top: 8px; border-radius: 4px; z-index: 1;"></div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <div>
+              <h5 style="margin: 0; font-size: 13px; font-weight: 700;">--</h5>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Distance</p>
+            </div>
+            <div>
+              <h5 style="margin: 0; font-size: 13px; font-weight: 700;">${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</h5>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Time of Request</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;" id="map-link-${prefix}-${data.caseId}">Maps</a>
+            <button style="flex: 1; padding: 8px; border: none; ${dispatchStyle} color: white; border-radius: 6px; font-weight: 600; font-size: 12px; min-width: 100px;" id="btn-dispatch-${prefix}-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')" ${dispatchDisabled}>${dispatchText}</button>
+            <button style="flex: 1; padding: 8px; border: 1px solid var(--border); background: #f1f5f9; color: #1e293b; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
+          </div>
+        </div>
+      </div>
+    `;
+    setTimeout(() => {
+      mapInstances[`${prefix}_${data.caseId}`] = initMap(`${prefix}-map-${data.caseId}`, data.lat, data.lng, 'patient');
+    }, 100);
+  });
+}
 function renderNotifications(items) { const unread=items.filter(item=>item.status==='UNREAD').length; const count=document.getElementById('notification-count'); const dot=document.getElementById('notification-dot'); if(count) count.textContent=unread; if(dot) dot.classList.toggle('hidden', !unread); const list=document.getElementById('notification-list'); if(list) list.innerHTML=items.length ? items.map(item=>{ let msg=escapeHtml(item.message); msg=msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #ef4444; font-weight: bold; text-decoration: underline;" onclick="event.stopPropagation()">$1</a>'); return `<div class="notification-item ${item.status==='UNREAD'?'unread':''}" onclick="markNotificationRead('${item.id}')">${msg}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`; }).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>'; }
 window.openNotifications = async function() { await fetchNotifications(); openModal('modal-notifications'); };
 window.markNotificationRead = async function(id) { await fetch(`${API_BASE}/notifications/${id}/read`,{method:'POST'}); fetchNotifications(); };
