@@ -735,24 +735,35 @@ function renderPatientDoctorsList() {
   const term = document.getElementById('pt-doc-search-input')?.value.trim().toLowerCase() || '';
   const doctors = allDoctors.filter(doc => !term || [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
   container.innerHTML = doctors.length ? doctors.map(doc => `
-    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(0,0,0,0.05)'">
       <div style="display: flex; gap: 16px;">
-        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
           <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=random&color=fff&size=100" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; bottom: 0; background: #16a34a; width: 100%; color: white; text-align: center; font-size: 10px; font-weight: bold; padding: 2px 0;">Available</div>
         </div>
         <div style="flex: 1;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h4 style="margin: 0; font-size: 16px; font-weight: bold; color: #111827;">
-              <i class="fa-solid fa-thumbs-up" style="color: #4b5563; font-size: 14px; margin-right: 4px;"></i> ${escapeHtml(doc.name)}
+            <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+              ${escapeHtml(doc.name)}
+              <i class="fa-solid fa-badge-check" style="color: #2563EB; font-size: 14px;" title="Verified Medical License"></i>
             </h4>
-            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;"><i class="fa-solid fa-shield-check"></i> Top rated</span>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 8px;">
-            <span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 13px;">${doc.rating} ★</span>
-            <span style="color: #6b7280; font-size: 13px;">${doc.reviews} Ratings</span>
+          
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; margin-bottom: 8px;">
+            <span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${doc.rating} ★</span>
+            <span style="color: #64748B; font-size: 13px; font-weight: 500;"><u>${doc.reviews} Verified Reviews</u></span>
           </div>
-          <p style="color: #6b7280; font-size: 13px; margin: 4px 0;">${escapeHtml(doc.clinic)} • ${escapeHtml(doc.specialization)}</p>
-          <p style="color: #16a34a; font-size: 13px; font-weight: 500; margin: 4px 0;"><i class="fa-regular fa-clock"></i> Open 24 Hrs</p>
+          
+          <p style="color: #374151; font-size: 14px; margin: 4px 0; font-weight: 500;">
+            <i class="fa-solid fa-stethoscope" style="color:#64748B; width:16px;"></i> ${escapeHtml(doc.specialization)}
+          </p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0;">
+            <i class="fa-solid fa-briefcase-medical" style="color:#64748B; width:16px;"></i> ${escapeHtml(doc.exp || '10+ Years Exp.')} • <i class="fa-solid fa-language" style="color:#64748B; margin-left:4px;"></i> ${escapeHtml(doc.languages || 'English, Hindi')}
+          </p>
+          <p style="color: #0F172A; font-size: 14px; font-weight: 700; margin: 6px 0;">
+            <i class="fa-solid fa-indian-rupee-sign" style="color:#64748B; width:16px;"></i> ${doc.fee || 500} Consultation Fee
+          </p>
         </div>
       </div>
       <div style="display: flex; gap: 12px; margin-top: 16px; border-top: 1px solid #f3f4f6; padding-top: 16px;">

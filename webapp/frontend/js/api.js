@@ -364,7 +364,8 @@ window.startSOSCountdown = function() {
   if (textEl) textEl.innerText = 'Keep holding...';
 
   sosTimer = setTimeout(async () => {
-    if (textEl) textEl.innerText = 'Triggering SOS...';
+    if (textEl) textEl.innerText = 'Connecting to Hospital...';
+    showToast('Establishing secure connection to emergency services...', 'info');
     // Get live location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (pos) => {
