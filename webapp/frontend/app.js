@@ -52,9 +52,19 @@ const curatedHealthTips = [
 async function requestJson(path, options = {}) {
   let response;
   try {
+    const headers = options.headers || {};
+    if (currentUser?.token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${currentUser.token}`;
+    }
+    options.headers = headers;
     response = await fetch(`${API_BASE}${path}`, options);
   } catch {
     throw new Error('Cannot connect to HealthSync. Check your internet connection and try again.');
+  }
+
+  if (response.status === 401) {
+    if (typeof logoutCurrentUser === 'function') logoutCurrentUser();
+    throw new Error('Session expired. Please log in again.');
   }
 
   const contentType = response.headers.get('content-type') || '';

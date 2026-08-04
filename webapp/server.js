@@ -454,6 +454,25 @@ const server = http.createServer(async (req, res) => {
 
   // ── API Router (/v1/) ───────────────────────────────────────────────────
   if (pathname.startsWith('/v1/')) {
+    const isPublicRoute = pathname.startsWith('/v1/auth') || pathname.startsWith('/v1/doctors/search') || pathname === '/v1/health';
+    
+    if (!isPublicRoute) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, code: 'AUTH_MISSING', message: 'Unauthorized. Missing token.' }));
+        return;
+      }
+      const token = authHeader.split(' ')[1];
+      const payload = jwtVerify(token);
+      if (!payload) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, code: 'AUTH_INVALID', message: 'Unauthorized. Invalid or expired token.' }));
+        return;
+      }
+      req.user = payload;
+    }
+    
     const body = await readBody(req);
     return apiRouter(req, res, pathname, url, body);
   }
@@ -746,7 +765,7 @@ function apiRouter(req, res, pathname, url, body) {
       const apptId   = 'apt-' + uid();
       const qId      = 'q-'   + uid();
       const patName  = body.patientName || 'Neha Kulkarni';
-      const patId    = body.patientId   || 'pat1';
+      const patId    = req.user ? req.user.userId : (body.patientId || 'pat1');
       const docId    = body.doctorId    || 'doc1';
       const docName  = body.doctorName  || 'Dr. Amit Patil';
       const date     = body.date || new Date().toISOString().split('T')[0];
@@ -861,7 +880,7 @@ function apiRouter(req, res, pathname, url, body) {
 
   // ── GET Prescriptions ──────────────────────────────────────────────────
   if (pathname === '/v1/prescriptions' && method === 'GET') {
-    const patId = url.searchParams.get('patientId') || null;
+    const patId = (req.user && req.user.role === 'PATIENT') ? req.user.userId : (url.searchParams.get('patientId') || null);
     const sql   = patId
       ? 'SELECT * FROM prescriptions WHERE patient_id=? ORDER BY created_at DESC'
       : 'SELECT * FROM prescriptions ORDER BY created_at DESC';
@@ -887,7 +906,7 @@ function apiRouter(req, res, pathname, url, body) {
   // ── POST (Create) Prescription ─────────────────────────────────────────
   if (pathname === '/v1/prescriptions' && method === 'POST') {
     const rxId   = 'rx-' + uid();
-    const patId2 = body.patientId   || 'HS-2026-000001';
+    const patId2 = req.user ? req.user.userId : (body.patientId || 'HS-2026-000001');
     const patNm  = body.patientName || 'Patient';
     const diag   = body.diagnosis;
     const meds   = JSON.stringify(body.medications || []);
@@ -910,7 +929,7 @@ function apiRouter(req, res, pathname, url, body) {
 
   // ── Consent Management ─────────────────────────────────────────────────
   if (pathname === '/v1/consents' && method === 'GET') {
-    const patId3 = url.searchParams.get('patientId');
+    const patId3 = (req.user && req.user.role === 'PATIENT') ? req.user.userId : url.searchParams.get('patientId');
     const sql3   = patId3 ? 'SELECT * FROM consents WHERE patient_id=?' : 'SELECT * FROM consents';
     db.all(sql3, patId3 ? [patId3] : [], (err, rows) =>
       json(res, 200, { success:true, consents: rows || [] }));
@@ -919,7 +938,7 @@ function apiRouter(req, res, pathname, url, body) {
 
   if (pathname === '/v1/consents' && method === 'POST') {
     const cId   = 'con-' + uid();
-    const patId4  = body.patientId || 'pat1';
+    const patId4  = req.user ? req.user.userId : (body.patientId || 'pat1');
     const docId2  = body.doctorId  || 'doc1';
     const docNm2  = body.doctorName || 'Dr. Amit Patil';
     const dur     = body.duration || '1 Visit';
@@ -937,7 +956,7 @@ function apiRouter(req, res, pathname, url, body) {
 
   // ── Emergency SOS Endpoint ─────────────────────────────────────────────
   if (pathname === '/v1/emergency/trigger' && method === 'POST') {
-    const patId = body.patientId || 'pat1';
+    const patId = req.user ? req.user.userId : (body.patientId || 'pat1');
     const lat = body.latitude || 18.5204;
     const lng = body.longitude || 73.8567;
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;

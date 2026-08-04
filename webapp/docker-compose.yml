@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  webapp:
+    build: .
+    container_name: healthsync_webapp
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/usr/src/app/data/healthsync.db
+    volumes:
+      # Mount a local directory to persist the SQLite database outside the container
+      - ./data:/usr/src/app/data
+    restart: always
