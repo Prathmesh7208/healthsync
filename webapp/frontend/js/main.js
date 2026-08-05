@@ -776,6 +776,53 @@ function renderPatientDoctorsList() {
 window.handlePatientDocSearch = function() { renderPatientDoctorsList(); };
 window.clearPatientDoctorSearch = function() { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
 
+window.openSymptomDoctorsModal = function(symptom) {
+  const container = document.getElementById('symptom-doctors-list');
+  const title = document.getElementById('modal-symptom-title');
+  if (!container || !title) return;
+  
+  title.innerText = `Doctors for ${symptom}`;
+  
+  const term = symptom.toLowerCase().split(' / ')[0]; // Handle "Swine Flu / Fever" etc.
+  const doctors = allDoctors.filter(doc => [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
+  
+  container.innerHTML = doctors.length ? doctors.map(doc => `
+    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+      <div style="display: flex; gap: 16px;">
+        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+          <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=random&color=fff&size=100" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; bottom: 0; background: #16a34a; width: 100%; color: white; text-align: center; font-size: 10px; font-weight: bold; padding: 2px 0;">Available</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+              ${escapeHtml(doc.name)}
+              <i class="fa-solid fa-badge-check" style="color: #2563EB; font-size: 14px;"></i>
+            </h4>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; margin-bottom: 8px;">
+            <span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${doc.rating} ★</span>
+            <span style="color: #64748B; font-size: 13px; font-weight: 500;"><u>${doc.reviews} Reviews</u></span>
+          </div>
+          <p style="color: #374151; font-size: 14px; margin: 4px 0; font-weight: 500;">
+            <i class="fa-solid fa-stethoscope" style="color:#64748B; width:16px;"></i> ${escapeHtml(doc.specialization)}
+          </p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0;">
+            <i class="fa-solid fa-indian-rupee-sign" style="color:#64748B; width:16px;"></i> ${doc.fee || 500} Fee
+          </p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 16px; border-top: 1px solid #f3f4f6; padding-top: 16px;">
+        <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')"><i class="fa-solid fa-calendar-check"></i> Book Now</button>
+      </div>
+    </div>
+  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found for ${symptom}</p></div>`;
+  
+  const modal = document.getElementById('modal-symptom-doctors');
+  if (modal) modal.classList.add('active');
+};
+
 function renderPatientDashboardPrescriptions() {
   const container = document.getElementById('patient-recent-rx-list');
   if (!container) return;
