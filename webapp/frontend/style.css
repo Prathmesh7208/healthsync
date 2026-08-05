@@ -531,20 +531,28 @@ table.hs-table { width: 100%; border-collapse: collapse; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
 .form-group { display: flex; flex-direction: column; gap: 5px; }
 .form-group.full { grid-column: 1 / -1; }
-.form-label { font-size: 12px; font-weight: 600; color: var(--text-medium); }
-.form-label .req { color: var(--red); }
+.form-label { font-size: 14px; font-weight: 600; color: var(--text-dark); margin-bottom: 6px; }
+.form-label .req { color: var(--red); margin-left: 2px; }
 .form-control {
-  padding: 8px 12px;
+  padding: 0 16px;
+  height: 48px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 13px; font-family: inherit;
-  color: var(--text-dark); background: var(--card-bg);
-  transition: border-color .15s;
+  font-size: 15px; font-family: inherit; font-weight: 500;
+  color: var(--text-dark); background: #f8fafc;
+  transition: all 0.2s ease;
+  width: 100%;
 }
-.form-control:focus { border-color: var(--blue-primary); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
-.form-control::placeholder { color: var(--text-light); }
-select.form-control { cursor: pointer; }
-textarea.form-control { resize: vertical; min-height: 80px; }
+.form-control:focus { border-color: var(--blue-primary); background: #ffffff; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); outline: none; }
+.form-control::placeholder { color: var(--text-light); font-weight: 400; }
+select.form-control { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px; }
+textarea.form-control { resize: vertical; min-height: 100px; padding: 12px 16px; }
+
+/* ─── Input With Icon ─── */
+.input-with-icon { position: relative; display: flex; align-items: center; }
+.input-with-icon i { position: absolute; left: 16px; color: var(--text-light); font-size: 16px; transition: color 0.2s ease; pointer-events: none; }
+.input-with-icon .form-control { padding-left: 44px; }
+.input-with-icon:focus-within i { color: var(--blue-primary); }
 
 /* ─── Radio / Gender Select ─── */
 .radio-group { display: flex; gap: 12px; align-items: center; }
