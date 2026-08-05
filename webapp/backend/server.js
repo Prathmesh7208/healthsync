@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const { Server } = require("socket.io");
 
 const dbPath = path.join(__dirname, 'healthsync.db');
 const db = new sqlite3.Database(dbPath);
@@ -137,6 +138,9 @@ db.serialize(() => {
     }
   });
 });
+
+// Global state for live emergency SOS tracking
+const activeEmergencies = [];
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -397,6 +401,12 @@ const server = http.createServer((req, res) => {
         });
       }
 
+      // Fetch Pending Emergencies
+      else if (pathname === '/v1/emergency/pending' && req.method === 'GET') {
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, cases: activeEmergencies }));
+      }
+
       else {
         res.writeHead(404);
 
@@ -423,6 +433,53 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content, 'utf-8');
     }
+  });
+});
+
+// Setup Socket.io Server
+const io = new Server(server, { cors: { origin: "*" } });
+
+io.on('connection', (socket) => {
+  socket.on('sos_trigger', (data) => {
+    const newCase = {
+      caseId: 'sos-' + Date.now(),
+      patientId: data.userId,
+      patientName: data.patientName || 'Unknown Patient',
+      phone: data.phone || 'N/A',
+      lat: data.lat,
+      lng: data.lng,
+      timestamp: Date.now(),
+      status: 'Pending',
+      address: 'Live Location Tracking...'
+    };
+    activeEmergencies.push(newCase);
+    
+    // Broadcast to Receptionist and Ambulance
+    io.emit('sos_alert', newCase);
+    
+    // Acknowledge back to sender
+    socket.emit('sos_acknowledged', newCase);
+  });
+
+  socket.on('dispatch_ambulance', (data) => {
+    const e = activeEmergencies.find(c => c.caseId === data.caseId);
+    if (e) e.status = 'Ambulance Dispatched';
+    io.emit('sos_status_update', { caseId: data.caseId, status: 'Ambulance Dispatched' });
+  });
+
+  socket.on('resolve_emergency', (data) => {
+    const idx = activeEmergencies.findIndex(c => c.caseId === data.caseId);
+    if (idx !== -1) activeEmergencies.splice(idx, 1);
+    io.emit('emergency_resolved', { caseId: data.caseId });
+  });
+
+  socket.on('ambulance_location_update', (data) => {
+    const e = activeEmergencies.find(c => c.caseId === data.caseId);
+    if (e) {
+      e.lat = data.lat;
+      e.lng = data.lng;
+    }
+    io.emit('ambulance_location_update', data);
   });
 });
 
