@@ -40,39 +40,39 @@
 
 /* ─── Role Themes ─── */
 .role-panel#panel-patient {
-  --sidebar-bg: #ffffff;
-  --sidebar-text: #334155;
-  --sidebar-hover: #f1f5f9;
-  --sidebar-active: #e0f2fe;
-  --theme-accent: #0284c7;
+  --sidebar-bg: #16213e;
+  --sidebar-text: #e2e8f0;
+  --sidebar-hover: #1e2c52;
+  --sidebar-active: #283a6b;
+  --theme-accent: #2563EB;
 }
 .role-panel#panel-doctor {
-  --sidebar-bg: #ffffff;
-  --sidebar-text: #334155;
-  --sidebar-hover: #f1f5f9;
-  --sidebar-active: #ede9fe;
-  --theme-accent: #7c3aed;
+  --sidebar-bg: #2a1f44;
+  --sidebar-text: #e2e8f0;
+  --sidebar-hover: #3b2b5e;
+  --sidebar-active: #533e85;
+  --theme-accent: #8B5CF6;
 }
 .role-panel#panel-reception {
-  --sidebar-bg: #ffffff;
-  --sidebar-text: #334155;
-  --sidebar-hover: #f1f5f9;
-  --sidebar-active: #ccfbf1;
-  --theme-accent: #0d9488;
+  --sidebar-bg: #114c45;
+  --sidebar-text: #e2e8f0;
+  --sidebar-hover: #16645b;
+  --sidebar-active: #1c7c71;
+  --theme-accent: #10B981;
 }
 .role-panel#panel-ambulance {
-  --sidebar-bg: #ffffff;
-  --sidebar-text: #334155;
-  --sidebar-hover: #f1f5f9;
-  --sidebar-active: #fee2e2;
-  --theme-accent: #dc2626;
+  --sidebar-bg: #1e2a38;
+  --sidebar-text: #e2e8f0;
+  --sidebar-hover: #293a4d;
+  --sidebar-active: #374b63;
+  --theme-accent: #2563EB;
 }
 
 
 /* ─── Reset ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
-body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: var(--text-dark); background: var(--page-bg); background-image: radial-gradient(at 0% 0%, hsla(210, 100%, 95%, 1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(180, 100%, 95%, 1) 0, transparent 50%); background-attachment: fixed; letter-spacing: -0.01em; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; color: var(--text-dark); background: var(--page-bg); letter-spacing: -0.01em; }
 a { text-decoration: none; color: inherit; }
 button { font-family: inherit; cursor: pointer; border: none; }
 input, select, textarea { font-family: inherit; outline: none; }
@@ -156,14 +156,14 @@ img { max-width: 100%; display: block; }
 }
 
 .nav-item {
-  padding: 14px 20px;
-  margin: 6px 16px;
+  padding: 12px 20px;
+  margin: 4px 12px;
   color: var(--sidebar-text);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border-radius: var(--radius-sm);
   transition: all 0.2s ease;
 }
@@ -173,17 +173,17 @@ img { max-width: 100%; display: block; }
 }
 .nav-item.active {
   background: var(--sidebar-active);
-  color: var(--theme-accent);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  color: #fff;
+  font-weight: 600;
 }
 .nav-item.active .nav-icon {
-  color: var(--theme-accent);
+  color: #fff;
 }
 .nav-icon {
-  width: 22px;
+  width: 20px;
   text-align: center;
   color: var(--text-light);
-  font-size: 18px;
+  font-size: 16px;
   transition: color 0.2s ease;
 }
 

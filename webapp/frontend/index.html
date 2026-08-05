@@ -160,45 +160,45 @@
 
             <!-- Top Row: 4 Main Action Cards -->
             <div class="grid-4" style=" gap: 16px; margin-bottom: 24px;">
-              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; box-shadow: 0 10px 20px rgba(2, 132, 199, 0.2);" onclick="switchPatientPage('doctors')">
-                <div style="background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; backdrop-filter: blur(4px);">
-                  <i class="fa-solid fa-user-doctor" style="color: white; font-size: 20px;"></i>
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;" onclick="switchPatientPage('doctors')">
+                <div style="background: #e0e7ff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                  <i class="fa-solid fa-calendar-plus" style="color: #4f46e5; font-size: 20px;"></i>
                 </div>
                 <div>
-                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: white; letter-spacing: -0.01em;">Book Appointment</h4>
-                  <p style="font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.4; font-weight: 500;">Find top doctors & book instantly</p>
+                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: #1e293b;">Book Appointment</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">Find doctors & book instantly</p>
                 </div>
               </div>
 
-              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 10px 20px rgba(5, 150, 105, 0.2);" onclick="switchPatientPage('appointments')">
-                <div style="background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; backdrop-filter: blur(4px);">
-                  <i class="fa-solid fa-calendar-check" style="color: white; font-size: 20px;"></i>
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;" onclick="switchPatientPage('appointments')">
+                <div style="background: #dcfce7; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                  <i class="fa-solid fa-calendar-check" style="color: #16a34a; font-size: 20px;"></i>
                 </div>
                 <div>
-                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: white; letter-spacing: -0.01em;">My Appointments</h4>
-                  <p style="font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.4; font-weight: 500;">View your upcoming schedules</p>
+                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: #1e293b;">My Appointments</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">View upcoming schedules</p>
                 </div>
               </div>
 
-              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; box-shadow: 0 10px 20px rgba(109, 40, 217, 0.2);" onclick="switchPatientPage('health-records')">
-                <div style="background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; backdrop-filter: blur(4px);">
-                  <i class="fa-solid fa-file-waveform" style="color: white; font-size: 20px;"></i>
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;" onclick="switchPatientPage('health-records')">
+                <div style="background: #f3e8ff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                  <i class="fa-solid fa-file-medical" style="color: #9333ea; font-size: 20px;"></i>
                 </div>
                 <div>
-                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: white; letter-spacing: -0.01em;">Health Records</h4>
-                  <p style="font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.4; font-weight: 500;">Access all your medical data</p>
+                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: #1e293b;">Health Records</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">Access all medical data</p>
                 </div>
               </div>
 
-              <div id="patient-sos-btn" class="card btn-emergency" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px; background: linear-gradient(135deg, #ef4444, #b91c1c); border: none; box-shadow: 0 10px 20px rgba(220, 38, 38, 0.3); align-items: flex-start;" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()" onmouseleave="cancelSOSCountdown()" ontouchstart="startSOSCountdown()" ontouchend="cancelSOSCountdown()">
-                <div style="background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: white; font-weight: 800; font-size: 13px; backdrop-filter: blur(4px);">
+              <div id="patient-sos-btn" class="card btn-emergency" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px; background: #fef2f2; border: 1px solid #fecaca; align-items: flex-start;" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()" onmouseleave="cancelSOSCountdown()" ontouchstart="startSOSCountdown()" ontouchend="cancelSOSCountdown()">
+                <div style="background: #fee2e2; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: #dc2626; font-weight: 800; font-size: 14px;">
                   SOS
                 </div>
                 <div>
-                  <h4 id="sos-btn-text" style="font-weight: 800; margin-bottom: 6px; font-size: 16px; color: white; letter-spacing: -0.01em;">Emergency SOS</h4>
-                  <p style="font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.4; font-weight: 500;">Hold to dispatch ambulance</p>
+                  <h4 id="sos-btn-text" style="font-weight: 800; margin-bottom: 6px; font-size: 16px; color: #991b1b;">Emergency SOS</h4>
+                  <p style="font-size: 13px; color: #b91c1c; line-height: 1.4;">Hold to dispatch ambulance</p>
                 </div>
-                <div id="sos-progress" style="height: 4px; background: rgba(255,255,255,0.5); width: 0%; transition: width 0.1s linear; margin-top: 12px; border-radius: 2px;"></div>
+                <div id="sos-progress" style="height: 4px; background: #dc2626; width: 0%; transition: width 0.1s linear; margin-top: 12px; border-radius: 2px;"></div>
               </div>
             </div>
 
