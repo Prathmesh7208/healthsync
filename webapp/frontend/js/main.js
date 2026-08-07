@@ -716,7 +716,6 @@ async function fetchPrescriptions() {
 // ---------------------------------------------------------------------------
 function populateDoctorSelects() {
   const selects = [
-    document.getElementById('booking-doctor-select'),
     document.getElementById('issue-token-doctor-select'),
     document.getElementById('walkin-form-doctor')
   ];
@@ -1200,8 +1199,11 @@ window.openBookAppointmentModal = function() {
 window.openBookAppointmentModalWithDoctor = function(doctorId) {
   bookingMode = 'IN_PERSON';
   setBookingModeUI();
-  const select = document.getElementById('booking-doctor-select');
-  if (select) select.value = doctorId;
+  const input = document.getElementById('booking-doctor-name');
+  if (input) {
+    const doc = allDoctors.find(d => d.id === doctorId);
+    input.value = doc ? doc.name : '';
+  }
   openModal('modal-book-appt');
 };
 
@@ -1219,15 +1221,24 @@ window.openOnlineConsultation = function() {
 };
 
 window.submitAppointmentBooking = async function() {
-  const select = document.getElementById('booking-doctor-select');
-  const docId = select?.value || 'doc1';
-  const docName = select?.options[select.selectedIndex]?.text.split(' (')[0] || 'Dr. Priya Sharma';
+  const docInput = document.getElementById('booking-doctor-name');
+  const docName = docInput?.value.trim() || 'Dr. Priya Sharma';
+  const docId = 'manual_entry';
   const dateVal = document.getElementById('booking-date-input')?.value;
   const timeVal = document.getElementById('booking-time-select')?.value;
   const patName = document.getElementById('booking-patient-name')?.value || 'Rahul Verma';
+  const reasonVal = document.getElementById('booking-reason')?.value || '';
 
+  if (!docName) {
+    showToast('Please enter the doctor\\'s name.', 'warning');
+    return;
+  }
   if (!dateVal || !timeVal) {
     showToast('Please pick a date and time slot.', 'warning');
+    return;
+  }
+  if (!reasonVal) {
+    showToast('Please enter a reason for the visit.', 'warning');
     return;
   }
 
@@ -1235,7 +1246,7 @@ window.submitAppointmentBooking = async function() {
     const res = await fetch(`${API_BASE}/appointments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ doctorId: docId, doctorName: docName, patientName: patName, date: dateVal, time: timeVal, consultationType: bookingMode })
+      body: JSON.stringify({ doctorId: docId, doctorName: docName, patientName: patName, date: dateVal, time: timeVal, consultationType: bookingMode, reason: reasonVal })
     });
     const data = await res.json();
     if (data.success) {
