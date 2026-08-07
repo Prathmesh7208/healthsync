@@ -716,7 +716,24 @@
                     <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchDoctorPage('patients')">View Full Profile</a>
                   </div>
 
-                  <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 24px;">
+                  <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 20px;">
+
+                  <!-- AI Patient Summary Section -->
+                  <div class="ai-summary-card hover-lift" style="margin-bottom: 24px; padding: 18px; border-radius: 14px; background: linear-gradient(145deg, #f0f9ff 0%, #eef2ff 100%); border: 1px solid #e0e7ff; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -10px; right: -10px; opacity: 0.05; font-size: 80px; color: #4f46e5;"><i class="fa-solid fa-microchip"></i></div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                      <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);">
+                        <i class="fa-solid fa-sparkles" style="animation: pulse 2s infinite;"></i>
+                      </div>
+                      <h3 style="font-size: 15px; font-weight: 800; margin: 0; background: linear-gradient(90deg, #3730a3, #6d28d9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI Patient Insights</h3>
+                    </div>
+                    <p style="font-size: 13.5px; color: #334155; line-height: 1.6; margin: 0; position: relative; z-index: 1;" id="doc-sel-pat-ai-summary">
+                      Please select a patient from today's appointments to generate an AI-powered summary of their health records, past visits, and current condition.
+                    </p>
+                    <div id="doc-sel-pat-ai-tags" style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-size: 11px; padding: 4px 12px; background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: 20px; color: #475569; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">Awaiting Selection</span>
+                    </div>
+                  </div>
 
                   <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Appointment Details</h3>
                   
