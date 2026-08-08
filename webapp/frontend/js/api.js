@@ -34,10 +34,11 @@ function escapeHtml(value) {
 }
 
 function populateCountryCodeSelects() {
+  const getFlagEmoji = iso => iso.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
   const countries = window.HEALTHSYNC_COUNTRY_CODES || [['IN', 'India', '+91']];
   document.querySelectorAll('.country-code-select').forEach(select => {
     if (select.options.length) return;
-    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${name} (${code})</option>`).join('');
+    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${getFlagEmoji(iso)} ${name} (${code})</option>`).join('');
   });
 }
 
