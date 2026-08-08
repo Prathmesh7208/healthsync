@@ -33,26 +33,27 @@ function escapeHtml(value) {
   return node.innerHTML;
 }
 
+function getFlagEmoji(iso) {
+  if (!iso) return String.fromCodePoint(0x1F3F3, 0xFE0F, 0x200D, 0x2690, 0xFE0F); // White flag fallback
+  return iso.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+}
+
 function populateCountryCodeSelects() {
   const countries = window.HEALTHSYNC_COUNTRY_CODES || [['IN', 'India', '+91']];
   document.querySelectorAll('.country-code-select').forEach(select => {
     if (select.options.length) return;
-    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${name} (${code})</option>`).join('');
+    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${getFlagEmoji(iso)} ${name} (${code})</option>`).join('');
     createCountryPicker(select, countries);
   });
 }
-
-function countryFlagUrl(iso) { return `https://flagcdn.com/w40/${String(iso || 'in').toLowerCase()}.png`; }
 
 function syncCountryPicker(select) {
   const picker = select?.previousElementSibling;
   if (!picker?.classList.contains('country-picker')) return;
   const selected = select.options[select.selectedIndex];
   if (!selected) return;
-  const image = picker.querySelector('.country-picker-trigger img');
   const label = picker.querySelector('.country-picker-label');
-  if (image) { image.src = countryFlagUrl(selected.dataset.iso); image.alt = selected.dataset.iso || ''; }
-  if (label) label.textContent = selected.value;
+  if (label) label.textContent = `${getFlagEmoji(selected.dataset.iso)} ${selected.value}`;
 }
 
 function createCountryPicker(select, countries) {
@@ -60,15 +61,20 @@ function createCountryPicker(select, countries) {
   select.dataset.enhanced = 'true';
   const picker = document.createElement('div');
   picker.className = 'country-picker';
-  picker.innerHTML = `<button type="button" class="country-picker-trigger" aria-haspopup="listbox" aria-expanded="false"><img alt=""><span class="country-picker-label"></span><i class="fa-solid fa-chevron-down"></i></button><div class="country-picker-menu hidden"><div class="country-picker-options" role="listbox"></div></div>`;
+  picker.innerHTML = `<button type="button" class="country-picker-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="country-picker-label"></span><i class="fa-solid fa-chevron-down"></i></button><div class="country-picker-menu hidden"><div class="country-picker-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search country or code" aria-label="Search country code"></div><div class="country-picker-options" role="listbox"></div></div>`;
   select.before(picker);
   select.classList.add('native-country-code-select');
   
   const optionsRoot = picker.querySelector('.country-picker-options');
-  optionsRoot.innerHTML = countries.map(([iso, name, code], i) => `<button type="button" class="country-picker-option ${iso === 'IN' ? 'selected' : ''}" data-value="${code}" data-index="${i}"><img src="${countryFlagUrl(iso)}" alt="${iso} flag"><span>${name} (${code})</span></button>`).join('');
-  
+  const searchInput = picker.querySelector('input[type="search"]');
   const menu = picker.querySelector('.country-picker-menu');
   const trigger = picker.querySelector('.country-picker-trigger');
+  
+  const renderOptions = (query = '') => {
+    const term = query.toLowerCase().trim();
+    const filtered = countries.map((c, i) => ({ c, i })).filter(({ c }) => c[1].toLowerCase().includes(term) || c[2].includes(term) || c[0].toLowerCase().includes(term));
+    optionsRoot.innerHTML = filtered.map(({ c: [iso, name, code], i }) => `<button type="button" class="country-picker-option ${select.selectedIndex === i ? 'selected' : ''}" data-value="${code}" data-index="${i}"><span>${getFlagEmoji(iso)}</span><span>${name} (${code})</span></button>`).join('');
+  };
   
   trigger.addEventListener('click', (e) => { 
     e.stopPropagation();
@@ -77,25 +83,30 @@ function createCountryPicker(select, countries) {
     menu.classList.toggle('hidden', isOpen); 
     trigger.setAttribute('aria-expanded', String(!isOpen)); 
     if (!isOpen) {
+      searchInput.value = '';
+      renderOptions();
+      searchInput.focus();
       const selectedBtn = optionsRoot.querySelector('.selected');
       if (selectedBtn) selectedBtn.scrollIntoView({ block: 'nearest' });
     }
   });
   
+  searchInput.addEventListener('input', () => renderOptions(searchInput.value));
+  searchInput.addEventListener('click', (e) => e.stopPropagation());
+  
   optionsRoot.addEventListener('click', event => { 
     const optionBtn = event.target.closest('.country-picker-option'); 
     if (!optionBtn) return; 
-    select.selectedIndex = optionBtn.dataset.index;
+    select.selectedIndex = parseInt(optionBtn.dataset.index, 10);
     select.dispatchEvent(new Event('change', { bubbles:true })); 
     
-    optionsRoot.querySelectorAll('.country-picker-option').forEach(b => b.classList.remove('selected'));
-    optionBtn.classList.add('selected');
-    
+    renderOptions(searchInput.value);
     syncCountryPicker(select); 
     menu.classList.add('hidden'); 
     trigger.setAttribute('aria-expanded', 'false'); 
   });
   
+  renderOptions();
   syncCountryPicker(select); 
 }
 
