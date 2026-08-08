@@ -9,19 +9,6 @@
 // Render serves the website and API from the same service.
 var API_BASE = `${window.location.origin}/v1`;
 
-window.HEALTHSYNC_COUNTRY_CODES = [
-  ['IN', 'India', '+91'],
-  ['US', 'United States', '+1'],
-  ['GB', 'United Kingdom', '+44'],
-  ['AU', 'Australia', '+61'],
-  ['CA', 'Canada', '+1'],
-  ['SG', 'Singapore', '+65'],
-  ['AE', 'United Arab Emirates', '+971'],
-  ['NZ', 'New Zealand', '+64'],
-  ['ZA', 'South Africa', '+27'],
-  ['IE', 'Ireland', '+353']
-];
-
 // Global variables
 var allDoctors = [];
 var todayAppointments = [];
