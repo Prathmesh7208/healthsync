@@ -90,6 +90,9 @@ db.serialize(() => {
   )`);
   // Safe forward migration for databases created before consultation type existed.
   db.run("ALTER TABLE appointments ADD COLUMN consultation_type TEXT NOT NULL DEFAULT 'IN_PERSON'", () => {});
+  db.run("ALTER TABLE appointments ADD COLUMN patient_type TEXT", () => {});
+  db.run("ALTER TABLE appointments ADD COLUMN reason_for_visit TEXT", () => {});
+  db.run("ALTER TABLE appointments ADD COLUMN clinic_name TEXT", () => {});
 
   db.run(`CREATE TABLE IF NOT EXISTS queue_entries (
     id TEXT PRIMARY KEY,
@@ -894,12 +897,15 @@ function apiRouter(req, res, pathname, url, body) {
   }
 
   if (pathname === '/v1/appointments' && method === 'POST') {
-    const patName  = body.patientName || 'Neha Kulkarni';
+    const patName  = body.patientName || 'Patient';
     const patId    = req.user ? req.user.userId : (body.patientId || 'pat1');
     const docId    = body.doctorId    || 'doc1';
-    const docName  = body.doctorName  || 'Dr. Amit Patil';
+    const docName  = body.doctorName  || 'Doctor';
     const date     = body.date || new Date().toISOString().split('T')[0];
     const time     = body.time || nowTime();
+    const patType  = body.patientType || 'Myself';
+    const reason   = body.reasonForVisit || '';
+    const clinic   = body.clinicName || 'HealthSync Multispeciality Hospital';
 
     db.get('SELECT COUNT(*) AS c FROM appointments', (err, rowCount) => {
       const nextNum  = (rowCount?.c || 0) + 17;
@@ -909,10 +915,10 @@ function apiRouter(req, res, pathname, url, body) {
 
       db.run(
         `INSERT INTO appointments 
-           (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, consultation_type, token_number)
-         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+           (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, consultation_type, token_number, patient_type, reason_for_visit, clinic_name)
+         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
          WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE doctor_id=? AND slot_date=? AND slot_time=? AND status != 'Cancelled')`,
-        [apptId, patId, patName, docId, docName, date, time, body.consultationType === 'ONLINE' ? 'ONLINE' : 'IN_PERSON', token, docId, date, time],
+        [apptId, patId, patName, docId, docName, date, time, body.consultationType === 'ONLINE' ? 'ONLINE' : 'IN_PERSON', token, patType, reason, clinic, docId, date, time],
         function(err) {
           if (err) return json(res, 500, { success: false, message: 'Database error' });
           if (this.changes === 0) {
@@ -926,7 +932,7 @@ function apiRouter(req, res, pathname, url, body) {
             [qId, apptId, token, patId, patName, docId, time],
             () => json(res, 201, {
               success: true,
-              appointment: { id: apptId, token, doctorName: docName, date, time, status: 'CONFIRMED' }
+              appointment: { id: apptId, token, doctorName: docName, date, time, status: 'CONFIRMED', clinicName: clinic, patientType: patType }
             })
           );
         }
