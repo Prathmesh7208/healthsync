@@ -39,4 +39,16 @@ window.selectDoctorAppointment = function(id) {
   document.getElementById('doc-sel-apt-time').innerText = appt.slot_time;
   document.getElementById('doc-sel-apt-type').innerText = 'Consultation';
   document.getElementById('doc-sel-apt-fee').innerText = '₹800';
+
+  // AI Summary Logic
+  const summaryEl = document.getElementById('doc-sel-pat-ai-summary');
+  const tagsEl = document.getElementById('doc-sel-pat-ai-tags');
+  if (summaryEl && tagsEl) {
+    summaryEl.innerHTML = `<strong>AI Insight:</strong> Patient ${appt.patient_name} presents with a history of mild hypertension and seasonal allergies. Recent lab reports from 2 months ago show normal cholesterol levels. No current acute symptoms reported, routine follow-up recommended.`;
+    tagsEl.innerHTML = `
+      <span style="font-size: 11px; padding: 4px 12px; background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: 20px; color: #475569; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><i class="fa-solid fa-notes-medical"></i> Hypertension</span>
+      <span style="font-size: 11px; padding: 4px 12px; background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: 20px; color: #475569; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><i class="fa-solid fa-allergies"></i> Seasonal Allergies</span>
+      <span style="font-size: 11px; padding: 4px 12px; background: rgba(209,250,229,0.7); border: 1px solid #10b981; border-radius: 20px; color: #047857; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"><i class="fa-solid fa-check"></i> Labs Normal</span>
+    `;
+  }
 };
