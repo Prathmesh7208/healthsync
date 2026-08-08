@@ -1184,7 +1184,7 @@ function renderAppointmentsList() {
               ${appt.status === 'CONFIRMED' ? `<button class="btn btn-success btn-xs" onclick="updateAppointmentStatus('${appt.id}', 'Checked In')">Check-in</button>` : ''}
               ${appt.status === 'Checked In' ? `<button class="btn btn-primary btn-xs" onclick="updateAppointmentStatus('${appt.id}', 'Waiting')">Gen Token & Queue</button>` : ''}
               <button class="btn btn-secondary btn-xs" onclick="alert('View Patient Profile: ${appt.patient_name}')">View</button>
-              ${!['CANCELLED', 'COMPLETED'].includes(appt.status.toUpperCase()) ? `<button class="btn btn-danger btn-xs" onclick="cancelAppointment('${appt.id}')">Cancel</button>` : ''}
+              ${!['CANCELLED', 'COMPLETED'].includes(String(appt.status || '').toUpperCase()) ? `<button class="btn btn-danger btn-xs" onclick="cancelAppointment('${appt.id}')">Cancel</button>` : ''}
             </div>
           </td>
         </tr>
@@ -1230,7 +1230,7 @@ window.selectDoctorAppointment = function(id) {
     </div>
   `;
 
-  const s = appt.status.toUpperCase();
+  const s = String(appt.status || '').toUpperCase();
   actions.innerHTML = `
     <button class="btn btn-secondary" style="flex: 1 1 45%;" onclick="alert('Viewing patient history for ${appt.patient_name}')"><i class="fa-solid fa-file-medical"></i> View Patient</button>
     ${['PENDING', 'CONFIRMED'].includes(s) ? `<button class="btn btn-danger" style="flex: 1 1 45%;" onclick="updateAppointmentStatus('${appt.id}', 'Rejected'); closeModal('modal-doctor-appointment');">Reject</button>` : ''}
