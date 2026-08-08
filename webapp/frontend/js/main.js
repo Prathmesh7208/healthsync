@@ -18,7 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
   applyLanguage(selectedLanguage);
   populateCountryCodeSelects();
   updateAppHistoryButtons();
-  if (isMobileAppNavigation()) history.replaceState({ healthsyncNavigation: true, role: 'patient', page: 'dashboard' }, '', window.location.href);
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#')) {
+    const parts = hash.substring(1).split('/');
+    if (parts.length === 2) {
+      history.replaceState({ healthsyncNavigation: true, role: parts[0], page: parts[1] }, '', hash);
+      setTimeout(() => goToAppHistoryState({ role: parts[0], page: parts[1] }), 50);
+    }
+  } else {
+    history.replaceState({ healthsyncNavigation: true, role: 'patient', page: 'dashboard' }, '', '#patient/dashboard');
+  }
   renderPatientHealthProfile();
   startHealthTipRotation();
   restoreSession();
@@ -324,7 +333,8 @@ function recordAppNavigation(role, page) {
   appHistory = appHistory.slice(0, appHistoryIndex + 1);
   appHistory.push({ role, page });
   appHistoryIndex = appHistory.length - 1;
-  if (isMobileAppNavigation()) history.pushState({ healthsyncNavigation: true, role, page }, '', window.location.href);
+  const newUrl = `#${role}/${page}`;
+  history.pushState({ healthsyncNavigation: true, role, page }, '', newUrl);
   updateAppHistoryButtons();
 }
 function updateAppHistoryButtons() {
@@ -344,7 +354,7 @@ window.goAppBack = function() { if (appHistoryIndex === 0) return; appHistoryInd
 window.goAppForward = function() { if (appHistoryIndex >= appHistory.length - 1) return; appHistoryIndex++; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
 window.addEventListener('popstate', event => {
   const state = event.state;
-  if (!isMobileAppNavigation() || !state?.healthsyncNavigation) return;
+  if (!state?.healthsyncNavigation) return;
   const index = appHistory.findIndex(item => item.role === state.role && item.page === state.page);
   if (index >= 0) appHistoryIndex = index;
   else { appHistory.push({ role: state.role, page: state.page }); appHistoryIndex = appHistory.length - 1; }
