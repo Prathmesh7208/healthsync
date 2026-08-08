@@ -1460,11 +1460,11 @@ window.openBookAppointmentModalWithDoctor = function(doctorId) {
   // Render doc info
   document.getElementById('booking-doc-info').innerHTML = `
     <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #64748b;">
-      ${bookingDoctor.full_name.substring(4, 6)}
+      ${(bookingDoctor.name || bookingDoctor.full_name || 'Dr. Doctor').substring(4, 6)}
     </div>
     <div>
-      <h4 style="margin: 0; font-size: 15px; color: #1e293b;">${escapeHtml(bookingDoctor.full_name)}</h4>
-      <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${escapeHtml(bookingDoctor.specialization)} • ₹${bookingDoctor.consultation_fee || 500}</p>
+      <h4 style="margin: 0; font-size: 15px; color: #1e293b;">${escapeHtml(bookingDoctor.name || bookingDoctor.full_name || 'Doctor')}</h4>
+      <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${escapeHtml(bookingDoctor.specialization)} • ₹${bookingDoctor.fee || bookingDoctor.consultation_fee || 500}</p>
     </div>
   `;
   
@@ -1574,11 +1574,11 @@ window.selectBookingTime = function(timeStr) {
 window.bookingNextStep = function() {
   if (bookingStep === 1) {
     // Show summary
-    document.getElementById('summary-doc-name').textContent = bookingDoctor.full_name;
+    document.getElementById('summary-doc-name').textContent = bookingDoctor.name || bookingDoctor.full_name || 'Doctor';
     document.getElementById('summary-doc-spec').textContent = bookingDoctor.specialization;
     document.getElementById('summary-date').textContent = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('summary-time').textContent = bookingTime;
-    document.getElementById('summary-fee').textContent = `₹${bookingDoctor.consultation_fee || 500}`;
+    document.getElementById('summary-fee').textContent = `₹${bookingDoctor.fee || bookingDoctor.consultation_fee || 500}`;
     
     const patNameEl = document.getElementById('summary-pat-name');
     if (patNameEl) patNameEl.textContent = currentUser?.full_name || 'Patient';
@@ -1616,7 +1616,7 @@ window.submitAppointmentBooking = async function() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         doctorId: bookingDoctor.id, 
-        doctorName: bookingDoctor.full_name, 
+        doctorName: bookingDoctor.name || bookingDoctor.full_name || 'Doctor', 
         patientId: currentUser?.id || 'pat1',
         patientName: currentUser?.full_name || 'Patient', 
         date: bookingDate, 
@@ -1639,7 +1639,7 @@ window.submitAppointmentBooking = async function() {
     
     if (data.success) {
       // Show success screen
-      document.getElementById('success-doc-name').textContent = bookingDoctor.full_name;
+      document.getElementById('success-doc-name').textContent = bookingDoctor.name || 'Doctor';
       document.getElementById('success-date').textContent = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('success-time').textContent = bookingTime;
       document.getElementById('success-appt-id').textContent = data.appointment.id;
