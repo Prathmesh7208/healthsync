@@ -1440,7 +1440,7 @@ let bookingTime = null;
 let bookingStep = 1;
 
 window.openBookAppointmentModalWithDoctor = function(doctorId) {
-  bookingDoctor = allDoctors.find(d => d.id === doctorId);
+  bookingDoctor = allDoctors.find(d => String(d.id) === String(doctorId));
   if (!bookingDoctor) return;
   bookingDate = null;
   bookingTime = null;
@@ -1570,6 +1570,9 @@ window.bookingNextStep = function() {
     document.getElementById('summary-time').textContent = bookingTime;
     document.getElementById('summary-fee').textContent = `₹${bookingDoctor.consultation_fee || 500}`;
     
+    const patNameEl = document.getElementById('summary-pat-name');
+    if (patNameEl) patNameEl.textContent = currentUser?.full_name || 'Patient';
+    
     document.getElementById('btn-booking-next').textContent = 'Confirm Appointment';
     showBookingStep(2);
   } else if (bookingStep === 2) {
@@ -1604,7 +1607,8 @@ window.submitAppointmentBooking = async function() {
       body: JSON.stringify({ 
         doctorId: bookingDoctor.id, 
         doctorName: bookingDoctor.full_name, 
-        patientName: 'Rahul Verma', 
+        patientId: currentUser?.id || 'pat1',
+        patientName: currentUser?.full_name || 'Patient', 
         date: bookingDate, 
         time: bookingTime, 
         consultationType: 'IN_PERSON' 
