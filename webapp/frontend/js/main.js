@@ -304,6 +304,7 @@ window.markNotificationRead = async function(id) { await fetch(`${API_BASE}/noti
 window.clearNotifications = async function() { if(!currentUser)return; await fetch(`${API_BASE}/notifications/clear`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:currentUser.id})}); fetchNotifications(); };
 
 async function syncAllData() {
+  if (!currentUser) return;
   await Promise.all([
     fetchQueueLive(),
     fetchAppointmentsToday(),
