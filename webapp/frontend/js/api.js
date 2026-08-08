@@ -34,15 +34,15 @@ function escapeHtml(value) {
 }
 
 function getFlagEmoji(iso) {
-  if (!iso) return String.fromCodePoint(0x1F3F3, 0xFE0F, 0x200D, 0x2690, 0xFE0F); // White flag fallback
-  return iso.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+  if (!iso) return `<span class="fi fi-xx"></span>`;
+  return `<span class="fi fi-${iso.toLowerCase()}"></span>`;
 }
 
 function populateCountryCodeSelects() {
   const countries = window.HEALTHSYNC_COUNTRY_CODES || [['IN', 'India', '+91']];
   document.querySelectorAll('.country-code-select').forEach(select => {
     if (select.options.length) return;
-    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${getFlagEmoji(iso)} ${name} (${code})</option>`).join('');
+    select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${name} (${code})</option>`).join('');
     createCountryPicker(select, countries);
   });
 }
@@ -53,7 +53,7 @@ function syncCountryPicker(select) {
   const selected = select.options[select.selectedIndex];
   if (!selected) return;
   const label = picker.querySelector('.country-picker-label');
-  if (label) label.textContent = `${getFlagEmoji(selected.dataset.iso)} ${selected.value}`;
+  if (label) label.innerHTML = `${getFlagEmoji(selected.dataset.iso)} ${selected.value}`;
 }
 
 function createCountryPicker(select, countries) {

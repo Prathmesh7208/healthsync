@@ -1103,3 +1103,8 @@ select.form-control { padding-right: 34px; }
 .country-picker-option:hover, .country-picker-option.selected { background: var(--blue-light); color: var(--blue-primary); }
 .country-picker-option span:first-child { font-size: 20px; line-height: 1; }
 @media (max-width: 420px) { .country-picker { min-width: 95px; max-width: 120px; } .country-picker-trigger { padding: 6px 7px; gap: 5px; } .country-picker-trigger .country-picker-label { font-size: 13px; } .country-picker-menu { width: min(310px, 94vw); } }
+. c o u n t r y - p i c k e r - t r i g g e r  
+ . c o u n t r y - p i c k e r - l a b e l  
+ . f i  
+   f o n t - s i z e :   1 8 p x ;   m a r g i n - r i g h t :   5 p x ;   v e r t i c a l - a l i g n :   m i d d l e ;    
+ 
