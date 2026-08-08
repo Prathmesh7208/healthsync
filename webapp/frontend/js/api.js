@@ -38,72 +38,10 @@ function populateCountryCodeSelects() {
   document.querySelectorAll('.country-code-select').forEach(select => {
     if (select.options.length) return;
     select.innerHTML = countries.map(([iso, name, code]) => `<option value="${code}" data-iso="${iso}" ${iso === 'IN' ? 'selected' : ''}>${name} (${code})</option>`).join('');
-    createCountryPicker(select);
   });
 }
 
-function countryFlagUrl(iso) { return `https://flagcdn.com/w40/${String(iso || 'in').toLowerCase()}.png`; }
 
-function syncCountryPicker(select) {
-  const picker = select?.previousElementSibling;
-  if (!picker?.classList.contains('country-picker')) return;
-  const selected = select.options[select.selectedIndex];
-  if (!selected) return;
-  const image = picker.querySelector('.country-picker-trigger img');
-  const label = picker.querySelector('.country-picker-label');
-  if (image) { image.src = countryFlagUrl(selected.dataset.iso); image.alt = selected.dataset.iso || ''; }
-  if (label) label.textContent = selected.value;
-}
-
-function createCountryPicker(select) {
-  if (select.dataset.enhanced === 'true') return;
-  select.dataset.enhanced = 'true';
-  const picker = document.createElement('div');
-  picker.className = 'country-picker';
-  picker.innerHTML = `<button type="button" class="country-picker-trigger" aria-haspopup="listbox" aria-expanded="false"><img alt=""><span class="country-picker-label"></span><i class="fa-solid fa-chevron-down"></i></button><div class="country-picker-menu hidden"><div class="country-picker-options" role="listbox"></div></div>`;
-  select.before(picker);
-  select.classList.add('native-country-code-select');
-  
-  const optionsRoot = picker.querySelector('.country-picker-options');
-  optionsRoot.innerHTML = [...select.options].map((option, i) => `<button type="button" class="country-picker-option ${option.selected ? 'selected' : ''}" data-value="${option.value}" data-index="${i}"><img src="${countryFlagUrl(option.dataset.iso)}" alt="${option.dataset.iso} flag"><span>${option.textContent}</span></button>`).join('');
-  
-  const menu = picker.querySelector('.country-picker-menu');
-  const trigger = picker.querySelector('.country-picker-trigger');
-  
-  trigger.addEventListener('click', (e) => { 
-    e.stopPropagation();
-    const isOpen = !menu.classList.contains('hidden'); 
-    document.querySelectorAll('.country-picker-menu').forEach(item => item.classList.add('hidden')); 
-    menu.classList.toggle('hidden', isOpen); 
-    trigger.setAttribute('aria-expanded', String(!isOpen)); 
-    if (!isOpen) {
-      const selectedBtn = optionsRoot.querySelector('.selected');
-      if (selectedBtn) selectedBtn.scrollIntoView({ block: 'nearest' });
-    }
-  });
-  
-  optionsRoot.addEventListener('click', event => { 
-    const optionBtn = event.target.closest('.country-picker-option'); 
-    if (!optionBtn) return; 
-    select.selectedIndex = optionBtn.dataset.index;
-    select.dispatchEvent(new Event('change', { bubbles:true })); 
-    
-    optionsRoot.querySelectorAll('.country-picker-option').forEach(b => b.classList.remove('selected'));
-    optionBtn.classList.add('selected');
-    
-    syncCountryPicker(select); 
-    menu.classList.add('hidden'); 
-    trigger.setAttribute('aria-expanded', 'false'); 
-  });
-  
-  syncCountryPicker(select); 
-}
-
-document.addEventListener('click', event => {
-  if (event.target.closest('.country-picker')) return;
-  document.querySelectorAll('.country-picker-menu').forEach(menu => menu.classList.add('hidden'));
-  document.querySelectorAll('.country-picker-trigger').forEach(button => button.setAttribute('aria-expanded', 'false'));
-});
 
 function selectedCountryCode(id) { return document.getElementById(id)?.value || '+91'; }
 function internationalPhone(countryCode, value) {
@@ -115,7 +53,6 @@ function setCountryCodeValue(id, value) {
   const select = document.getElementById(id);
   if (select && value && [...select.options].some(option => option.value === value)) { 
     select.value = value;
-    if (typeof syncCountryPicker === 'function') syncCountryPicker(select);
   }
 }
 
