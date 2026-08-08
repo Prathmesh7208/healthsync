@@ -767,8 +767,7 @@ function renderPatientDoctorsList() {
         </div>
       </div>
       <div style="display: flex; gap: 12px; margin-top: 16px; border-top: 1px solid #f3f4f6; padding-top: 16px;">
-        <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')"><i class="fa-solid fa-phone"></i> Call to Book</button>
-        <button style="flex: 1; background: white; color: #0066cc; border: 1px solid #0066cc; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="showToast('Enquiry sent to ${escapeHtml(doc.name)}!')">Send Enquiry</button>
+        <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')">Book Appointment</button>
       </div>
     </div>
   `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px; margin-top: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found matching your criteria</p><button class="btn btn-secondary mt-3" onclick="clearPatientDoctorSearch()">Clear Search</button></div>`;
@@ -1192,60 +1191,211 @@ function renderRecordsList(type) {
 // ---------------------------------------------------------------------------
 // PATIENT BOOK APPOINTMENT MODAL
 // ---------------------------------------------------------------------------
-window.openBookAppointmentModal = function() {
-  bookingMode = 'IN_PERSON';
-  setBookingModeUI();
-  openModal('modal-book-appt');
-};
+let bookingDoctor = null;
+let bookingDate = null;
+let bookingTime = null;
+let bookingStep = 1;
 
 window.openBookAppointmentModalWithDoctor = function(doctorId) {
+  bookingDoctor = allDoctors.find(d => d.id === doctorId);
+  if (!bookingDoctor) return;
+  bookingDate = null;
+  bookingTime = null;
+  bookingStep = 1;
   bookingMode = 'IN_PERSON';
-  setBookingModeUI();
-  const select = document.getElementById('booking-doctor-select');
-  if (select) select.value = doctorId;
+  
+  // Render doc info
+  document.getElementById('booking-doc-info').innerHTML = `
+    <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #64748b;">
+      ${bookingDoctor.full_name.substring(4, 6)}
+    </div>
+    <div>
+      <h4 style="margin: 0; font-size: 15px; color: #1e293b;">${escapeHtml(bookingDoctor.full_name)}</h4>
+      <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${escapeHtml(bookingDoctor.specialization)} • ₹${bookingDoctor.consultation_fee || 500}</p>
+    </div>
+  `;
+  
+  // Render Date List (Next 7 days)
+  let dateHtml = '';
+  for(let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', {weekday:'short'});
+    const dayNum = d.getDate();
+    dateHtml += `
+      <div class="booking-date-card" id="date-card-${dateStr}" onclick="selectBookingDate('${dateStr}')" style="min-width: 70px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s;">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">${dayName}</div>
+        <div style="font-size: 16px; font-weight: bold; color: var(--text-dark);">${dayNum}</div>
+      </div>
+    `;
+  }
+  document.getElementById('booking-date-container').innerHTML = dateHtml;
+  document.getElementById('booking-time-container').innerHTML = '<p class="text-muted text-sm">Please select a date to view available time slots.</p>';
+  document.getElementById('btn-booking-next').disabled = true;
+  document.getElementById('btn-booking-next').textContent = 'Continue';
+  document.getElementById('btn-booking-next').onclick = bookingNextStep;
+  
+  showBookingStep(1);
   openModal('modal-book-appt');
 };
 
-function setBookingModeUI() {
-  const heading = document.querySelector('#modal-book-appt .modal-header h3');
-  const submit = document.querySelector('#modal-book-appt .modal-footer .btn-primary');
-  if (heading) heading.textContent = bookingMode === 'ONLINE' ? 'Online Consultation Booking' : 'Appointment Booking';
-  if (submit) submit.textContent = bookingMode === 'ONLINE' ? 'Book Online Consultation' : 'Book Slot';
+window.selectBookingDate = async function(dateStr) {
+  bookingDate = dateStr;
+  bookingTime = null;
+  document.getElementById('btn-booking-next').disabled = true;
+  
+  // Highlight selected date
+  document.querySelectorAll('.booking-date-card').forEach(el => {
+    el.style.background = 'transparent';
+    el.style.borderColor = 'var(--border)';
+    el.style.color = 'inherit';
+  });
+  const selectedEl = document.getElementById(`date-card-${dateStr}`);
+  if (selectedEl) {
+    selectedEl.style.background = '#eff6ff';
+    selectedEl.style.borderColor = 'var(--blue-primary)';
+  }
+  
+  document.getElementById('booking-time-container').innerHTML = '<p class="text-muted text-sm">Loading slots...</p>';
+  
+  try {
+    const res = await fetch(`${API_BASE}/doctors/${bookingDoctor.id}/slots?date=${dateStr}`);
+    const data = await res.json();
+    if (!data.success || !data.slots || data.slots.length === 0) {
+      document.getElementById('booking-time-container').innerHTML = '<p class="text-muted text-sm text-danger">No slots available on this date.</p>';
+      return;
+    }
+    
+    // Group slots
+    const morning = [], afternoon = [], evening = [];
+    data.slots.forEach(s => {
+      let hour = parseInt(s.time.split(':')[0]);
+      if (s.time.includes('PM') && hour !== 12) hour += 12;
+      if (s.time.includes('AM') && hour === 12) hour = 0;
+      
+      if (hour < 12) morning.push(s);
+      else if (hour < 17) afternoon.push(s);
+      else evening.push(s);
+    });
+    
+    let html = '';
+    const renderGroup = (title, slots) => {
+      if (!slots.length) return '';
+      let groupHtml = `<h5 style="margin: 10px 0 8px; font-size: 13px; color: var(--text-muted);">${title}</h5><div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">`;
+      slots.forEach(s => {
+        if (s.available) {
+          groupHtml += `<button class="time-slot-btn" id="time-slot-${s.time.replace(/[: ]/g,'-')}" onclick="selectBookingTime('${s.time}')" style="padding: 8px 12px; border: 1px solid var(--blue-primary); background: transparent; color: var(--blue-primary); border-radius: 6px; font-size: 13px; cursor: pointer;">${s.time}</button>`;
+        } else {
+          groupHtml += `<button disabled style="padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #94a3b8; border-radius: 6px; font-size: 13px; cursor: not-allowed; text-decoration: line-through;">${s.time}</button>`;
+        }
+      });
+      groupHtml += `</div>`;
+      return groupHtml;
+    };
+    
+    html += renderGroup('Morning', morning);
+    html += renderGroup('Afternoon', afternoon);
+    html += renderGroup('Evening', evening);
+    
+    document.getElementById('booking-time-container').innerHTML = html;
+  } catch (err) {
+    document.getElementById('booking-time-container').innerHTML = '<p class="text-muted text-sm text-danger">Failed to load slots.</p>';
+  }
+};
+
+window.selectBookingTime = function(timeStr) {
+  bookingTime = timeStr;
+  document.querySelectorAll('.time-slot-btn').forEach(el => {
+    el.style.background = 'transparent';
+    el.style.color = 'var(--blue-primary)';
+  });
+  const selectedEl = document.getElementById(`time-slot-${timeStr.replace(/[: ]/g,'-')}`);
+  if (selectedEl) {
+    selectedEl.style.background = 'var(--blue-primary)';
+    selectedEl.style.color = '#fff';
+  }
+  document.getElementById('btn-booking-next').disabled = false;
+};
+
+window.bookingNextStep = function() {
+  if (bookingStep === 1) {
+    // Show summary
+    document.getElementById('summary-doc-name').textContent = bookingDoctor.full_name;
+    document.getElementById('summary-doc-spec').textContent = bookingDoctor.specialization;
+    document.getElementById('summary-date').textContent = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('summary-time').textContent = bookingTime;
+    document.getElementById('summary-fee').textContent = `₹${bookingDoctor.consultation_fee || 500}`;
+    
+    document.getElementById('btn-booking-next').textContent = 'Confirm Appointment';
+    showBookingStep(2);
+  } else if (bookingStep === 2) {
+    // Submit
+    submitAppointmentBooking();
+  }
+};
+
+function showBookingStep(step) {
+  bookingStep = step;
+  document.getElementById('booking-step-datetime').classList.add('hidden');
+  document.getElementById('booking-step-summary').classList.add('hidden');
+  document.getElementById('booking-step-success').classList.add('hidden');
+  document.getElementById('booking-footer').classList.remove('hidden');
+  
+  if (step === 1) document.getElementById('booking-step-datetime').classList.remove('hidden');
+  if (step === 2) document.getElementById('booking-step-summary').classList.remove('hidden');
+  if (step === 3) {
+    document.getElementById('booking-step-success').classList.remove('hidden');
+    document.getElementById('booking-footer').classList.add('hidden'); // Hide footer on success
+  }
 }
 
-window.openOnlineConsultation = function() {
-  bookingMode = 'ONLINE';
-  setBookingModeUI();
-  openModal('modal-book-appt');
-};
-
 window.submitAppointmentBooking = async function() {
-  const select = document.getElementById('booking-doctor-select');
-  const docId = select?.value || 'doc1';
-  const docName = select?.options[select.selectedIndex]?.text.split(' (')[0] || 'Dr. Priya Sharma';
-  const dateVal = document.getElementById('booking-date-input')?.value;
-  const timeVal = document.getElementById('booking-time-select')?.value;
-  const patName = document.getElementById('booking-patient-name')?.value || 'Rahul Verma';
-
-  if (!dateVal || !timeVal) {
-    showToast('Please pick a date and time slot.', 'warning');
-    return;
-  }
-
+  document.getElementById('btn-booking-next').disabled = true;
+  document.getElementById('btn-booking-next').textContent = 'Confirming...';
+  
   try {
     const res = await fetch(`${API_BASE}/appointments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ doctorId: docId, doctorName: docName, patientName: patName, date: dateVal, time: timeVal, consultationType: bookingMode })
+      body: JSON.stringify({ 
+        doctorId: bookingDoctor.id, 
+        doctorName: bookingDoctor.full_name, 
+        patientName: 'Rahul Verma', 
+        date: bookingDate, 
+        time: bookingTime, 
+        consultationType: 'IN_PERSON' 
+      })
     });
+    
     const data = await res.json();
+    
+    if (res.status === 409) {
+      showToast(data.message || 'Sorry, this slot was just booked.', 'error');
+      // Go back to step 1 and refresh slots
+      document.getElementById('btn-booking-next').disabled = false;
+      document.getElementById('btn-booking-next').textContent = 'Continue';
+      showBookingStep(1);
+      selectBookingDate(bookingDate); // Refresh slots
+      return;
+    }
+    
     if (data.success) {
-      showToast(`${bookingMode === 'ONLINE' ? 'Online consultation' : 'Appointment'} confirmed! Token issued: ${data.appointment.token}`, 'success');
-      closeAllModals();
-      syncAllData();
+      // Show success screen
+      document.getElementById('success-doc-name').textContent = bookingDoctor.full_name;
+      document.getElementById('success-date').textContent = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('success-time').textContent = bookingTime;
+      document.getElementById('success-appt-id').textContent = data.appointment.id;
+      
+      showBookingStep(3);
+      syncAllData(); // Refresh dashboards
+    } else {
+      throw new Error(data.message);
     }
   } catch (err) {
     showToast('Failed to book appointment.', 'error');
+    document.getElementById('btn-booking-next').disabled = false;
+    document.getElementById('btn-booking-next').textContent = 'Confirm Appointment';
   }
 };
 

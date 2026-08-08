@@ -732,6 +732,57 @@ function apiRouter(req, res, pathname, url, body) {
     return;
   }
 
+  // ── Get Doctor Slots (Real Availability) ──────────────────────────────────
+  if (pathname.match(/^\/v1\/doctors\/([^/]+)\/slots$/) && method === 'GET') {
+    const docId = pathname.split('/')[3];
+    const dateStr = parsedUrl.searchParams.get('date'); // YYYY-MM-DD
+    if (!dateStr) return json(res, 400, { success: false, message: 'Date is required' });
+
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const reqDate = new Date(year, month, day);
+    const dayOfWeek = reqDate.getDay(); // 0-6 (Sun-Sat)
+    
+    // Default fallback if doctor hasn't configured schedule (9 AM - 5 PM)
+    const defaultStart = '09:00';
+    const defaultEnd = '17:00';
+
+    db.get('SELECT * FROM doctor_availability WHERE doctor_id=? AND day_of_week=? AND is_active=1', [docId, dayOfWeek], (err, avail) => {
+      let start = avail ? avail.start_time : defaultStart;
+      let end = avail ? avail.end_time : defaultEnd;
+      
+      let slots = [];
+      let currentMs = new Date(`${dateStr}T${start}:00`).getTime();
+      let endMs = new Date(`${dateStr}T${end}:00`).getTime();
+      
+      while (currentMs < endMs) {
+        let d = new Date(currentMs);
+        let hh = d.getHours();
+        let mm = d.getMinutes();
+        let ampm = hh >= 12 ? 'PM' : 'AM';
+        let h12 = hh % 12;
+        if (h12 === 0) h12 = 12;
+        let timeString = (h12 < 10 ? '0'+h12 : h12) + ':' + (mm < 10 ? '0'+mm : mm) + ' ' + ampm;
+        slots.push({ time: timeString, available: true });
+        currentMs += 30 * 60 * 1000; // 30 min slots
+      }
+      
+      db.all("SELECT slot_time FROM appointments WHERE doctor_id=? AND slot_date=? AND status != 'Cancelled'", [docId, dateStr], (err, bookedAppts) => {
+        const bookedTimes = new Set((bookedAppts || []).map(a => a.slot_time));
+        slots = slots.map(s => ({
+          time: s.time,
+          available: !bookedTimes.has(s.time)
+        }));
+        
+        json(res, 200, { success: true, date: dateStr, slots });
+      });
+    });
+    return;
+  }
+
+
   // ── Book / List / Cancel Appointments ────────────────────────────────────
   if (pathname === '/v1/appointments' && method === 'GET') {
     db.all('SELECT * FROM appointments ORDER BY created_at DESC', (err, rows) => {
@@ -766,34 +817,43 @@ function apiRouter(req, res, pathname, url, body) {
   }
 
   if (pathname === '/v1/appointments' && method === 'POST') {
-    db.get('SELECT COUNT(*) AS c FROM appointments', (err, row) => {
-      const nextNum  = (row?.c || 0) + 17;
+    const patName  = body.patientName || 'Neha Kulkarni';
+    const patId    = req.user ? req.user.userId : (body.patientId || 'pat1');
+    const docId    = body.doctorId    || 'doc1';
+    const docName  = body.doctorName  || 'Dr. Amit Patil';
+    const date     = body.date || new Date().toISOString().split('T')[0];
+    const time     = body.time || nowTime();
+
+    db.get('SELECT COUNT(*) AS c FROM appointments', (err, rowCount) => {
+      const nextNum  = (rowCount?.c || 0) + 17;
       const token    = 'A' + nextNum;
       const apptId   = 'apt-' + uid();
       const qId      = 'q-'   + uid();
-      const patName  = body.patientName || 'Neha Kulkarni';
-      const patId    = req.user ? req.user.userId : (body.patientId || 'pat1');
-      const docId    = body.doctorId    || 'doc1';
-      const docName  = body.doctorName  || 'Dr. Amit Patil';
-      const date     = body.date || new Date().toISOString().split('T')[0];
-      const time     = body.time || nowTime();
 
       db.run(
-        `INSERT INTO appointments
+        `INSERT INTO appointments 
            (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, consultation_type, token_number)
-         VALUES (?,?,?,?,?,?,?,?,?)`,
-        [apptId, patId, patName, docId, docName, date, time, body.consultationType === 'ONLINE' ? 'ONLINE' : 'IN_PERSON', token],
-        () => {
+         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+         WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE doctor_id=? AND slot_date=? AND slot_time=? AND status != 'Cancelled')`,
+        [apptId, patId, patName, docId, docName, date, time, body.consultationType === 'ONLINE' ? 'ONLINE' : 'IN_PERSON', token, docId, date, time],
+        function(err) {
+          if (err) return json(res, 500, { success: false, message: 'Database error' });
+          if (this.changes === 0) {
+            return json(res, 409, { success: false, message: 'Sorry, this slot was just booked. Please select another available time.' });
+          }
+          
           db.run(
             `INSERT INTO queue_entries
                (id, appointment_id, token_number, patient_id, patient_name, doctor_id, status, checkin_time)
              VALUES (?, ?, ?, ?, ?, ?, 'Waiting', ?)`,
             [qId, apptId, token, patId, patName, docId, time],
             () => json(res, 201, {
-              success:true,
-              appointment:{ id:apptId, token, doctorName:docName, date, time, status:'CONFIRMED' }
-            }));
-        });
+              success: true,
+              appointment: { id: apptId, token, doctorName: docName, date, time, status: 'CONFIRMED' }
+            })
+          );
+        }
+      );
     });
     return;
   }
