@@ -196,6 +196,21 @@ db.serialize(() => {
     document_type TEXT NOT NULL, file_name TEXT NOT NULL, storage_path TEXT, notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+  db.run(`CREATE TABLE IF NOT EXISTS medical_records (
+    id TEXT PRIMARY KEY, patient_id TEXT NOT NULL, title TEXT NOT NULL, description TEXT,
+    date TEXT NOT NULL, doctor_name TEXT, type TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`, () => {
+    // Seed demo records if empty
+    db.get('SELECT count(*) as c FROM medical_records', (err, row) => {
+      if (row && row.c === 0) {
+        const stmt = db.prepare('INSERT INTO medical_records (id, patient_id, title, description, date, doctor_name, type) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        stmt.run('rec-1', 'pat1', 'Complete Blood Count (CBC)', 'Hemoglobin slightly low, everything else normal.', '2026-07-20', 'Dr. Priya Sharma', 'Lab Report');
+        stmt.run('rec-2', 'pat1', 'Consultation Notes - Allergies', 'Prescribed anti-histamines for seasonal pollen allergy.', '2026-06-15', 'Dr. Amit Patil', 'Visit Summary');
+        stmt.run('rec-3', 'pat1', 'X-Ray Chest', 'No abnormalities detected. Clear lungs.', '2025-12-10', 'Dr. Ramesh Kumar', 'Imaging');
+        stmt.finalize();
+      }
+    });
+  });
   db.run(`CREATE TABLE IF NOT EXISTS doctor_availability (
     id TEXT PRIMARY KEY, doctor_id TEXT NOT NULL, day_of_week INTEGER NOT NULL,
     start_time TEXT NOT NULL, end_time TEXT NOT NULL, consultation_type TEXT NOT NULL DEFAULT 'IN_PERSON', is_active INTEGER NOT NULL DEFAULT 1
@@ -785,8 +800,44 @@ function apiRouter(req, res, pathname, url, body) {
 
   // ── Book / List / Cancel Appointments ────────────────────────────────────
   if (pathname === '/v1/appointments' && method === 'GET') {
-    db.all('SELECT * FROM appointments ORDER BY created_at DESC', (err, rows) => {
+    let query = 'SELECT * FROM appointments';
+    let params = [];
+    if (req.user && req.user.role === 'PATIENT') {
+      query += ' WHERE patient_id = ?';
+      params.push(req.user.userId);
+    } else if (req.user && req.user.role === 'DOCTOR') {
+      query += ' WHERE doctor_id = ?';
+      params.push(req.user.userId);
+    }
+    query += ' ORDER BY slot_date ASC, slot_time ASC';
+    db.all(query, params, (err, rows) => {
       json(res, 200, { success: true, appointments: rows || [] });
+    });
+    return;
+  }
+
+  if (pathname === '/v1/appointments/next' && method === 'GET') {
+    if (!req.user || req.user.role !== 'PATIENT') {
+      return json(res, 403, { success: false, message: 'Forbidden' });
+    }
+    const query = `
+      SELECT * FROM appointments 
+      WHERE patient_id = ? AND status IN ('CONFIRMED', 'WAITING', 'IN PROGRESS', 'CHECKED IN') 
+      ORDER BY slot_date ASC, slot_time ASC 
+      LIMIT 1
+    `;
+    db.get(query, [req.user.userId], (err, row) => {
+      json(res, 200, { success: true, appointment: row || null });
+    });
+    return;
+  }
+
+  if (pathname === '/v1/records' && method === 'GET') {
+    if (!req.user || req.user.role !== 'PATIENT') {
+      return json(res, 403, { success: false, message: 'Forbidden' });
+    }
+    db.all('SELECT * FROM medical_records WHERE patient_id = ? ORDER BY created_at DESC', [req.user.userId], (err, rows) => {
+      json(res, 200, { success: true, records: rows || [] });
     });
     return;
   }
@@ -798,6 +849,32 @@ function apiRouter(req, res, pathname, url, body) {
       db.run("UPDATE queue_entries SET status='Cancelled' WHERE appointment_id=?", [apptId], () => {
         json(res, 200, { success: true, message: 'Appointment cancelled' });
       });
+    });
+    return;
+  }
+
+  if (pathname.startsWith('/v1/appointments/') && pathname.endsWith('/status') && method === 'PUT') {
+    const parts = pathname.split('/');
+    const apptId = parts[3];
+    const newStatus = body.status;
+    db.run("UPDATE appointments SET status=? WHERE id=?", [newStatus, apptId], function(err) {
+      if (err) return json(res, 500, { success: false, message: 'Database error' });
+      
+      if (newStatus === 'Completed') {
+        db.run("UPDATE queue_entries SET status='Completed' WHERE appointment_id=?", [apptId]);
+      } else if (newStatus === 'In Progress' || newStatus === 'In Consultation') {
+        db.run("UPDATE queue_entries SET status='In Consultation' WHERE appointment_id=?", [apptId]);
+      } else if (newStatus === 'Waiting') {
+        // Generate Token if moving to queue
+        db.get("SELECT MAX(CAST(token_number AS INTEGER)) as maxT FROM queue_entries WHERE date=date('now')", [], (err, row) => {
+          const nextT = row && row.maxT ? row.maxT + 1 : 1;
+          db.run("UPDATE appointments SET token_number=? WHERE id=?", [nextT, apptId]);
+          db.run("INSERT OR IGNORE INTO queue_entries (appointment_id, token_number, status, date) VALUES (?, ?, 'Waiting', date('now'))", [apptId, nextT]);
+          db.run("UPDATE queue_entries SET status='Waiting', token_number=? WHERE appointment_id=?", [nextT, apptId]);
+        });
+      }
+      
+      json(res, 200, { success: true, message: 'Appointment status updated' });
     });
     return;
   }

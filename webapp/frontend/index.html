@@ -213,24 +213,10 @@
               <!-- Upcoming Appointment -->
               <div>
                 <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Upcoming Appointment</h3>
-                <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
-                  <div style="display: flex; gap: 16px;">
-                    <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px;">👩‍⚕️</div>
-                    <div style="flex: 1;">
-                      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                          <h4 style="font-weight: 700; font-size: 15px; margin: 0; color: #0f172a;">Dr. Anjali Mehta</h4>
-                          <p style="font-size: 13px; color: var(--text-muted); margin: 2px 0;">Cardiologist</p>
-                        </div>
-                        <span style="background: #dcfce7; color: #16a34a; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: 600;">Confirmed</span>
-                      </div>
-                      <div style="margin-top: 12px; font-size: 13px; color: var(--text-medium);">
-                        <p style="margin: 4px 0;"><i class="fa-regular fa-clock" style="color: var(--text-muted); width: 16px;"></i> 20 May 2025 • 11:30 AM</p>
-                        <p style="margin: 4px 0;"><i class="fa-solid fa-location-dot" style="color: var(--text-muted); width: 16px;"></i> City Heart Clinic</p>
-                      </div>
-                      <div style="margin-top: 16px; text-align: right;">
-                        <button style="background: transparent; border: 1px solid #e2e8f0; color: #4f46e5; font-weight: 600; padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;">View Details</button>
-                      </div>
+                <div id="patient-dashboard-upcoming-appt">
+                  <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100px; color: var(--text-muted); font-size: 14px;">
+                      Loading appointment...
                     </div>
                   </div>
                 </div>
@@ -1519,12 +1505,7 @@
       </div>
     </div>
   </div>
-
-  <div id="modal-notifications" class="modal-backdrop">
-    <div class="modal-box modal-sm">
-      <div class="modal-header"><h3>Notifications</h3><button class="modal-close" onclick="closeAllModals()">&times;</button></div>
-      <div id="notification-list" class="modal-body notification-list"></div>
-      <div class="modal-footer"><button class="btn btn-secondary" onclick="clearNotifications()">Clear history</button><button class="btn btn-primary" onclick="closeAllModals()">Done</button></div>
+          <div class="modal-footer"><button class="btn btn-secondary" onclick="clearNotifications()">Clear history</button><button class="btn btn-primary" onclick="closeAllModals()">Done</button></div>
     </div>
   </div>
 
@@ -1538,6 +1519,35 @@
 
   <script src="js/country-codes.js"></script>
   <script src="js/globals.js"></script>
+  
+  <!-- Appointment Details Modal -->
+  <div id="modal-appointment-details" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <span class="close" onclick="closeModal('modal-appointment-details')">&times;</span>
+      <h3 style="margin-top:0; font-size: 18px; color: #1e293b;">Appointment Details</h3>
+      <div id="appt-details-body" style="margin-top: 16px;">
+        <!-- Injected via JS -->
+      </div>
+      <div id="appt-details-actions" style="margin-top: 24px; display: flex; gap: 12px;">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Doctor Appointment Action Modal -->
+  <div id="modal-doctor-appointment" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <span class="close" onclick="closeModal('modal-doctor-appointment')">&times;</span>
+      <h3 style="margin-top:0; font-size: 18px; color: #1e293b;">Manage Consultation</h3>
+      <div id="doc-appt-body" style="margin-top: 16px;">
+        <!-- Injected via JS -->
+      </div>
+      <div id="doc-appt-actions" style="margin-top: 24px; display: flex; flex-wrap: wrap; gap: 12px;">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
   <script src="js/api.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>

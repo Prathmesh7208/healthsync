@@ -251,9 +251,10 @@ function renderEmergencyAlertToDOM(data) {
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;" id="map-link-${prefix}-${data.caseId}">Maps</a>
             <button style="flex: 1; padding: 8px; border: none; ${dispatchStyle} color: white; border-radius: 6px; font-weight: 600; font-size: 12px; min-width: 100px;" id="btn-dispatch-${prefix}-${data.caseId}" onclick="dispatchAmbulance('${data.caseId}')" ${dispatchDisabled}>${dispatchText}</button>
-            <button style="flex: 1; padding: 8px; border: 1px solid var(--border); background: #f1f5f9; color: #1e293b; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" onclick="resolveEmergency('${data.caseId}')">Resolve</button>
+            <a href="tel:${data.phone}" style="flex: 1; padding: 8px; border: 1px solid var(--border); background: #f8fafc; color: #1e293b; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;"><i class="fa-solid fa-phone"></i> Call Patient</a>
+            <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center; text-decoration: none; min-width: 100px;" id="map-link-${prefix}-${data.caseId}"><i class="fa-solid fa-location-dot"></i> View Location</a>
+            <button style="flex: 1; padding: 8px; border: 1px solid var(--border); background: #f1f5f9; color: #1e293b; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 100px;" onclick="resolveEmergency('${data.caseId}')"><i class="fa-solid fa-check"></i> Mark Resolved</button>
           </div>
         </div>
       </div>
@@ -263,7 +264,41 @@ function renderEmergencyAlertToDOM(data) {
     }, 100);
   });
 }
-function renderNotifications(items) { const unread=items.filter(item=>item.status==='UNREAD').length; const count=document.getElementById('notification-count'); const dot=document.getElementById('notification-dot'); if(count) count.textContent=unread; if(dot) dot.classList.toggle('hidden', !unread); const list=document.getElementById('notification-list'); if(list) list.innerHTML=items.length ? items.map(item=>{ let msg=escapeHtml(item.message); msg=msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #ef4444; font-weight: bold; text-decoration: underline;" onclick="event.stopPropagation()">$1</a>'); return `<div class="notification-item ${item.status==='UNREAD'?'unread':''}" onclick="markNotificationRead('${item.id}')">${msg}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`; }).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>'; }
+
+window.resolveEmergency = async function(caseId) {
+  if (!confirm('Are you sure you want to mark this emergency as resolved?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/emergency/${caseId}/resolve`, { method: 'PUT' });
+    if (res.ok) {
+      showToast('Emergency marked as resolved', 'success');
+      ['rec', 'doc', 'amb'].forEach(prefix => {
+        const el = document.getElementById(`emerg-${caseId}`);
+        if (el) el.remove();
+        const list = document.getElementById(`${prefix}-emergency-list`);
+        const panel = document.getElementById(`${prefix}-emergency-panel`);
+        if (list && list.children.length === 0 && panel) panel.classList.add('hidden');
+      });
+    }
+  } catch (err) {
+    showToast('Failed to resolve emergency', 'error');
+  }
+};
+function renderNotifications(items) {
+  const unread = items.filter(item => item.status === 'UNREAD').length;
+  const count = document.getElementById('notification-count');
+  const dot = document.getElementById('notification-dot');
+  if (count) count.textContent = unread;
+  if (dot) dot.classList.toggle('hidden', !unread);
+  
+  const list = document.getElementById('notification-list');
+  if (list) {
+    list.innerHTML = items.length ? items.map(item => {
+      let msg = escapeHtml(item.message);
+      msg = msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #ef4444; font-weight: bold; text-decoration: underline;" onclick="event.stopPropagation()">$1</a>');
+      return `<div class="notification-item ${item.status === 'UNREAD' ? 'unread' : ''}" onclick="markNotificationRead('${item.id}')">${msg}<span class="notification-time">${new Date(item.created_at).toLocaleString('en-IN')}</span></div>`;
+    }).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>';
+  }
+}
 window.openNotifications = async function() { await fetchNotifications(); openModal('modal-notifications'); };
 window.markNotificationRead = async function(id) { await fetch(`${API_BASE}/notifications/${id}/read`,{method:'POST'}); fetchNotifications(); };
 window.clearNotifications = async function() { if(!currentUser)return; await fetch(`${API_BASE}/notifications/clear`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:currentUser.id})}); fetchNotifications(); };
@@ -272,7 +307,9 @@ async function syncAllData() {
   await Promise.all([
     fetchQueueLive(),
     fetchAppointmentsToday(),
-    fetchPrescriptions()
+    fetchPrescriptions(),
+    fetchNextAppointment(),
+    fetchHealthRecords()
   ]);
   renderDoctorPatientReports();
 }
@@ -686,30 +723,149 @@ async function fetchQueueLive() {
 
 async function fetchAppointmentsToday() {
   try {
-    const res = await fetch(`${API_BASE}/appointments`);
-    const data = await res.json();
-    if (data.success) {
+    const data = await requestJson('/appointments');
+    if (data && data.success) {
       todayAppointments = data.appointments || [];
       renderAppointmentsList();
     }
   } catch (err) {
     console.error('Error fetching today appointments:', err);
+    todayAppointments = [];
+    renderAppointmentsList(); // Render empty states if it fails
   }
 }
 
 async function fetchPrescriptions() {
   try {
-    const res = await fetch(`${API_BASE}/prescriptions`);
-    const data = await res.json();
-    if (data.success) {
+    const data = await requestJson('/prescriptions');
+    if (data && data.success) {
       patientPrescriptions = data.prescriptions || [];
-      renderPatientDashboardPrescriptions();
-      renderDoctorPatientPrescriptions();
+      if (typeof renderPatientDashboardPrescriptions === 'function') renderPatientDashboardPrescriptions();
+      if (typeof renderDoctorPatientPrescriptions === 'function') renderDoctorPatientPrescriptions();
     }
   } catch (err) {
     console.error('Error fetching prescriptions:', err);
   }
 }
+
+async function fetchNextAppointment() {
+  if (currentUser?.role !== 'PATIENT') return;
+  try {
+    const data = await requestJson('/appointments/next');
+    renderNextAppointment(data?.success ? data.appointment : null);
+  } catch (err) {
+    console.error('Error fetching next appointment:', err);
+    renderNextAppointment(null);
+  }
+}
+
+async function fetchHealthRecords() {
+  if (currentUser?.role !== 'PATIENT') return;
+  try {
+    const data = await requestJson('/records');
+    renderHealthRecordsList(data?.success ? data.records : []);
+  } catch (err) {
+    console.error('Error fetching records:', err);
+    renderHealthRecordsList([]);
+  }
+}
+
+function renderNextAppointment(appt) {
+  const container = document.getElementById('patient-dashboard-upcoming-appt');
+  if (!container) return;
+  if (!appt) {
+    container.innerHTML = `
+      <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; text-align: center;">
+        <i class="fa-regular fa-calendar-xmark" style="font-size: 24px; color: var(--text-muted); margin-bottom: 8px;"></i>
+        <p style="font-size: 14px; color: var(--text-muted); margin: 0 0 12px 0;">No upcoming appointment</p>
+        <button class="btn btn-primary btn-sm" onclick="openBookAppointmentModal()">Book Appointment</button>
+      </div>`;
+    return;
+  }
+  
+  const dateObj = new Date(`${appt.slot_date}T12:00:00`);
+  const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', {month:'short'})} ${dateObj.getFullYear()}`;
+  const docName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync Doctor';
+  const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'City Heart Clinic';
+  
+  container.innerHTML = `
+    <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
+      <div style="display: flex; gap: 16px;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px;">👩‍⚕️</div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h4 style="font-weight: 700; font-size: 15px; margin: 0; color: #0f172a;">${escapeHtml(docName)}</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin: 2px 0;">Consultation</p>
+            </div>
+            <span style="background: #dcfce7; color: #16a34a; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: 600;">${escapeHtml(appt.status)}</span>
+          </div>
+          <div style="margin-top: 12px; font-size: 13px; color: var(--text-medium);">
+            <p style="margin: 4px 0;"><i class="fa-regular fa-clock" style="color: var(--text-muted); width: 16px;"></i> ${displayDate} • ${escapeHtml(appt.slot_time || appt.time)}</p>
+            <p style="margin: 4px 0;"><i class="fa-solid fa-location-dot" style="color: var(--text-muted); width: 16px;"></i> ${escapeHtml(clinic)}</p>
+          </div>
+          <div style="margin-top: 16px; text-align: right;">
+            <button onclick="viewAppointmentDetails('${appt.id}')" style="background: transparent; border: 1px solid #e2e8f0; color: #4f46e5; font-weight: 600; padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;">View Details</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+window.viewAppointmentDetails = function(id) {
+  const appt = todayAppointments.find(a => a.id === id);
+  if (!appt) return;
+  
+  const body = document.getElementById('appt-details-body');
+  const actions = document.getElementById('appt-details-actions');
+  
+  const docName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync Doctor';
+  const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'HealthSync Partner Clinic';
+  const dateObj = new Date(`${appt.slot_date}T12:00:00`);
+  const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', {month:'short'})} ${dateObj.getFullYear()}`;
+  
+  body.innerHTML = `
+    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+      <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(docName)}</h4>
+      <p style="margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted);">${escapeHtml(clinic)}</p>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Date</p>
+        <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #1e293b;">${displayDate}</p>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Time</p>
+        <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #1e293b;">${escapeHtml(appt.slot_time || appt.time)}</p>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Appointment ID</p>
+        <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #1e293b;">${escapeHtml(appt.id.split('-').pop().toUpperCase())}</p>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Consultation Fee</p>
+        <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #1e293b;"><i class="fa-solid fa-indian-rupee-sign" style="font-size: 12px;"></i> ${appt.consultation_fee || 500}</p>
+      </div>
+    </div>
+    <div>
+      <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Status</p>
+      <span style="display: inline-block; background: #e0e7ff; color: #4f46e5; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-top: 4px;">${escapeHtml(appt.status)}</span>
+      ${appt.token_number ? `<span style="display: inline-block; background: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-top: 4px; margin-left: 8px;">Token: ${escapeHtml(appt.token_number)}</span>` : ''}
+    </div>
+  `;
+  
+  const mapsLink = `https://www.google.com/maps?q=${encodeURIComponent(clinic)}`;
+  const canCancel = ['WAITING', 'CONFIRMED'].includes(String(appt.status).trim().toUpperCase());
+  
+  actions.innerHTML = `
+    <button class="btn btn-secondary" style="flex: 1;" onclick="window.open('${mapsLink}', '_blank')"><i class="fa-solid fa-location-arrow"></i> Get Directions</button>
+    ${canCancel ? `<button class="btn btn-danger" style="flex: 1;" onclick="cancelAppointment('${appt.id}'); closeModal('modal-appointment-details');">Cancel</button>` : ''}
+    ${canCancel ? `<button class="btn btn-primary" style="flex: 1;" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}'); closeModal('modal-appointment-details');">Reschedule</button>` : ''}
+  `;
+  
+  openModal('modal-appointment-details');
+};
+
 
 // ---------------------------------------------------------------------------
 // POPULATE SELECTS
@@ -774,6 +930,42 @@ function renderPatientDoctorsList() {
 }
 window.handlePatientDocSearch = function() { renderPatientDoctorsList(); };
 window.clearPatientDoctorSearch = function() { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
+
+function renderHealthRecordsList(records) {
+  const container = document.getElementById('records-list-container');
+  if (!container) return;
+  if (!records || records.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="es-icon"><i class="fa-solid fa-folder-open"></i></div>
+        <div class="es-text">No health records yet</div>
+        <div class="es-sub">Upload medical reports, prescriptions, and lab tests to view them here.</div>
+        <button class="btn btn-primary mt-3" onclick="openUploadRecordModal()">Upload Medical Report</button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = records.map(record => `
+    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+      <div style="display: flex; gap: 16px; align-items: center;">
+        <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #0066cc; font-size: 20px;">
+          <i class="${record.type === 'Lab Report' ? 'fa-solid fa-flask' : (record.type === 'Imaging' ? 'fa-solid fa-x-ray' : 'fa-solid fa-file-medical')}"></i>
+        </div>
+        <div>
+          <h4 style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;">${escapeHtml(record.title)}</h4>
+          <p style="margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted);">${escapeHtml(record.description)}</p>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px; display: flex; gap: 12px;">
+            <span><i class="fa-regular fa-calendar" style="margin-right: 4px;"></i>${record.date}</span>
+            <span><i class="fa-solid fa-user-doctor" style="margin-right: 4px;"></i>${escapeHtml(record.doctor_name)}</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm"><i class="fa-solid fa-download"></i> View</button>
+      </div>
+    </div>
+  `).join('');
+}
 
 window.openSymptomDoctorsModal = function(symptom) {
   const container = document.getElementById('symptom-doctors-list');
@@ -879,27 +1071,18 @@ window.showEmergencyHelp = function() {
 };
 
 async function triggerEmergencySOS(lat, lng) {
-  try {
-    const res = await fetch(`${API_BASE}/emergency/trigger`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': currentUser?.token ? `Bearer ${currentUser.token}` : ''
-      },
-      body: JSON.stringify({
-        patientId: currentUser?.patientId || 'pat1',
-        latitude: lat,
-        longitude: lng
-      })
+  if (typeof appSocket !== 'undefined' && appSocket && appSocket.connected) {
+    appSocket.emit('sos_trigger', {
+      patientId: currentUser?.patientId || 'pat1',
+      patientName: currentUser?.name || 'Emergency Patient',
+      phone: currentUser?.mobile || '9999999999',
+      lat: lat,
+      lng: lng,
+      address: 'Current Location'
     });
-    const data = await res.json();
-    if (data.success) {
-      showToast('Emergency SOS triggered! Live location link sent to nearby hospital.', 'success');
-    } else {
-      showToast(data.message || 'Failed to trigger SOS alert.', 'error');
-    }
-  } catch (err) {
-    showToast('Could not connect to server to trigger SOS alert.', 'error');
+    showToast('Emergency SOS triggered! Waiting for hospital response...', 'success');
+  } else {
+    showToast('Cannot connect to emergency services. Please call an ambulance directly.', 'error');
   }
 }
 
@@ -998,8 +1181,10 @@ function renderAppointmentsList() {
           <td><span class="badge ${getBadgeClass(appt.status)}">${appt.status}</span></td>
           <td>
             <div class="flex gap-2">
-              ${appt.status === 'CONFIRMED' ? `<button class="btn btn-success btn-xs" onclick="checkinAppointment('${appt.id}')">Check-in</button>` : ''}
-              ${appt.status !== 'Cancelled' && appt.status !== 'Completed' ? `<button class="btn btn-danger btn-xs" onclick="cancelAppointment('${appt.id}')">Cancel</button>` : ''}
+              ${appt.status === 'CONFIRMED' ? `<button class="btn btn-success btn-xs" onclick="updateAppointmentStatus('${appt.id}', 'Checked In')">Check-in</button>` : ''}
+              ${appt.status === 'Checked In' ? `<button class="btn btn-primary btn-xs" onclick="updateAppointmentStatus('${appt.id}', 'Waiting')">Gen Token & Queue</button>` : ''}
+              <button class="btn btn-secondary btn-xs" onclick="alert('View Patient Profile: ${appt.patient_name}')">View</button>
+              ${!['CANCELLED', 'COMPLETED'].includes(appt.status.toUpperCase()) ? `<button class="btn btn-danger btn-xs" onclick="cancelAppointment('${appt.id}')">Cancel</button>` : ''}
             </div>
           </td>
         </tr>
@@ -1010,15 +1195,72 @@ function renderAppointmentsList() {
 // Helper badge class resolver
 function getBadgeClass(status) {
   const value = String(status || '').trim().toUpperCase();
-  if (value === 'CONFIRMED') return 'badge-confirmed';
-  if (value === 'WAITING' || value === 'CHECKED IN') return 'badge-waiting';
-  if (value === 'IN CONSULTATION' || value === 'IN PROGRESS') return 'badge-in-consult';
-  if (value === 'COMPLETED') return 'badge-completed';
-  if (value === 'CANCELLED') return 'badge-cancelled';
-  if (value === 'NO SHOW') return 'badge-noshow';
-  return 'badge-pending';
+  if (value === 'COMPLETED') return 'badge-success';
+  if (value === 'CONFIRMED') return 'badge-primary';
+  if (value === 'WAITING' || value === 'CHECKED IN') return 'badge-warning';
+  if (value === 'CANCELLED' || value === 'REJECTED') return 'badge-danger';
+  return 'badge-secondary';
 }
 
+window.selectDoctorAppointment = function(id) {
+  const appt = todayAppointments.find(a => a.id === id);
+  if (!appt) return;
+
+  const body = document.getElementById('doc-appt-body');
+  const actions = document.getElementById('doc-appt-actions');
+  
+  body.innerHTML = `
+    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+      <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(appt.patient_name)}</h4>
+      <p style="margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted);">Appointment ID: ${appt.id.split('-').pop().toUpperCase()}</p>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Date</p>
+        <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #1e293b;">${appt.slot_date}</p>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Time</p>
+        <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 600; color: #1e293b;">${appt.slot_time}</p>
+      </div>
+    </div>
+    <div>
+      <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Status</p>
+      <span class="badge ${getBadgeClass(appt.status)} mt-1">${escapeHtml(appt.status)}</span>
+    </div>
+  `;
+
+  const s = appt.status.toUpperCase();
+  actions.innerHTML = `
+    <button class="btn btn-secondary" style="flex: 1 1 45%;" onclick="alert('Viewing patient history for ${appt.patient_name}')"><i class="fa-solid fa-file-medical"></i> View Patient</button>
+    ${['PENDING', 'CONFIRMED'].includes(s) ? `<button class="btn btn-danger" style="flex: 1 1 45%;" onclick="updateAppointmentStatus('${appt.id}', 'Rejected'); closeModal('modal-doctor-appointment');">Reject</button>` : ''}
+    ${['WAITING', 'CHECKED IN', 'CONFIRMED'].includes(s) ? `<button class="btn btn-primary" style="flex: 1 1 45%;" onclick="updateAppointmentStatus('${appt.id}', 'In Progress'); closeModal('modal-doctor-appointment');">Start Consultation</button>` : ''}
+    ${s === 'IN PROGRESS' ? `<button class="btn btn-success" style="flex: 1 1 100%;" onclick="updateAppointmentStatus('${appt.id}', 'Completed'); closeModal('modal-doctor-appointment');">Complete Appointment</button>` : ''}
+  `;
+
+  openModal('modal-doctor-appointment');
+};
+
+window.updateAppointmentStatus = async function(id, newStatus) {
+  try {
+    const res = await fetch(`${API_BASE}/appointments/${id}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': currentUser?.token ? `Bearer ${currentUser.token}` : ''
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (res.ok) {
+      showToast(`Appointment marked as ${newStatus}`, 'success');
+      syncAllData(); // Refresh UI
+    } else {
+      showToast('Failed to update status', 'error');
+    }
+  } catch (err) {
+    showToast('Network error updating status', 'error');
+  }
+};
 // ---------------------------------------------------------------------------
 // RENDERING - QUEUES
 // ---------------------------------------------------------------------------
