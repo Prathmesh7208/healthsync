@@ -1864,17 +1864,67 @@ select.form-control { padding-right: 34px; }
     left: 0 !important;
     width: 280px !important;
     transform: none !important;
+    transition: width 0.3s ease !important;
   }
   .main-area {
     margin-left: 280px !important;
+    transition: margin-left 0.3s ease !important;
   }
+  /* DO NOT HIDE MOBILE MENU BTN ON DESKTOP ANYMORE! */
   .mobile-menu-btn {
-    display: none !important;
+    display: flex !important;
   }
   #sidebar-overlay {
     display: none !important;
   }
+  
+  /* Collapsed state */
+  .sidebar.collapsed {
+    width: 80px !important;
+  }
+  .sidebar.collapsed .sidebar-brand-name,
+  .sidebar.collapsed .nav-item span:not(.nav-icon),
+  .sidebar.collapsed .sidebar-footer,
+  .sidebar.collapsed .mobile-role-selector-container {
+    display: none !important;
+  }
+  .sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+    padding: 16px 0;
+  }
+  .sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 12px 0;
+  }
+  .sidebar.collapsed .nav-icon {
+    margin-right: 0 !important;
+    font-size: 20px;
+  }
+  .sidebar.collapsed ~ .main-area,
+  .role-panel:has(.sidebar.collapsed) .main-area {
+    margin-left: 80px !important;
+  }
 }
+
+.mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 24px;
+  cursor: pointer;
+  margin-left: auto;
+  opacity: 0.8;
+}
+.mobile-close-btn:hover {
+  opacity: 1;
+}
+@media (max-width: 768px) {
+  .mobile-close-btn {
+    display: block;
+  }
+}
+
 
 /* --- MOBILE SIDEBAR BULLETPROOF FIX --- */
 @media (max-width: 768px) {
