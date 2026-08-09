@@ -1856,3 +1856,22 @@ select.form-control { padding-right: 34px; }
     transform: none !important;
   }
 }
+
+
+/* --- DESKTOP SIDEBAR LAYOUT FIX --- */
+@media (min-width: 769px) {
+  .sidebar {
+    left: 0 !important;
+    width: 280px !important;
+    transform: none !important;
+  }
+  .main-area {
+    margin-left: 280px !important;
+  }
+  .mobile-menu-btn {
+    display: none !important;
+  }
+  #sidebar-overlay {
+    display: none !important;
+  }
+}
