@@ -143,7 +143,7 @@
       <!-- Main Area -->
       <div class="main-area">
         <header class="top-header new-top-header">
-          <button class="icon-btn mobile-menu-btn" type="button" aria-label="Open sidebar" onclick="document.querySelector('#panel-patient .sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open');"><i class="fa-solid fa-bars"></i></button>
+          <button class="icon-btn mobile-menu-btn" type="button" aria-label="Open sidebar" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
           
           <div class="new-search-bar">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -603,7 +603,7 @@
       <!-- Main Area -->
       <div class="main-area">
         <header class="top-header new-top-header">
-          <button class="icon-btn mobile-menu-btn" type="button" aria-label="Open sidebar" onclick="document.querySelector('#panel-patient .sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open');"><i class="fa-solid fa-bars"></i></button>
+          <button class="icon-btn mobile-menu-btn" type="button" aria-label="Open sidebar" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
           
           <div class="new-search-bar">
             <i class="fa-solid fa-magnifying-glass search-icon" style="color: #94a3b8; font-size: 14px; margin-left: 16px;"></i>
@@ -957,19 +957,20 @@
 
       <!-- Main Area -->
       <div class="main-area">
-        <header class="top-header">
-          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
-          <span class="page-title">Receptionist Dashboard</span>
-          <div class="role-tab-bar">
-            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
-            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
-            <div class="role-tab active" onclick="switchGlobalRole('reception')">Receptionist View</div>
-            <div class="role-tab" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
+        <header class="top-header new-top-header">
+          <button class="icon-btn mobile-menu-btn" type="button" aria-label="Open sidebar" onclick="document.querySelector('#panel-patient .sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open');"><i class="fa-solid fa-bars"></i></button>
+          
+          <div class="new-search-bar">
+            <i class="fa-solid fa-magnifying-glass search-icon" style="color: #94a3b8; font-size: 14px; margin-left: 16px;"></i>
+            <input type="text" placeholder="Search doctors, tests, medicines..." class="new-search-input">
           </div>
+          
           <div class="header-icons">
-            <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
-            <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
-            <button class="header-avatar profile-trigger" type="button" onclick="toggleProfileMenu('reception')" aria-label="Open receptionist profile menu">R</button>
+            <div class="new-notification-bell">
+              <i class="fa-regular fa-bell" style="font-size: 20px; color: #334155;"></i>
+              <span class="new-badge">3</span>
+            </div>
+            <div class="new-header-avatar" id="patient-header-avatar">NP</div>
           </div>
         </header>
 
