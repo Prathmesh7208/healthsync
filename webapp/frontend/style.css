@@ -1827,8 +1827,6 @@ select.form-control { padding-right: 34px; }
   .new-dash-row-1 { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
-  .new-sidebar { left: -280px; }
-  .new-sidebar.open { left: 0; }
   .new-top-header { padding: 0 16px; }
   .new-search-bar { display: none; }
   .medicine-box { flex-direction: column; text-align: center; gap: 16px; }
