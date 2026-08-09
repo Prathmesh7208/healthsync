@@ -18,6 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
   applyLanguage(selectedLanguage);
   populateCountryCodeSelects();
   updateAppHistoryButtons();
+
+  // Restore unauthenticated language/phone state
+  if (sessionStorage.getItem('healthsync-language-confirmed') === 'true') {
+    document.getElementById('language-screen')?.classList.add('hidden');
+    document.getElementById('auth-screen')?.classList.remove('hidden');
+  }
+  const savedMobile = sessionStorage.getItem('healthsync-pending-mobile');
+  if (savedMobile) {
+    const authMobile = document.getElementById('auth-mobile');
+    if (authMobile) {
+      authMobile.value = savedMobile.replace(/^\+\d{2}/, '');
+      pendingMobile = savedMobile;
+    }
+    document.getElementById('mobile-login-form')?.classList.add('hidden');
+    document.getElementById('otp-login-form')?.classList.remove('hidden');
+    startResendCooldown(); // restart cooldown display
+  }
+
   const hash = window.location.hash;
   if (hash && hash.startsWith('#')) {
     const parts = hash.substring(1).split('/');
@@ -108,7 +126,7 @@ window.exitDemoExperience = function() {
 function authMessage(message, isError = false) { const el = document.getElementById('auth-message'); if (el) { el.textContent = message; el.style.color = isError ? '#b91c1c' : ''; } }
 function setAuthBusy(buttonId, busy, idleLabel) { const button = document.getElementById(buttonId); if (button) { button.disabled = busy; button.textContent = busy ? 'Please wait…' : idleLabel; } }
 window.requestOtp = async function(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
   if (authMode === 'register') {
     const name = document.getElementById('register-name')?.value.trim() || '';
     const role = document.getElementById('register-role')?.value || 'PATIENT';
@@ -123,6 +141,10 @@ window.requestOtp = async function(event) {
   if (pendingCountryCode === '+91' && !/^[6-9]\d{9}$/.test(localMobile)) return authMessage('Enter a valid 10-digit Indian mobile number.', true);
   pendingMobile = internationalPhone(pendingCountryCode, localMobile);
   if (!/^\+\d{7,15}$/.test(pendingMobile)) return authMessage('Enter a valid mobile number for the selected country code.', true);
+  
+  // Persist pending mobile
+  sessionStorage.setItem('healthsync-pending-mobile', pendingMobile);
+
   setAuthBusy('send-otp-btn', true, 'Send OTP');
   try {
     const data = await requestJson('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile}) });
@@ -134,10 +156,11 @@ window.requestOtp = async function(event) {
   } catch (error) { authMessage(error.message, true); }
   finally { setAuthBusy('send-otp-btn', false, 'Send OTP'); }
 };
-window.resendOtp = function() { requestOtp({ preventDefault() {} }); };
+window.resendOtp = function() { requestOtp(null); };
 window.backToMobileLogin = function() {
   clearInterval(resendTimer);
   pendingMobile = '';
+  sessionStorage.removeItem('healthsync-pending-mobile');
   document.getElementById('auth-otp').value = '';
   document.getElementById('otp-login-form').classList.add('hidden');
   document.getElementById('mobile-login-form').classList.remove('hidden');
@@ -702,7 +725,18 @@ window.saveSettings = async function() {
   } catch { showToast('Could not sync settings.', 'error'); }
 };
 window.submitSupport = function() { const text=document.getElementById('support-message').value.trim(); if(!text) return showToast('Describe your issue first.', 'warning'); const rows=localItems('healthsync-support'); rows.push({text,createdAt:new Date().toISOString()}); saveLocalItems('healthsync-support',rows); document.getElementById('support-message').value=''; showToast('Support request sent.', 'success'); };
-window.logoutCurrentUser = async function() { if(currentUser?.refreshToken) await fetch(`${API_BASE}/auth/logout`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refreshToken:currentUser.refreshToken})}); localStorage.removeItem('healthsync-session'); currentUser=null; location.reload(); };
+window.logoutCurrentUser = async function() {
+  if(currentUser?.refreshToken) {
+    try {
+      await fetch(`${API_BASE}/auth/logout`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refreshToken:currentUser.refreshToken})});
+    } catch(e) { console.error('Logout error', e); }
+  }
+  localStorage.removeItem('healthsync-session');
+  sessionStorage.removeItem('healthsync-language-confirmed');
+  sessionStorage.removeItem('healthsync-pending-mobile');
+  currentUser=null;
+  location.reload();
+};
 window.exportAppointmentsCsv = function() { const rows=[['Patient','Doctor','Date','Time','Status'], ...todayAppointments.map(a=>[a.patient_name,a.doctor_name,a.slot_date,a.slot_time,a.status])]; const csv=rows.map(row=>row.map(value=>`"${String(value || '').replace(/"/g,'""')}"`).join(',')).join('\n'); const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); link.download='healthsync-appointments.csv'; link.click(); URL.revokeObjectURL(link.href); };
 
 // ---------------------------------------------------------------------------

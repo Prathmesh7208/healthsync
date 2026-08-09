@@ -496,10 +496,12 @@ window.startAmbulanceLocationTracking = function(caseId) {
 window.selectAppLanguage = function(language) { applyLanguage(language); };
 window.continueToLogin = function() {
   applyLanguage(selectedLanguage);
+  sessionStorage.setItem('healthsync-language-confirmed', 'true');
   document.getElementById('language-screen')?.classList.add('hidden');
   document.getElementById('auth-screen')?.classList.remove('hidden');
 };
 window.backToLanguageSelection = function() {
+  sessionStorage.removeItem('healthsync-language-confirmed');
   document.getElementById('auth-screen')?.classList.add('hidden');
   document.getElementById('language-screen')?.classList.remove('hidden');
 };
