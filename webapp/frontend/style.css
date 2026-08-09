@@ -1418,7 +1418,7 @@ select.form-control { padding-right: 34px; }
    PATIENT DASHBOARD NEW UI CSS
    ===================================================== */
 
-.new-sidebar {
+.sidebar {
   background: #111827; /* Dark Navy */
   color: #f1f5f9;
   border-right: none;
@@ -1838,7 +1838,7 @@ select.form-control { padding-right: 34px; }
 
 /* Bulletproof Mobile Sidebar Fix */
 @media (max-width: 768px) {
-  .new-sidebar {
+  .sidebar {
     position: fixed !important;
     top: 0 !important;
     left: -280px !important;
@@ -1851,7 +1851,7 @@ select.form-control { padding-right: 34px; }
     display: flex !important;
     flex-direction: column !important;
   }
-  .new-sidebar.open {
+  .sidebar.open {
     left: 0 !important;
     transform: none !important;
   }
@@ -1873,5 +1873,26 @@ select.form-control { padding-right: 34px; }
   }
   #sidebar-overlay {
     display: none !important;
+  }
+}
+
+/* --- MOBILE SIDEBAR BULLETPROOF FIX --- */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: -280px !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    height: 100dvh !important;
+    z-index: 999999 !important;
+    transition: left 0.3s ease !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .sidebar.open {
+    left: 0 !important;
+    transform: none !important;
   }
 }
