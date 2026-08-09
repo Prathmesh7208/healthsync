@@ -151,7 +151,7 @@
           <div id="patient-page-dashboard" class="page active">
             <div class="page-header-row mb-4">
               <div>
-                <h2 class="page-heading">Hello, <span id="patient-dashboard-name">Priya</span> 👋</h2>
+                <h2 class="page-heading">Hello, <span id="patient-dashboard-name"></span> 👋</h2>
                 <p class="page-subheading text-muted">How can we help you today?</p>
               </div>
             </div>
@@ -371,7 +371,7 @@
                 <h2 class="page-heading">My Appointments</h2>
                 <p class="page-subheading">Track and manage your visits</p>
               </div>
-              <button class="btn btn-primary" onclick="openBookAppointmentModal()"><i class="fa-solid fa-plus"></i> Book Appointment</button>
+              <button class="btn btn-primary" onclick="switchPatientPage('doctors')"><i class="fa-solid fa-plus"></i> Book Appointment</button>
             </div>
 
             <div class="tab-nav">
@@ -506,7 +506,10 @@
               <div class="records-sidebar">
                 <div class="card">
                   <nav style="padding: 10px 0;">
-                    <div class="records-menu-item active" onclick="switchRecordsSubtab(this, 'lab-reports')">
+                    <div class="records-menu-item active" onclick="switchRecordsSubtab(this, 'timeline')">
+                      <i class="fa-solid fa-clock-rotate-left"></i> Medical Timeline
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'lab-reports')">
                       <i class="fa-solid fa-microscope"></i> Lab Reports
                     </div>
                     <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'prescriptions')">
@@ -1276,7 +1279,7 @@
                 <h2 class="page-heading">Today's Appointment Schedule</h2>
                 <p class="page-subheading">Track patient checkins, rescheduling and confirmations</p>
               </div>
-              <button class="btn btn-primary" onclick="openBookAppointmentModal()"><i class="fa-solid fa-plus"></i> Book Appointment</button>
+              <button class="btn btn-primary" onclick="switchPatientPage('doctors')"><i class="fa-solid fa-plus"></i> Book Appointment</button>
             </div>
             <div class="card">
               <div class="card-body table-wrap">

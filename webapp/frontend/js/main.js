@@ -419,6 +419,10 @@ window.switchPatientPage = function(pageId, remember = true) {
   const targetPage = document.getElementById(`patient-page-${pageId}`);
   if (targetPage) targetPage.classList.add('active');
   if (pageId === 'health-profile') renderPatientHealthProfile();
+  if (pageId === 'health-records') {
+    const firstTab = document.querySelector('.records-menu-item');
+    if (firstTab) switchRecordsSubtab(firstTab, 'timeline');
+  }
   if (remember) recordAppNavigation('patient', pageId);
 };
 
@@ -482,7 +486,7 @@ function profileInitials(name) {
   return (words.slice(0, 2).map(word => word.charAt(0)).join('') || 'HS').toUpperCase();
 }
 function renderPatientIdentity(profile = getHealthProfile()) {
-  const name = profile?.name || currentUser?.name || 'Rahul Verma';
+  const name = currentUser?.full_name || currentUser?.name || profile?.name || 'Patient';
   const initials = profileInitials(name);
   const firstName = String(name).trim().split(/\s+/)[0] || 'Patient';
   ['patient-sidebar-avatar', 'patient-header-avatar', 'patient-profile-photo-preview'].forEach(id => {
@@ -789,7 +793,7 @@ function renderNextAppointment(appt) {
       <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; text-align: center;">
         <i class="fa-regular fa-calendar-xmark" style="font-size: 24px; color: var(--text-muted); margin-bottom: 8px;"></i>
         <p style="font-size: 14px; color: var(--text-muted); margin: 0 0 12px 0;">No upcoming appointment</p>
-        <button class="btn btn-primary btn-sm" onclick="openBookAppointmentModal()">Book Appointment</button>
+        <button class="btn btn-primary btn-sm" onclick="switchPatientPage('doctors')">Book Appointment</button>
       </div>`;
     return;
   }
@@ -798,11 +802,39 @@ function renderNextAppointment(appt) {
   const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', {month:'short'})} ${dateObj.getFullYear()}`;
   const docName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync Doctor';
   const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'City Heart Clinic';
-  
+    
+  // Check live queue
+  let queueInfoHtml = '';
+  if (['CHECKED IN', 'WAITING', 'IN PROGRESS'].includes(String(appt.status).toUpperCase())) {
+    const queueEntry = typeof liveQueueList !== 'undefined' ? liveQueueList.find(q => q.token === appt.token_number || q.patientId === appt.patient_id) : null;
+    let waitStr = 'Calculating...';
+    let ahead = '...';
+    if (queueEntry) {
+      const waitingList = liveQueueList.filter(q => q.status === 'Waiting');
+      const pos = waitingList.findIndex(q => q.token === queueEntry.token);
+      ahead = pos >= 0 ? pos : 0;
+      waitStr = `${ahead * 15} mins`; // Mock 15 mins per patient ahead
+      if (queueEntry.status === 'In Consultation') {
+        ahead = 0; waitStr = 'Consulting now';
+      }
+    }
+    queueInfoHtml = `
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <p style="font-size: 11px; color: #166534; font-weight: 700; margin: 0; text-transform: uppercase;">Live Status</p>
+        <p style="font-size: 14px; color: #15803d; font-weight: 600; margin: 2px 0 0 0;">Token ${appt.token_number || 'Waitlist'}</p>
+      </div>
+      <div style="text-align: right;">
+        <p style="font-size: 11px; color: #166534; font-weight: 700; margin: 0; text-transform: uppercase;">Est. Wait</p>
+        <p style="font-size: 14px; color: #15803d; font-weight: 600; margin: 2px 0 0 0;">${waitStr} (${ahead} ahead)</p>
+      </div>
+    </div>`;
+  }
+
   container.innerHTML = `
     <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
       <div style="display: flex; gap: 16px;">
-        <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px;">👩‍⚕️</div>
+        <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px;">🏥</div>
         <div style="flex: 1;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
@@ -815,6 +847,7 @@ function renderNextAppointment(appt) {
             <p style="margin: 4px 0;"><i class="fa-regular fa-clock" style="color: var(--text-muted); width: 16px;"></i> ${displayDate} • ${escapeHtml(appt.slot_time || appt.time)}</p>
             <p style="margin: 4px 0;"><i class="fa-solid fa-location-dot" style="color: var(--text-muted); width: 16px;"></i> ${escapeHtml(clinic)}</p>
           </div>
+          ${queueInfoHtml}
           <div style="margin-top: 16px; text-align: right;">
             <button onclick="viewAppointmentDetails('${appt.id}')" style="background: transparent; border: 1px solid #e2e8f0; color: #4f46e5; font-weight: 600; padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;">View Details</button>
           </div>
@@ -1059,7 +1092,44 @@ window.searchDoctorsFromDashboard = function() {
     search.dispatchEvent(new Event('input', { bubbles: true }));
   }
 };
-window.showEmergencyHelp = function() {
+  let sosTimer = null;
+  let sosProgressInterval = null;
+  
+  window.startSOSCountdown = function() {
+    const progressEl = document.getElementById('sos-progress');
+    const textEl = document.getElementById('sos-btn-text');
+    if (!progressEl || !textEl) return;
+    
+    if (textEl.textContent === 'Dispatched') return; // already dispatched
+    
+    let progress = 0;
+    progressEl.style.width = '0%';
+    
+    sosProgressInterval = setInterval(() => {
+      progress += 100 / 30; // 3 seconds = 30 intervals of 100ms
+      progressEl.style.width = `${Math.min(progress, 100)}%`;
+    }, 100);
+    
+    sosTimer = setTimeout(() => {
+      clearInterval(sosProgressInterval);
+      textEl.textContent = 'Dispatched';
+      progressEl.style.width = '100%';
+      progressEl.style.background = '#16a34a';
+      window.showEmergencyHelp();
+    }, 3000);
+  };
+  
+  window.cancelSOSCountdown = function() {
+    const progressEl = document.getElementById('sos-progress');
+    const textEl = document.getElementById('sos-btn-text');
+    if (textEl && textEl.textContent === 'Dispatched') return;
+    
+    if (sosTimer) clearTimeout(sosTimer);
+    if (sosProgressInterval) clearInterval(sosProgressInterval);
+    if (progressEl) progressEl.style.width = '0%';
+  };
+
+  window.showEmergencyHelp = function() {
   showToast('Gathering exact live coordinates for Emergency SOS...', 'info');
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -1120,7 +1190,7 @@ function renderAppointmentsList() {
     }[type];
     const action = type === 'cancelled'
       ? "showPatientAppointmentTab('pt-appt-upcoming')"
-      : 'openBookAppointmentModal()';
+      : 'switchPatientPage(\\\'doctors\\\')';
     return `<div class="empty-state appointment-empty-state"><div class="es-icon"><i class="fa-regular fa-calendar"></i></div><div class="es-text">${content[0]}</div><div class="es-sub">${content[1]}</div><button class="btn btn-primary btn-sm mt-3" onclick="${action}"><i class="fa-solid fa-calendar-plus"></i> ${content[2]}</button></div>`;
   };
 
@@ -1409,10 +1479,10 @@ function updateKPIs(stats) {
 // ---------------------------------------------------------------------------
 window.switchRecordsSubtab = function(btn, type) {
   document.querySelectorAll('.records-menu-item').forEach(m => m.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
 
   const title = document.getElementById('records-subtab-title');
-  if (title) title.innerText = btn.innerText.trim();
+  if (title) title.innerText = type === 'timeline' ? 'Medical Timeline' : btn ? btn.innerText.trim() : 'Records';
 
   renderRecordsList(type);
 };
@@ -1421,9 +1491,67 @@ function renderRecordsList(type) {
   const container = document.getElementById('records-list-container');
   if (!container) return;
 
+  if (type === 'timeline') {
+    // Collect timeline events
+    const events = [];
+    
+    // 1. Appointments (Past)
+    todayAppointments.forEach(appt => {
+      const isPast = ['COMPLETED', 'CANCELLED'].includes(String(appt.status).toUpperCase());
+      if (isPast) {
+        events.push({
+          date: new Date(appt.slot_date || appt.date),
+          type: 'visit',
+          title: `Doctor Visit - ${appt.doctor_name || appt.doctor}`,
+          desc: `Consultation at ${appt.clinic_name || 'Clinic'} (${appt.status})`,
+          icon: 'fa-user-doctor',
+          color: '#3b82f6'
+        });
+      }
+    });
+
+    // 2. Records
+    patientRecords.forEach(r => {
+      events.push({
+        date: new Date(r.date),
+        type: 'record',
+        title: `Uploaded Record: ${r.name}`,
+        desc: `Added by ${r.doctor}`,
+        icon: 'fa-file-medical',
+        color: '#10b981'
+      });
+    });
+
+    // Sort descending
+    events.sort((a, b) => b.date - a.date);
+
+    if (events.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="es-icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="es-text">No health records yet.</div><div class="es-sub">Your medical timeline will appear here.</div></div>`;
+      return;
+    }
+
+    let html = '<div class="timeline" style="position: relative; padding-left: 20px; border-left: 2px solid #e2e8f0; margin-top: 16px;">';
+    events.forEach(e => {
+      const dateStr = Number.isNaN(e.date.getTime()) ? 'Unknown Date' : e.date.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+      html += `
+        <div style="position: relative; margin-bottom: 24px; padding-left: 16px;">
+          <div style="position: absolute; left: -30px; top: 0; width: 18px; height: 18px; border-radius: 50%; background: ${e.color}; border: 3px solid white; box-shadow: 0 0 0 1px #e2e8f0;"></div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 4px;">${dateStr}</div>
+          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <div style="font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px;"><i class="fa-solid ${e.icon}" style="color: ${e.color}; margin-right: 6px;"></i>${escapeHtml(e.title)}</div>
+            <div style="font-size: 13px; color: #64748b;">${escapeHtml(e.desc)}</div>
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    return;
+  }
+
   const filtered = patientRecords.filter(r => r.type === type);
   if (filtered.length === 0) {
-    container.innerHTML = `<p class="text-muted text-sm empty-state">No files uploaded in this folder.</p>`;
+    container.innerHTML = `<div class="empty-state"><div class="es-icon"><i class="fa-regular fa-folder-open"></i></div><div class="es-text">No health records yet.</div><div class="es-sub">Upload reports to see them here.</div></div>`;
     return;
   }
 
