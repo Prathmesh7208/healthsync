@@ -1189,8 +1189,8 @@ function renderAppointmentsList() {
       cancelled: ['No cancelled appointments', 'Cancelled visits are kept here so your upcoming appointments stay uncluttered.', 'View upcoming appointments']
     }[type];
     const action = type === 'cancelled'
-      ? "showPatientAppointmentTab('pt-appt-upcoming')"
-      : 'switchPatientPage(\\\'doctors\\\')';
+        ? "showPatientAppointmentTab('pt-appt-upcoming')"
+        : "switchPatientPage('doctors')";
     return `<div class="empty-state appointment-empty-state"><div class="es-icon"><i class="fa-regular fa-calendar"></i></div><div class="es-text">${content[0]}</div><div class="es-sub">${content[1]}</div><button class="btn btn-primary btn-sm mt-3" onclick="${action}"><i class="fa-solid fa-calendar-plus"></i> ${content[2]}</button></div>`;
   };
 
