@@ -1126,6 +1126,7 @@ window.searchDoctorsFromDashboard = function() {
     search.dispatchEvent(new Event('input', { bubbles: true }));
   }
 };
+  let sosTimer = null;
   let sosProgressInterval = null;
   
   window.startSOSCountdown = function() {

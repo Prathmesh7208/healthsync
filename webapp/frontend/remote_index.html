@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HealthSync — Syncing Care, Improving Lives</title>
+  <meta name="description" content="HealthSync outpatient clinic management — patient queue, appointments, prescriptions and health records.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="demo.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css" />
+</head>
+<body>
+  <!-- Sidebar overlay for mobile/collapsed menu -->
+  <div id="sidebar-overlay" onclick="toggleSidebar(true)"></div>
+  <section id="language-screen" class="auth-screen language-screen" aria-labelledby="language-title">
+    <div class="auth-card language-card">
+      <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
+      <h1 id="language-title" data-i18n="Choose your language">Choose your language</h1>
+      <p class="auth-subtitle" data-i18n="You can change this later from Settings.">You can change this later from Settings.</p>
+      <div class="language-choice-grid" role="radiogroup" aria-label="Choose your language">
+        <button type="button" class="language-choice active" data-language="English" onclick="selectAppLanguage('English')"><strong>English</strong><span>English</span></button>
+        <button type="button" class="language-choice" data-language="Hindi" onclick="selectAppLanguage('Hindi')"><strong>हिन्दी</strong><span>Hindi</span></button>
+        <button type="button" class="language-choice" data-language="Marathi" onclick="selectAppLanguage('Marathi')"><strong>मराठी</strong><span>Marathi</span></button>
+      </div>
+      <button class="btn btn-primary w-full mt-3" type="button" onclick="continueToLogin()" data-i18n="Continue">Continue</button>
+    </div>
+  </section>
+
+  <section id="auth-screen" class="auth-screen hidden" aria-labelledby="auth-title">
+    <div class="auth-card auth-split-card">
+      <aside class="auth-showcase" aria-label="HealthSync care illustration">
+        <div class="auth-showcase-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
+        <div class="auth-doctor-art"><div class="doctor-halo"></div><div class="doctor-illustration"><i class="fa-solid fa-user-doctor"></i></div><div class="doctor-clipboard"><i class="fa-solid fa-clipboard-list"></i></div></div>
+        <div class="auth-stat stat-top"><i class="fa-solid fa-shield-heart"></i><span><strong>Private care</strong><small>Secure health records</small></span></div>
+        <div class="auth-stat stat-bottom"><i class="fa-solid fa-circle-check"></i><span><strong>Verified network</strong><small>Doctors and clinics</small></span></div>
+        <div class="auth-showcase-copy"><span class="eyebrow">HealthSync care</span><h2>Care that stays connected.</h2><p>Appointments, records, prescriptions, and clinic updates in one secure place.</p></div>
+      </aside>
+      <div class="auth-form-panel">
+      <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
+      <h1 id="auth-title">Welcome to better care</h1>
+      <p id="auth-subtitle" class="auth-subtitle">Sign in securely with your mobile number.</p>
+      <div class="auth-mode-tabs" role="tablist" aria-label="Account action"><button id="auth-mode-login" class="auth-mode-tab active" type="button" onclick="setAuthMode('login')">Log in</button><button id="auth-mode-register" class="auth-mode-tab" type="button" onclick="setAuthMode('register')">Register</button></div>
+      <form id="mobile-login-form" onsubmit="requestOtp(event); return false;">
+        <div id="registration-fields" class="hidden">
+          <div class="form-group"><label class="form-label" for="register-name">Full name <span class="req">*</span></label><input id="register-name" class="form-control" maxlength="80" autocomplete="name" placeholder="Your full name"></div>
+          <div class="form-group"><label class="form-label" for="register-role">Register as <span class="req">*</span></label><select id="register-role" class="form-control" onchange="toggleRegistrationFields()"><option value="PATIENT">Patient</option><option value="DOCTOR">Doctor</option><option value="RECEPTIONIST">Receptionist</option></select></div>
+          <div id="doctor-registration-fields" class="hidden"><div class="form-group"><label class="form-label" for="register-specialization">Specialization <span class="req">*</span></label><input id="register-specialization" class="form-control" maxlength="80" placeholder="e.g. General Medicine"></div><div class="form-group"><label class="form-label" for="register-clinic">Hospital / clinic <span class="req">*</span></label><input id="register-clinic" class="form-control" maxlength="100" placeholder="Your clinic or hospital"></div></div>
+          <p id="registration-role-help" class="auth-help">Your patient account will be ready immediately after OTP verification.</p>
+        </div>
+        <label class="form-label" for="auth-mobile">Mobile number</label>
+        <div class="auth-mobile-input"><select id="auth-country-code" class="country-code-select" aria-label="Country code"></select><input id="auth-mobile" class="form-control" inputmode="numeric" autocomplete="tel" maxlength="15" placeholder="Mobile number" required></div>
+        <button id="send-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Send OTP</button>
+        <button class="btn btn-secondary w-full mt-2" type="button" onclick="backToLanguageSelection()"><i class="fa-solid fa-arrow-left"></i> Back to language selection</button>
+      </form>
+      <form id="otp-login-form" class="hidden" onsubmit="verifyOtp(event); return false;">
+        <label class="form-label" for="auth-otp">Enter the 6-digit OTP</label>
+        <input id="auth-otp" class="form-control" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required>
+        <p class="auth-help">Enter the OTP sent to your registered mobile number.</p>
+        <button id="verify-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Verify and sign in</button>
+        <button id="resend-otp-btn" class="btn btn-secondary w-full mt-2" type="button" onclick="resendOtp()" disabled>Resend OTP (30s)</button>
+        <button class="btn btn-secondary w-full mt-2" type="button" onclick="backToMobileLogin()"><i class="fa-solid fa-arrow-left"></i> Change mobile number</button>
+      </form>
+      <p id="auth-message" class="auth-message" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo-portal" class="demo-portal hidden" aria-live="polite"></section>
+
+  <div id="app">
+    <!-- ======================================= -->
+    <!-- PATIENT ROLE VIEW PANEL                 -->
+    <!-- ======================================= -->
+    <div id="panel-patient" class="role-panel active w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-heart-pulse"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Patient Portal</div>
+          <div class="nav-item active" onclick="switchPatientPage('dashboard')">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
+          </div>
+          <div class="nav-item" onclick="switchPatientPage('appointments')">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-check"></i></span> Appointments
+          </div>
+          <div class="nav-item" onclick="switchPatientPage('doctors')">
+            <span class="nav-icon"><i class="fa-solid fa-user-doctor"></i></span> Doctors
+          </div>
+          <div class="nav-item" onclick="switchPatientPage('health-records')">
+            <span class="nav-icon"><i class="fa-solid fa-file-medical"></i></span> Health Records
+          </div>
+          <div class="nav-item" onclick="switchPatientPage('health-profile')">
+            <span class="nav-icon"><i class="fa-solid fa-heart-pulse"></i></span> My Health Profile
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'prescriptions')">
+            <span class="nav-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Prescriptions
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'medicines')">
+            <span class="nav-icon"><i class="fa-solid fa-pills"></i></span> Medicines
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'reminders')">
+            <span class="nav-icon"><i class="fa-solid fa-clock"></i></span> Reminders
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'vaccinations')"><span class="nav-icon"><i class="fa-solid fa-syringe"></i></span> Vaccinations</div>
+
+          <div class="nav-item" onclick="openPortalTool('patient', 'settings')">
+            <span class="nav-icon"><i class="fa-solid fa-gear"></i></span> Settings
+          </div>
+          <div class="nav-item" onclick="openPortalTool('patient', 'help')">
+            <span class="nav-icon"><i class="fa-solid fa-circle-question"></i></span> Help & Support
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-user profile-trigger" type="button" onclick="toggleProfileMenu('patient')" aria-label="Open patient profile menu">
+            <div id="patient-sidebar-avatar" class="avatar" aria-label="Patient profile image">RV</div>
+            <div class="sidebar-user-info">
+              <div id="patient-sidebar-name" class="sidebar-user-name">Rahul Verma</div>
+              <div class="sidebar-user-role">Patient Account</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+          <span class="page-title">Patient Dashboard</span>
+          <div class="role-tab-bar">
+            <div class="role-tab active" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
+          </div>
+          <div class="header-icons">
+            <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
+            <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i><span id="notification-dot" class="notif-dot hidden"></span></button>
+            <button id="patient-header-avatar" class="header-avatar profile-trigger" type="button" onclick="toggleProfileMenu('patient')" aria-label="Open patient profile menu">RV</button>
+          </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="page-content">
+
+          <!-- 1. Patient Dashboard Page -->
+          <div id="patient-page-dashboard" class="page active">
+            <div class="page-header-row mb-4">
+              <div>
+                <h2 class="page-heading">Hello, <span id="patient-dashboard-name"></span> 👋</h2>
+                <p class="page-subheading text-muted">How can we help you today?</p>
+              </div>
+            </div>
+
+            <!-- Top Row: 4 Main Action Cards -->
+            <div class="grid-4" style=" gap: 16px; margin-bottom: 24px;">
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;" onclick="switchPatientPage('doctors')">
+                <div style="background: #e0e7ff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                  <i class="fa-solid fa-calendar-plus" style="color: #4f46e5; font-size: 20px;"></i>
+                </div>
+                <div>
+                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: #1e293b;">Book Appointment</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">Find doctors & book instantly</p>
+                </div>
+              </div>
+
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;" onclick="switchPatientPage('appointments')">
+                <div style="background: #dcfce7; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                  <i class="fa-solid fa-calendar-check" style="color: #16a34a; font-size: 20px;"></i>
+                </div>
+                <div>
+                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: #1e293b;">My Appointments</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">View upcoming schedules</p>
+                </div>
+              </div>
+
+              <div class="card" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;" onclick="switchPatientPage('health-records')">
+                <div style="background: #f3e8ff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                  <i class="fa-solid fa-file-medical" style="color: #9333ea; font-size: 20px;"></i>
+                </div>
+                <div>
+                  <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 16px; color: #1e293b;">Health Records</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">Access all medical data</p>
+                </div>
+              </div>
+
+              <div id="patient-sos-btn" class="card btn-emergency" style="cursor: pointer; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px; background: #fef2f2; border: 1px solid #fecaca; align-items: flex-start;" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()" onmouseleave="cancelSOSCountdown()" ontouchstart="startSOSCountdown()" ontouchend="cancelSOSCountdown()">
+                <div style="background: #fee2e2; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: #dc2626; font-weight: 800; font-size: 14px;">
+                  SOS
+                </div>
+                <div>
+                  <h4 id="sos-btn-text" style="font-weight: 800; margin-bottom: 6px; font-size: 16px; color: #991b1b;">Emergency SOS</h4>
+                  <p style="font-size: 13px; color: #b91c1c; line-height: 1.4;">Hold to dispatch ambulance</p>
+                </div>
+                <div id="sos-progress" style="height: 4px; background: #dc2626; width: 0%; transition: width 0.1s linear; margin-top: 12px; border-radius: 2px;"></div>
+              </div>
+            </div>
+
+            <!-- SOS Status Panel Overlay (Hidden by default) -->
+            <div id="sos-status-panel" class="hidden" style="margin-bottom: 24px; background: #fee2e2; padding: 16px; border-radius: 8px; border: 1px solid #f87171;">
+              <h4 style="color: #b91c1c; margin-top:0; font-size: 14px;"><i class="fa-solid fa-truck-medical"></i> <span id="sos-status-text">SOS Sent... Pending Assignment</span></h4>
+              <a id="sos-maps-link" href="#" target="_blank" style="font-size: 13px; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 12px;">View Live Location</a>
+              <div id="patient-tracking-map" style="height: 250px; width: 100%; border-radius: 8px; display: none;"></div>
+            </div>
+
+            <!-- Middle Row -->
+            <div class="grid-col-2-1" style=" gap: 24px; margin-bottom: 24px;">
+              
+              <!-- Upcoming Appointment -->
+              <div>
+                <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Upcoming Appointment</h3>
+                <div id="patient-dashboard-upcoming-appt">
+                  <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100px; color: var(--text-muted); font-size: 14px;">
+                      Loading appointment...
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Health Tip -->
+              <div>
+                <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Health Tip of the Day</h3>
+                <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); height: calc(100% - 26px); display: flex; flex-direction: column;">
+                  <div style="display: flex; gap: 16px; flex: 1;">
+                    <p style="font-size: 14px; color: var(--text-medium); line-height: 1.5; flex: 1; margin: 0;">Drink plenty of water and stay hydrated.</p>
+                    <div style="width: 80px; text-align: center; font-size: 40px; align-self: center;">💧</div>
+                  </div>
+                  <div style="margin-top: 16px;">
+                    <button style="background: transparent; border: 1px solid #e2e8f0; color: #4f46e5; font-weight: 600; padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;">Learn More</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Row -->
+            <div class="grid-col-2-1" style=" gap: 24px;">
+              
+              <!-- Quick Actions -->
+              <div>
+                <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Quick Actions</h3>
+                <div class="card" style="padding: 24px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; gap: 24px; justify-content: space-around; text-align: center;">
+                  
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;" onclick="switchPatientPage('doctors')">
+                    <div style="background: #eff6ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #2563eb;">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Find Doctors</span>
+                  </div>
+
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="background: #f5f3ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #8b5cf6;">
+                      <i class="fa-regular fa-file-lines"></i>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Upload Report</span>
+                  </div>
+
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;" onclick="openPortalTool('patient', 'reminders')">
+                    <div style="background: #f5f3ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #8b5cf6;">
+                      <i class="fa-solid fa-pills"></i>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Medicine Reminder</span>
+                  </div>
+
+                  <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="background: #f5f3ff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #8b5cf6;">
+                      <i class="fa-solid fa-briefcase-medical"></i>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500; color: var(--text-dark);">Health Packages</span>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Recent Prescriptions -->
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0;">Recent Prescriptions</h3>
+                  <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchPatientPage('health-records')">View All</a>
+                </div>
+                <div class="card" style="border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);" id="patient-recent-rx-list">
+                  
+                  <div style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start;">
+                    <i class="fa-regular fa-circle-check" style="color: #64748b; margin-top: 4px;"></i>
+                    <div>
+                      <p style="font-size: 13px; font-weight: 600; margin: 0; color: #0f172a;">Paracetamol 500mg</p>
+                      <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0;">1-0-1 After Food</p>
+                    </div>
+                  </div>
+
+                  <div style="padding: 16px; display: flex; gap: 12px; align-items: flex-start;">
+                    <i class="fa-regular fa-circle" style="color: #64748b; margin-top: 4px;"></i>
+                    <div>
+                      <p style="font-size: 13px; font-weight: 600; margin: 0; color: #0f172a;">Vitamin D3</p>
+                      <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0;">0-0-1 After Breakfast</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Patient Health Profile Page -->
+          <div id="patient-page-health-profile" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">My Health Profile</h2>
+                <p class="page-subheading">Keep your wellness details up to date for a personalised dashboard guide.</p>
+              </div>
+            </div>
+            <div class="grid-col-2-1">
+              <form class="card" id="health-profile-form" onsubmit="saveHealthProfile(event)">
+                <div class="card-header"><span class="card-title">About you</span><span class="text-muted text-sm">Private to your patient dashboard</span></div>
+                <div class="card-body">
+                  <div class="profile-photo-editor">
+                    <div id="patient-profile-photo-preview" class="profile-photo-preview" aria-label="Profile photo preview">RV</div>
+                    <div class="profile-photo-content">
+                      <strong>Profile photo</strong>
+                      <p>Use your camera or choose an image from your device. It stays with this patient profile.</p>
+                      <div class="profile-photo-actions">
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="chooseProfilePhoto('camera')"><i class="fa-solid fa-camera"></i> Take photo</button>
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="chooseProfilePhoto('gallery')"><i class="fa-solid fa-image"></i> Choose image</button>
+                        <button class="btn btn-danger btn-sm" type="button" onclick="removeProfilePhoto()"><i class="fa-solid fa-trash"></i> Remove</button>
+                      </div>
+                    </div>
+                    <input id="profile-photo-camera" class="hidden" type="file" accept="image/*" capture="user" onchange="saveProfilePhoto(this.files[0])">
+                    <input id="profile-photo-gallery" class="hidden" type="file" accept="image/*" onchange="saveProfilePhoto(this.files[0])">
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label class="form-label" for="profile-name">Full name <span class="req">*</span></label><input class="form-control" id="profile-name" maxlength="80" required placeholder="Your full name"></div>
+                    <div class="form-group"><label class="form-label" for="profile-age">Age <span class="req">*</span></label><input class="form-control" id="profile-age" type="number" min="18" max="120" required placeholder="e.g. 30"></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label class="form-label" for="profile-gender">Gender</label><select class="form-control" id="profile-gender"><option value="Prefer not to say">Prefer not to say</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select></div>
+                    <div class="form-group"><label class="form-label" for="profile-job">Work / daily routine <span class="req">*</span></label><select class="form-control" id="profile-job" required onchange="toggleCustomWorkField()"><option value="">Select your routine</option><option value="Student">Student</option><option value="Desk-based / mostly sitting">Office / desk-based work</option><option value="Business owner / entrepreneur">Business owner / entrepreneur</option><option value="Mixed activity">Mixed activity / field and desk work</option><option value="Physically active work">Physically active work</option><option value="Healthcare / service work">Healthcare / service work</option><option value="Driving / travel-based work">Driving / travel-based work</option><option value="Homemaker / caregiver">Homemaker / caregiver</option><option value="Shift work">Shift work</option><option value="Retired">Retired</option><option value="Other">Other — type your own</option></select></div>
+                  </div>
+                  <div id="profile-custom-job-group" class="form-group full hidden"><label class="form-label" for="profile-custom-job">Describe your work / routine <span class="req">*</span></label><input class="form-control" id="profile-custom-job" maxlength="80" placeholder="For example: freelance photographer, farmer, delivery partner"></div>
+                  <div class="form-row">
+                    <div class="form-group"><label class="form-label" for="profile-height">Height (cm) <span class="req">*</span></label><input class="form-control" id="profile-height" type="number" min="80" max="250" step="0.1" required placeholder="e.g. 170"></div>
+                    <div class="form-group"><label class="form-label" for="profile-weight">Weight (kg) <span class="req">*</span></label><input class="form-control" id="profile-weight" type="number" min="20" max="400" step="0.1" required placeholder="e.g. 68"></div>
+                  </div>
+                  <div class="form-group"><label class="form-label" for="profile-work-hours">Average work / study hours per day <span class="req">*</span></label><input class="form-control" id="profile-work-hours" type="number" min="0" max="24" step="0.5" required placeholder="e.g. 8"><span class="form-help">Include study, paid work, caregiving, or your main regular daily routine.</span></div>
+                  <div class="form-section health-safety-section">
+                    <div class="form-section-title"><i class="fa-solid fa-shield-heart"></i> Safety information</div>
+                    <div class="form-row">
+                      <div class="form-group"><label class="form-label" for="profile-blood-group">Blood group</label><select class="form-control" id="profile-blood-group"><option value="Unknown">I don't know</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option></select></div>
+                      <div class="form-group"><label class="form-label" for="profile-emergency-name">Emergency contact name</label><input class="form-control" id="profile-emergency-name" maxlength="80" placeholder="For example: Priya Sharma"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label" for="profile-emergency-phone">Emergency contact mobile number</label><div class="phone-field"><select id="profile-emergency-country-code" class="country-code-select" aria-label="Emergency contact country code"></select><input class="form-control" id="profile-emergency-phone" inputmode="numeric" maxlength="15" placeholder="Mobile number"></div><span class="form-help">This is shown only in your patient profile summary.</span></div>
+                    <div class="form-group"><label class="form-label" for="profile-allergies">Allergies</label><textarea class="form-control" id="profile-allergies" maxlength="500" placeholder="For example: Penicillin, peanuts, pollen — or write None known"></textarea></div>
+                    <div class="form-group"><label class="form-label" for="profile-conditions">Medical conditions</label><textarea class="form-control" id="profile-conditions" maxlength="500" placeholder="For example: Asthma, diabetes, hypertension — or write None known"></textarea></div>
+                  </div>
+                  <p class="health-profile-note"><i class="fa-solid fa-circle-info"></i> This wellness guide is informational and does not replace advice from a qualified clinician.</p>
+                </div>
+                <div class="card-footer"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Save and update my guide</button></div>
+              </form>
+              <aside id="health-profile-summary" class="card health-profile-summary" aria-live="polite"></aside>
+            </div>
+          </div>
+
+          <!-- 2. Patient Appointments Page -->
+          <div id="patient-page-appointments" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">My Appointments</h2>
+                <p class="page-subheading">Track and manage your visits</p>
+              </div>
+              <button class="btn btn-primary" onclick="switchPatientPage('doctors')"><i class="fa-solid fa-plus"></i> Book Appointment</button>
+            </div>
+
+            <div class="tab-nav">
+              <button class="tab-btn active" onclick="switchTab(this, 'pt-appt-upcoming')">Upcoming</button>
+              <button class="tab-btn" onclick="switchTab(this, 'pt-appt-completed')">Completed</button>
+              <button class="tab-btn" onclick="switchTab(this, 'pt-appt-cancelled')">Cancelled</button>
+            </div>
+
+            <div id="pt-appt-upcoming" class="tab-content active">
+              <div id="pt-upcoming-appt-container">
+                <!-- Appt items will be loaded dynamically -->
+              </div>
+            </div>
+            <div id="pt-appt-completed" class="tab-content">
+              <div id="pt-completed-appt-container">
+                <p class="text-muted text-sm empty-state">No completed appointments found.</p>
+              </div>
+            </div>
+            <div id="pt-appt-cancelled" class="tab-content">
+              <div id="pt-cancelled-appt-container">
+                <p class="text-muted text-sm empty-state">No cancelled appointments found.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Patient Doctors Page -->
+          <div id="patient-page-doctors" class="page" style="max-width: 1200px; margin: 0 auto;">
+            <!-- Search Header Area -->
+            <div class="jd-search-header mb-4" style="position: relative;">
+              <div class="search-box" style="display: flex; align-items: center; background: white; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <i class="fa-solid fa-magnifying-glass" style="color: #6b7280;"></i>
+                <input type="text" id="pt-doc-search-input" placeholder="General Physician Doctors" oninput="handlePatientDocSearch()" style="border: none; outline: none; flex: 1; padding: 8px; font-size: 16px;">
+                <i class="fa-solid fa-microphone" style="color: #0066cc; font-size: 18px; cursor: pointer;"></i>
+              </div>
+              <div class="mt-3 flex justify-between items-center" style="font-size: 14px; color: #4b5563;">
+                <span><i class="fa-solid fa-location-dot" style="color: #6b7280;"></i> Results in "Pune"</span>
+                <span style="color: #0066cc; font-weight: 500; cursor: pointer;"><i class="fa-solid fa-location-crosshairs"></i> Detect Location</span>
+              </div>
+            </div>
+
+            <!-- Ad Banner -->
+            <div class="jd-ad-banner mb-5" style="border-radius: 12px; overflow: hidden; background: linear-gradient(90deg, #1d4ed8, #0ea5e9); color: white; display: flex; align-items: center; justify-content: space-between; padding: 20px;">
+              <div style="flex: 1;">
+                <h3 style="margin: 0; font-size: 1.25rem;">Siddhivinayak Multispeciality Hospital</h3>
+              </div>
+              <button class="btn" style="background: #f97316; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold;"><i class="fa-solid fa-phone"></i> Call</button>
+            </div>
+
+            <!-- Symptoms Grid -->
+            <div class="jd-symptoms-section mb-5">
+              <h3 style="font-size: 1.1rem; font-weight: bold; margin-bottom: 16px; color: #111827;">Most Common Symptoms</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 16px; text-align: center;">
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Swine Flu')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🤒</div>
+                  <span style="font-size: 13px; color: #374151;">Swine Flu / Fever</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Gastric')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🤢</div>
+                  <span style="font-size: 13px; color: #374151;">Gastric / colic Pain</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Body Aches')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🤕</div>
+                  <span style="font-size: 13px; color: #374151;">Body Aches</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Dust Allergy')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🤧</div>
+                  <span style="font-size: 13px; color: #374151;">Dust Allergy</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Migraine')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🤯</div>
+                  <span style="font-size: 13px; color: #374151;">Migraine</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Heart Diseases')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🫀</div>
+                  <span style="font-size: 13px; color: #374151;">Heart Diseases</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Skin Allergy')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🦠</div>
+                  <span style="font-size: 13px; color: #374151;">Skin Allergy</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Eye Infections')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">👁️</div>
+                  <span style="font-size: 13px; color: #374151;">Eye Infections</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Diabetes')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🩸</div>
+                  <span style="font-size: 13px; color: #374151;">Diabetes</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="openSymptomDoctorsModal('Depression')">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">🧠</div>
+                  <span style="font-size: 13px; color: #374151;">Depression</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="document.getElementById('pt-doc-search-input').value='Back pain'; handlePatientDocSearch();">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">⚡</div>
+                  <span style="font-size: 13px; color: #374151;">Back pain</span>
+                </div>
+                <div class="jd-symptom-card" style="cursor: pointer;" onclick="document.getElementById('pt-doc-search-input').value='Hair Fall'; handlePatientDocSearch();">
+                  <div style="background: #f8faff; border: 1px solid #e5e7eb; border-radius: 12px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px;">💇</div>
+                  <span style="font-size: 13px; color: #374151;">Hair Fall</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Health Care Options Placeholder -->
+            <div class="mb-5">
+              <h3 style="font-size: 1.1rem; font-weight: bold; margin-bottom: 16px; color: #111827;">Find Your Health Care Options</h3>
+              <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px;">
+                <div style="min-width: 200px; height: 120px; background: url('https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80') center/cover; border-radius: 12px;"></div>
+                <div style="min-width: 200px; height: 120px; background: url('https://images.unsplash.com/photo-1551884170-09fb70a3a2ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80') center/cover; border-radius: 12px;"></div>
+                <div style="min-width: 200px; height: 120px; background: url('https://images.unsplash.com/photo-1631549916768-4119b2e5f926?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80') center/cover; border-radius: 12px;"></div>
+              </div>
+            </div>
+
+            <h3 style="font-size: 1.1rem; font-weight: bold; margin-bottom: 16px; color: #111827;">Best Doctors - Book Appointment Online</h3>
+            <div id="patient-doctors-container" class="flex flex-col gap-4">
+              <!-- Doctors List will be loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- 4. Patient Health Records Page -->
+          <div id="patient-page-health-records" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Health Records</h2>
+                <p class="page-subheading">Access your clinical reports and documentation</p>
+              </div>
+              <button class="btn btn-primary" onclick="openUploadRecordModal()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Report</button>
+            </div>
+
+            <div class="records-layout">
+              <!-- Records Sidebar -->
+              <div class="records-sidebar">
+                <div class="card">
+                  <nav style="padding: 10px 0;">
+                    <div class="records-menu-item active" onclick="switchRecordsSubtab(this, 'timeline')">
+                      <i class="fa-solid fa-clock-rotate-left"></i> Medical Timeline
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'lab-reports')">
+                      <i class="fa-solid fa-microscope"></i> Lab Reports
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'prescriptions')">
+                      <i class="fa-solid fa-file-prescription"></i> Prescriptions
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'immunization')">
+                      <i class="fa-solid fa-syringe"></i> Immunization
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'vitals')">
+                      <i class="fa-solid fa-heart-pulse"></i> Vitals
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'documents')">
+                      <i class="fa-solid fa-folder-open"></i> Documents
+                    </div>
+                  </nav>
+                </div>
+              </div>
+
+              <!-- Records List Content -->
+              <div class="records-content card">
+                <div class="card-header">
+                  <span class="card-title" id="records-subtab-title">Lab Reports</span>
+                </div>
+                <div class="card-body" id="records-list-container">
+                  <!-- Record items will be injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ======================================= -->
+    <!-- DOCTOR ROLE VIEW PANEL                  -->
+    <!-- ======================================= -->
+    <div id="panel-doctor" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-user-md"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Doctor Clinical Portal</div>
+          <div class="nav-item active" onclick="switchDoctorPage('dashboard')">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
+          </div>
+          <div class="nav-item" onclick="switchDoctorPage('appointments')">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-days"></i></span> Appointments
+          </div>
+          <div class="nav-item" onclick="switchDoctorPage('patients')">
+            <span class="nav-icon"><i class="fa-solid fa-hospital-user"></i></span> Patients
+          </div>
+
+          <div class="nav-item" onclick="openPortalTool('doctor', 'schedule')">
+            <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Schedule
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'availability')"><span class="nav-icon"><i class="fa-solid fa-calendar-week"></i></span> Availability</div>
+
+
+
+
+          <div class="nav-item" onclick="openPortalTool('doctor', 'earnings')">
+            <span class="nav-icon"><i class="fa-solid fa-indian-rupee-sign"></i></span> Earnings
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'reports')">
+            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Reports
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'settings')">
+            <span class="nav-icon"><i class="fa-solid fa-gear"></i></span> Settings
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-user profile-trigger" type="button" onclick="toggleProfileMenu('doctor')" aria-label="Open doctor profile menu">
+            <div class="avatar">AP</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Dr. Priya Sharma</div>
+              <div class="sidebar-user-role">Cardiologist</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+          <span class="page-title">Doctor Dashboard</span>
+          <div class="role-tab-bar">
+            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab active" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
+          </div>
+          <div class="header-icons">
+            <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
+            <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
+            <button class="header-avatar profile-trigger" type="button" onclick="toggleProfileMenu('doctor')" aria-label="Open doctor profile menu">PS</button>
+          </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="page-content">
+
+          <!-- 1. Doctor Dashboard Page -->
+          <div id="doctor-page-dashboard" class="page active">
+            <div class="page-header-row mb-4">
+              <div>
+                <h2 class="page-heading">Dashboard</h2>
+              </div>
+            </div>
+
+            <!-- KPIs Row -->
+            <div class="grid-4" style=" gap: 16px; margin-bottom: 24px;">
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-total">12</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Today's Appointments</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-regular fa-calendar"></i></div>
+              </div>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #fffcf2;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-pending">2</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Pending Appointments</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #fef3c7; color: #f59e0b; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-hourglass-half"></i></div>
+              </div>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #f0fdf4;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-done">8</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Patients Seen</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #dcfce7; color: #10b981; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-clipboard-user"></i></div>
+              </div>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #f5f3ff;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="doc-kpi-earnings">₹18,500</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Today's Earnings</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #ede9fe; color: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+              </div>
+            </div>
+
+            <!-- Doctor Emergency Alerts Panel -->
+            <div id="doc-emergency-panel" class="hidden mb-4" style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px;">
+              <h3 style="color: #b91c1c; margin-top:0; font-size:18px;"><i class="fa-solid fa-triangle-exclamation"></i> Active Emergency Alert</h3>
+              <div id="doc-emergency-list" class="flex flex-col gap-3 mt-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <div class="grid-col-2-1" style=" gap: 24px; margin-bottom: 24px;">
+              <!-- Left Column: Today's Appointments -->
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                <div class="card-header" style="border-bottom: 1px solid var(--border); padding: 20px;">
+                  <span class="card-title" style="font-size: 16px; font-weight: 700;">Today's Appointments</span>
+                </div>
+                <div class="card-body" style="padding: 0;" id="doc-today-appointments-list">
+                  <!-- List item template injected via JS -->
+                </div>
+                <div style="padding: 16px; text-align: center; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 0 0 12px 12px;">
+                  <a href="#" style="color: #4f46e5; font-size: 13px; font-weight: 600;" onclick="switchDoctorPage('patients')">View All</a>
+                </div>
+              </div>
+
+              <!-- Right Column: Patient Details / Action Panel -->
+              <div class="flex flex-col gap-4">
+                
+                <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;" id="doc-selected-patient-panel">
+                  <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Patient Details</h3>
+                  
+                  <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
+                    <div style="width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">
+                      <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                      <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;" id="doc-sel-pat-name">Select Patient</h4>
+                      <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);" id="doc-sel-pat-meta">--</p>
+                      <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);" id="doc-sel-pat-phone">--</p>
+                    </div>
+                  </div>
+                  
+                  <div style="text-align: right; margin-bottom: 24px;">
+                    <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchDoctorPage('patients')">View Full Profile</a>
+                  </div>
+
+                  <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 20px;">
+
+                  <!-- AI Patient Summary Section -->
+                  <div class="ai-summary-card hover-lift" style="margin-bottom: 24px; padding: 18px; border-radius: 14px; background: linear-gradient(145deg, #f0f9ff 0%, #eef2ff 100%); border: 1px solid #e0e7ff; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -10px; right: -10px; opacity: 0.05; font-size: 80px; color: #4f46e5;"><i class="fa-solid fa-microchip"></i></div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                      <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);">
+                        <i class="fa-solid fa-sparkles" style="animation: pulse 2s infinite;"></i>
+                      </div>
+                      <h3 style="font-size: 15px; font-weight: 800; margin: 0; background: linear-gradient(90deg, #3730a3, #6d28d9); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">AI Patient Insights</h3>
+                    </div>
+                    <p style="font-size: 13.5px; color: #334155; line-height: 1.6; margin: 0; position: relative; z-index: 1;" id="doc-sel-pat-ai-summary">
+                      Please select a patient from today's appointments to generate an AI-powered summary of their health records, past visits, and current condition.
+                    </p>
+                    <div id="doc-sel-pat-ai-tags" style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-size: 11px; padding: 4px 12px; background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: 20px; color: #475569; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">Awaiting Selection</span>
+                    </div>
+                  </div>
+
+                  <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Appointment Details</h3>
+                  
+                  <div class="grid-col-1-2" style=" gap: 12px; margin-bottom: 24px;">
+                    <div style="font-size: 13px; color: var(--text-muted);">Date & Time</div>
+                    <div style="font-size: 13px; color: #0f172a; font-weight: 500;" id="doc-sel-apt-time">--</div>
+
+                    <div style="font-size: 13px; color: var(--text-muted);">Type</div>
+                    <div style="font-size: 13px; color: #0f172a; font-weight: 500;" id="doc-sel-apt-type">--</div>
+
+                    <div style="font-size: 13px; color: var(--text-muted);">Fees</div>
+                    <div style="font-size: 13px; color: #0f172a; font-weight: 500;" id="doc-sel-apt-fee">--</div>
+                  </div>
+
+                  <button style="width: 100%; background: #5b21b6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;" onclick="switchDoctorPage('prescription')" id="doc-sel-btn">Start Consultation</button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Doctor Patient Details Page -->
+          <div id="doctor-page-patients" class="page">
+            <div class="page-header-row">
+              <button class="btn btn-secondary" onclick="switchDoctorPage('dashboard')"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+              <h2 class="page-heading">Patient Details</h2>
+            </div>
+
+            <!-- Profile Summary Banner -->
+            <div class="patient-profile-card">
+              <div class="patient-profile-avatar" id="det-pat-avatar">RV</div>
+              <div class="flex-1">
+                <h3 class="patient-profile-name" id="det-pat-name">Rahul Verma</h3>
+                <p class="patient-profile-meta" id="det-pat-meta">34 Years, Male | +91 9876543210</p>
+                <div class="patient-info-pills">
+                  <span class="info-pill" id="det-pat-hsid">HealthSync ID: HS-2026-907501</span>
+                  <span class="info-pill" id="det-pat-blood">Blood Group: B+</span>
+                </div>
+              </div>
+              <div class="med-history-card">
+                <div class="med-history-title"><i class="fa-solid fa-triangle-exclamation"></i> Medical History Warnings</div>
+                <div style="font-size: 11.5px; color: #7f1d1d;" id="det-pat-history-text">• Diabetes Type 2<br>• Hypertension<br>• No known drug allergies</div>
+              </div>
+            </div>
+
+            <!-- Detail Tabs Navigation -->
+            <div class="tab-nav">
+              <button class="tab-btn active" onclick="switchTab(this, 'doc-det-summary')">Summary</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-history')">History</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-rx')">Prescriptions</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-reports')">Reports</button>
+              <button class="tab-btn" onclick="switchTab(this, 'doc-det-appointments')">Appointments</button>
+            </div>
+
+            <!-- Summary Tab Content -->
+            <div id="doc-det-summary" class="tab-content active">
+              <div class="grid-2">
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Consultation Summary Notes</span></div>
+                  <div class="card-body">
+                    <p style="font-size: 13px; line-height: 1.6; color: var(--text-medium);">Patient is responding well to medication. The blood sugar readings show stability over the past 3 weeks. Recommended to continue regular exercise and healthy diet plan.</p>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Active Care Plan Summary</span></div>
+                  <div class="card-body">
+                    <ul style="font-size: 13px; line-height: 1.8; color: var(--text-medium); padding-left: 16px; list-style-type: disc;">
+                      <li>Vitals checks every 15 days</li>
+                      <li>HbA1c test next month</li>
+                      <li>Consultation review on 20 May 2026</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-between mt-4">
+                <div></div>
+                <button class="btn btn-primary" onclick="openCreatePrescriptionPage()">📝 Create Digital Prescription</button>
+              </div>
+            </div>
+
+            <div id="doc-det-history" class="tab-content">
+              <p class="text-muted text-sm empty-state">No extended history details recorded.</p>
+            </div>
+            <div id="doc-det-rx" class="tab-content">
+              <div class="flex flex-col gap-3" id="doc-det-rx-container"></div>
+            </div>
+            <div id="doc-det-reports" class="tab-content">
+              <p class="text-muted text-sm empty-state">No lab reports found for this patient.</p>
+            </div>
+            <div id="doc-det-appointments" class="tab-content">
+              <div id="doc-det-appts-container"></div>
+            </div>
+          </div>
+
+          <!-- 3. Doctor Write Prescription Page -->
+          <div id="doctor-page-prescription" class="page">
+            <div class="page-header-row">
+              <button class="btn btn-secondary" onclick="switchDoctorPage('patients')"><i class="fa-solid fa-chevron-left"></i> Patient Details</button>
+              <h2 class="page-heading">Create Prescription</h2>
+            </div>
+
+            <div class="grid-col-2-1">
+              <!-- Left side: Medications Table Form -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-header">
+                    <span class="card-title">Prescription Details</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-row mb-3">
+                      <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="text" class="form-control" id="rx-form-date" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Diagnosis Type *</label>
+                        <input type="text" class="form-control" id="rx-form-diagnosis" placeholder="e.g. Type 2 Diabetes, Acute Migraine">
+                      </div>
+                    </div>
+
+                    <!-- Medicines Add table -->
+                    <div class="med-table-wrap">
+                      <table class="med-table" id="rx-form-med-table">
+                        <thead>
+                          <tr>
+                            <th>Medicine *</th>
+                            <th>Dosage Strength</th>
+                            <th>Frequency *</th>
+                            <th>Duration *</th>
+                            <th style="width: 50px;"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <!-- Rows added dynamically -->
+                        </tbody>
+                      </table>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="addMedRowToRxForm()"><i class="fa-solid fa-plus"></i> Add Medicine</button>
+
+                    <div class="form-group mt-3">
+                      <label class="form-label">Advice / Instructions</label>
+                      <textarea class="form-control" id="rx-form-instructions" placeholder="Take medicine after meals, drink plenty of fluids..."></textarea>
+                    </div>
+                  </div>
+                  <div class="card-footer flex justify-between">
+                    <button class="btn btn-secondary" onclick="saveRxDraft()">Save as Draft</button>
+                    <button class="btn btn-success" onclick="submitPrescription()">Save & Issue Prescription ➔</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right side: Patient Mini-Profile -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-body rx-patient-panel">
+                    <div class="rx-patient-avatar">RV</div>
+                    <div class="flex-1">
+                      <h4 class="rx-patient-name">Rahul Verma</h4>
+                      <p class="rx-patient-meta">34 Years, Male | +91 9876543210</p>
+                      <p class="rx-patient-id">HS ID: HS-2026-907501</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Recent Prescriptions</span></div>
+                  <div class="card-body" id="rx-form-recent-list">
+                    <p class="text-muted text-sm empty-state">No recent records available.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ======================================= -->
+    <!-- RECEPTIONIST ROLE VIEW PANEL            -->
+    <!-- ======================================= -->
+    <div id="panel-reception" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-headset"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Reception Dashboard</div>
+          <div class="nav-item active" onclick="switchReceptionPage('dashboard')">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
+          </div>
+          <div class="nav-item" onclick="switchReceptionPage('walk-in')">
+            <span class="nav-icon"><i class="fa-solid fa-pencil"></i></span> Walk-In Registration
+          </div>
+          <div class="nav-item" onclick="switchReceptionPage('appointments')">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-check"></i></span> Appointments
+          </div>
+          <div class="nav-item" onclick="switchReceptionPage('queue-mgmt')">
+            <span class="nav-icon"><i class="fa-solid fa-list-ol"></i></span> Queue Management
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'patients')">
+            <span class="nav-icon"><i class="fa-solid fa-users"></i></span> Patients
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'doctors')">
+            <span class="nav-icon"><i class="fa-solid fa-user-doctor"></i></span> Doctors
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'reports')">
+            <span class="nav-icon"><i class="fa-solid fa-file-invoice"></i></span> Reports
+          </div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'priority')"><span class="nav-icon"><i class="fa-solid fa-triangle-exclamation"></i></span> Emergency Priority</div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'billing')"><span class="nav-icon"><i class="fa-solid fa-indian-rupee-sign"></i></span> Billing Entry</div>
+          <div class="nav-item" onclick="openPortalTool('reception', 'settings')">
+            <span class="nav-icon"><i class="fa-solid fa-gears"></i></span> Settings
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-user profile-trigger" type="button" onclick="toggleProfileMenu('reception')" aria-label="Open receptionist profile menu">
+            <div class="avatar">R</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Receptionist Desk</div>
+              <div class="sidebar-user-role">Main Clinic Pune</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+          <span class="page-title">Receptionist Dashboard</span>
+          <div class="role-tab-bar">
+            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab active" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
+          </div>
+          <div class="header-icons">
+            <div class="app-history-nav" aria-label="Page navigation"><button class="app-nav-button" type="button" onclick="goAppBack()"><i class="fa-solid fa-arrow-left"></i><span>Back</span></button><button class="app-nav-button" type="button" onclick="goAppForward()"><span>Forward</span><i class="fa-solid fa-arrow-right"></i></button></div>
+            <button class="icon-btn" onclick="openNotifications()" aria-label="Open notifications"><i class="fa-solid fa-bell"></i></button>
+            <button class="header-avatar profile-trigger" type="button" onclick="toggleProfileMenu('reception')" aria-label="Open receptionist profile menu">R</button>
+          </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="page-content">
+
+          <!-- 1. Reception Dashboard Page -->
+          <div id="reception-page-dashboard" class="page active">
+            <div class="page-header-row mb-4">
+              <div>
+                <h2 class="page-heading">Dashboard</h2>
+              </div>
+            </div>
+
+            <!-- KPIs Row -->
+            <div class="grid-4" style=" gap: 16px; margin-bottom: 24px;">
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="rec-kpi-appointments">18</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Today's Appointments</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-regular fa-calendar-check"></i></div>
+              </div>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #f5f3ff;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="rec-kpi-walkin">6</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Walk-in Patients</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #ede9fe; color: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-person-walking"></i></div>
+              </div>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #eff6ff;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #0f172a;" id="rec-kpi-total">25</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Total Patients</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #dbeafe; color: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-users"></i></div>
+              </div>
+
+              <div class="card" style="padding: 24px; border-radius: 12px; border: 1px solid #fecaca; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; background: #fef2f2;">
+                <div>
+                  <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #dc2626;" id="rec-kpi-alerts">1</h3>
+                  <p style="font-size: 13px; color: #b91c1c; margin: 4px 0 0 0;">Emergency Alerts</p>
+                </div>
+                <div style="width: 48px; height: 48px; background: #fee2e2; color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-bell"></i></div>
+              </div>
+            </div>
+
+            <!-- Emergency Alerts Panel (Full Width) -->
+            <div id="rec-emergency-panel" class="hidden" style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i>
+                <h3 style="color: #b91c1c; margin: 0; font-size: 14px; font-weight: 700; text-transform: uppercase;">New Emergency Alert</h3>
+              </div>
+              <div id="rec-emergency-list">
+                <!-- Injected via JS. Example fallback structure if needed: -->
+                <div class="grid-3" style=" gap: 24px; align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm);">
+                  <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
+                    <div>
+                      <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">Rohit Sharma</h4>
+                      <p style="margin: 2px 0; font-size: 12px; color: var(--text-muted);">32 Years, Male</p>
+                      <p style="margin: 0; font-size: 12px; color: var(--text-muted);">9876543210</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">Live Location</h5>
+                    <div style="height: 60px; background: #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-location-dot" style="color: #dc2626;"></i></div>
+                  </div>
+                  <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                      <div>
+                        <h5 style="margin: 0; font-size: 13px; font-weight: 700;">2.3 km</h5>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Distance from Hospital</p>
+                      </div>
+                      <div>
+                        <h5 style="margin: 0; font-size: 13px; font-weight: 700;">10:24 AM</h5>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Time of Request</p>
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                      <button style="flex: 1; padding: 8px; border: 1px solid #16a34a; background: white; color: #16a34a; border-radius: 6px; font-weight: 600; font-size: 12px;">View Live Location</button>
+                      <button style="flex: 1; padding: 8px; border: none; background: #ef4444; color: white; border-radius: 6px; font-weight: 600; font-size: 12px;">Dispatch Ambulance</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-col-2-1" style=" gap: 24px; margin-bottom: 24px;">
+              <!-- Left Side: Recent Appointments Table -->
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                <div class="card-header" style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                  <span class="card-title" style="font-size: 16px; font-weight: 700;">Recent Appointments</span>
+                  <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchReceptionPage('appointments')">View All</a>
+                </div>
+                <div class="card-body table-wrap" style="padding: 0;">
+                  <table class="hs-table" id="rec-schedule-appointments-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="border-bottom: 1px solid var(--border); background: #f8fafc; text-align: left;">
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Time</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Patient Name</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Doctor</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Type</th>
+                        <th style="padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted);">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Injected via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Right Side: Queue Overview & Generate Token -->
+              <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 24px;">
+                <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 16px 0; color: #1e293b;">Queue Overview</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;" id="rec-queue-overview-list">
+                  <!-- Fallback items, to be injected via JS -->
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">1.</span> Priya Sharma</span>
+                    <span style="color: var(--text-muted);">Token No. 18</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">2.</span> Amit Kumar</span>
+                    <span style="color: var(--text-muted);">Token No. 19</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">3.</span> Neha Singh</span>
+                    <span style="color: var(--text-muted);">Token No. 20</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">4.</span> Rahul Verma</span>
+                    <span style="color: var(--text-muted);">Token No. 21</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span><span style="color: var(--text-muted); margin-right: 8px;">5.</span> Sunita Patel</span>
+                    <span style="color: var(--text-muted);">Token No. 22</span>
+                  </div>
+                </div>
+
+                <button style="width: 100%; background: #e0e7ff; color: #4f46e5; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer;" onclick="openReceptionIssueTokenModal()">Generate Token</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Reception Queue Management Page -->
+          <div id="reception-page-queue-mgmt" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Queue Management</h2>
+                <p class="page-subheading">Control status, order, and dispatch of patients</p>
+              </div>
+              <button class="btn btn-primary" onclick="openReceptionIssueTokenModal()"><i class="fa-solid fa-plus-circle"></i> Generate Token</button>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="flex justify-between items-center mb-3">
+              <div class="queue-filter-tabs">
+                <div class="q-tab active" onclick="filterQueueTable(this, 'all')">All</div>
+                <div class="q-tab" onclick="filterQueueTable(this, 'Waiting')">Waiting</div>
+                <div class="q-tab" onclick="filterQueueTable(this, 'In Consultation')">In Consultation</div>
+                <div class="q-tab" onclick="filterQueueTable(this, 'Completed')">Completed</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table class="hs-table" id="rec-mgmt-queue-table">
+                  <thead>
+                    <tr>
+                      <th>Token No.</th>
+                      <th>Patient Name</th>
+                      <th>Doctor</th>
+                      <th>Status</th>
+                      <th>Time</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Injected dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Reception Walk-in Registration Page -->
+          <div id="reception-page-walk-in" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Walk-In Registration</h2>
+                <p class="page-subheading">Add new patient or issue token directly to slot queue</p>
+              </div>
+            </div>
+
+            <div class="grid-col-2-1">
+              <div class="card">
+                <div class="card-header"><span class="card-title">Patient Information</span></div>
+                <div class="card-body">
+                  <div class="form-section">
+                    <div class="form-row-3">
+                      <div class="form-group">
+                        <label class="form-label">Full Name <span class="req">*</span></label>
+                        <input type="text" class="form-control" id="walkin-form-name" placeholder="Enter Full Name" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Age <span class="req">*</span></label>
+                        <input type="number" class="form-control" id="walkin-form-age" placeholder="Age" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Gender <span class="req">*</span></label>
+                        <select class="form-control" id="walkin-form-gender" required>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Mobile Number <span class="req">*</span></label>
+                        <div class="phone-field"><select id="walkin-country-code" class="country-code-select" aria-label="Patient country code"></select><input type="text" class="form-control" id="walkin-form-mobile" inputmode="numeric" maxlength="15" placeholder="Mobile number" required></div>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="walkin-form-email" placeholder="Email (Optional)">
+                      </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                      <label class="form-label">Address</label>
+                      <input type="text" class="form-control" id="walkin-form-address" placeholder="Address">
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Blood Group</label>
+                        <select class="form-control" id="walkin-form-blood">
+                          <option value="">Select Blood Group</option>
+                          <option value="A+">A+</option>
+                          <option value="B+">B+</option>
+                          <option value="O+">O+</option>
+                          <option value="AB+">AB+</option>
+                          <option value="A-">A-</option>
+                          <option value="B-">B-</option>
+                          <option value="O-">O-</option>
+                          <option value="AB-">AB-</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">ID Proof</label>
+                        <select class="form-control" id="walkin-form-idproof">
+                          <option value="">Select ID Proof</option>
+                          <option value="Aadhar Card">Aadhar Card</option>
+                          <option value="PAN Card">PAN Card</option>
+                          <option value="Driving License">Driving License</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section">
+                    <h4 class="form-section-title">Visit Information</h4>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Select Doctor <span class="req">*</span></label>
+                        <select class="form-control" id="walkin-form-doctor" required></select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Purpose of Visit <span class="req">*</span></label>
+                        <select class="form-control" id="walkin-form-purpose" required>
+                          <option value="General Checkup">General Checkup</option>
+                          <option value="Follow-up">Follow-up</option>
+                          <option value="Emergency Consultation">Emergency Consultation</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; gap: 8px; align-items: center; font-size: 13px;" class="mb-3">
+                    <input type="checkbox" id="walkin-form-confirm" required>
+                    <label for="walkin-form-confirm">I confirm the patient details are correct.</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Output Token Area -->
+              <div class="flex flex-col gap-4">
+                <div class="card">
+                  <div class="card-header"><span class="card-title">Generate Token</span></div>
+                  <div class="card-body flex flex-col gap-4 items-center justify-between" style="min-height: 220px;">
+                    <div class="token-output w-full" id="walkin-token-display-box" style="display: none;">
+                      <div class="token-big" id="walkin-generated-token-val">W12</div>
+                      <div class="token-label">Token Generated Successfully</div>
+                    </div>
+                    <div id="walkin-generate-prompt-text" class="text-muted text-sm text-center">Fill details to output token</div>
+                    <button class="btn btn-primary w-full" onclick="submitReceptionWalkinForm()"><i class="fa-solid fa-ticket"></i> Generate Token</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Reception Appointments Page -->
+          <div id="reception-page-appointments" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Today's Appointment Schedule</h2>
+                <p class="page-subheading">Track patient checkins, rescheduling and confirmations</p>
+              </div>
+              <button class="btn btn-primary" onclick="switchPatientPage('doctors')"><i class="fa-solid fa-plus"></i> Book Appointment</button>
+            </div>
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table class="hs-table" id="rec-schedule-appointments-table">
+                  <thead>
+                    <tr>
+                      <th>Patient Name</th>
+                      <th>Doctor</th>
+                      <th>Time Slot</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Injected via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================= -->
+    <!-- AMBULANCE ROLE VIEW PANEL               -->
+    <!-- ======================================= -->
+    <div id="panel-ambulance" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-truck-medical"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Ambulance Dashboard</div>
+          <div class="nav-item active">
+            <span class="nav-icon"><i class="fa-solid fa-map-location-dot"></i></span> Live Dispatch
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-user profile-trigger" type="button" aria-label="Ambulance profile menu">
+            <div class="avatar">AD</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Ambulance Driver</div>
+              <div class="sidebar-user-role">Vehicle MH12 AB 1234</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+          <span class="page-title">Ambulance Live Dispatch</span>
+          <div class="role-tab-bar">
+            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab active" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
+          </div>
+          <div class="header-icons">
+            <button class="icon-btn" onclick="openNotifications()"><i class="fa-solid fa-bell"></i></button>
+            <button class="header-avatar profile-trigger" type="button">AD</button>
+          </div>
+        </header>
+
+        <div class="page-content">
+          <div id="ambulance-page-dashboard" class="page active">
+            <div class="page-header-row mb-4">
+              <div>
+                <h2 class="page-heading">Emergency Ride</h2>
+              </div>
+            </div>
+            <div id="amb-emergency-panel" class="hidden mb-4" style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px;">
+              <h3 style="color: #b91c1c; margin-top:0; font-size:18px;"><i class="fa-solid fa-triangle-exclamation"></i> Emergency Dispatches</h3>
+              <div id="amb-emergency-list" class="flex flex-col gap-3 mt-2">
+                <!-- SOS alerts will be appended here -->
+              </div>
+            </div>
+
+            <div id="amb-dispatch-list">
+              <div class="card p-4 text-center text-muted empty-state" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                <i class="fa-solid fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
+                <p>No active dispatches. You are available.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ───────────────── MODALS ───────────────── -->
+
+  <!-- Symptom Doctors Modal -->
+  <div id="modal-symptom-doctors" class="modal-backdrop">
+    <div class="modal-box modal-lg" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 id="modal-symptom-title">Doctors for Symptom</h3>
+        <button class="modal-close" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body" style="background: #f8fafc; padding: 20px;">
+        <div id="symptom-doctors-list" style="display: flex; flex-direction: column; gap: 16px; max-height: 60vh; overflow-y: auto;">
+          <!-- Doctors will be populated here by main.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Book Appointment Modal -->
+  <div id="modal-book-appt" class="modal-backdrop">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <h3>Book Appointment</h3>
+        <button class="modal-close" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 16px; padding-bottom: 24px; min-height: 400px; display: flex; flex-direction: column;">
+        
+        <!-- Step 1 & 2: Date & Time Selection -->
+        <div id="booking-step-datetime">
+          <div class="doctor-summary-card mb-4" id="booking-doc-info" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: #f8fafc;">
+            <!-- Populated via JS -->
+          </div>
+          
+          <h4 class="form-label mb-2">Select Date</h4>
+          <div class="date-scroll-container mb-4" id="booking-date-container" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px;">
+            <!-- Populated via JS -->
+          </div>
+          
+          <h4 class="form-label mb-2">Available Time Slots</h4>
+          <div id="booking-time-container" style="min-height: 120px;">
+             <p class="text-muted text-sm">Please select a date to view available time slots.</p>
+          </div>
+        </div>
+
+        <!-- Step 3: Appointment Summary -->
+        <div id="booking-step-summary" class="hidden">
+           <h4 class="form-label mb-3">Appointment Summary</h4>
+           <div class="summary-details-box p-3 bg-light rounded" style="border: 1px solid var(--border); background: #f8fafc;">
+              <p style="margin-bottom: 8px; font-size: 14px;"><strong>Doctor:</strong> <span id="summary-doc-name"></span></p>
+              <p style="margin-bottom: 8px; font-size: 14px;"><strong>Specialization:</strong> <span id="summary-doc-spec"></span></p>
+              <p style="margin-bottom: 8px; font-size: 14px;"><strong>Date:</strong> <span id="summary-date"></span></p>
+              <p style="margin-bottom: 8px; font-size: 14px;"><strong>Time:</strong> <span id="summary-time"></span></p>
+              <p style="margin-bottom: 8px; font-size: 14px;"><strong>Consultation Fee:</strong> <span id="summary-fee"></span></p>
+              <p style="margin-bottom: 0px; font-size: 14px;"><strong>Patient:</strong> Rahul Verma</p>
+           </div>
+        </div>
+
+        <!-- Step 4: Success Confirmation -->
+        <div id="booking-step-success" class="hidden" style="text-align: center; padding-top: 20px;">
+           <div class="success-icon mb-3"><i class="fa-solid fa-circle-check" style="font-size: 48px; color: #10b981;"></i></div>
+           <h3 class="mb-3">Appointment Confirmed</h3>
+           <div class="summary-details-box p-3 bg-light rounded text-left mx-auto mb-4" style="border: 1px solid var(--border); max-width: 320px; background: #f8fafc; font-size: 14px;">
+              <p style="margin-bottom: 8px;"><strong>Doctor:</strong> <span id="success-doc-name"></span></p>
+              <p style="margin-bottom: 8px;"><strong>Date:</strong> <span id="success-date"></span></p>
+              <p style="margin-bottom: 8px;"><strong>Time:</strong> <span id="success-time"></span></p>
+              <p style="margin-bottom: 0px;"><strong>Appointment ID:</strong> <span id="success-appt-id"></span></p>
+           </div>
+           <div style="display: flex; gap: 10px; justify-content: center;">
+             <button class="btn btn-secondary" onclick="closeAllModals()">Close</button>
+             <button class="btn btn-primary" onclick="closeAllModals(); showPatientTab('appointments')">View Appointment</button>
+           </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" id="booking-footer" style="display: flex; justify-content: space-between; gap: 12px; padding: 20px 22px; background: #f8fafc;">
+        <button class="btn btn-secondary" style="height: 48px; font-size: 15px; flex: 1;" onclick="closeAllModals()">Cancel</button>
+        <button class="btn btn-primary" id="btn-booking-next" style="height: 48px; font-size: 15px; flex: 1;" onclick="bookingNextStep()" disabled>Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Generate Token Modal (Reception) -->
+  <div id="modal-issue-token" class="modal-backdrop">
+    <div class="modal-box modal-sm">
+      <div class="modal-header">
+        <h3>Generate Queue Token</h3>
+        <button class="modal-close" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-3">
+          <label class="form-label">Patient Name <span class="req">*</span></label>
+          <input type="text" class="form-control" id="issue-token-patient-name" placeholder="Enter Patient Name" required>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">Assign Doctor <span class="req">*</span></label>
+          <select class="form-control" id="issue-token-doctor-select" required></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAllModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReceptionQuickToken()">Generate Token</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Upload Record Modal -->
+  <div id="modal-upload-record" class="modal-backdrop">
+    <div class="modal-box modal-sm">
+      <div class="modal-header">
+        <h3>Upload Health Record</h3>
+        <button class="modal-close" onclick="closeAllModals()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-3">
+          <label class="form-label">Document Name *</label>
+          <input type="text" class="form-control" id="upload-doc-name" placeholder="e.g. Blood Sugar Report" required>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">Doctor Name</label>
+          <input type="text" class="form-control" id="upload-doc-doc" placeholder="e.g. Dr. Amit Patil">
+        </div>
+        <div class="form-group">
+    </div>
+
+    <!-- ======================================= -->
+    <!-- AMBULANCE ROLE VIEW PANEL               -->
+    <!-- ======================================= -->
+    <div id="panel-ambulance" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-truck-medical"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Ambulance Dashboard</div>
+          <div class="nav-item active">
+            <span class="nav-icon"><i class="fa-solid fa-map-location-dot"></i></span> Live Dispatch
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-user profile-trigger" type="button" aria-label="Ambulance profile menu">
+            <div class="avatar">AD</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Ambulance Driver</div>
+              <div class="sidebar-user-role">Vehicle MH12 AB 1234</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+          <span class="page-title">Ambulance Live Dispatch</span>
+          <div class="role-tab-bar">
+            <div class="role-tab" onclick="switchGlobalRole('patient')">Patient View</div>
+            <div class="role-tab" onclick="switchGlobalRole('doctor')">Doctor View</div>
+            <div class="role-tab" onclick="switchGlobalRole('reception')">Receptionist View</div>
+            <div class="role-tab active" onclick="switchGlobalRole('ambulance')">Ambulance View</div>
+          </div>
+          <div class="header-icons">
+            <button class="icon-btn" onclick="openNotifications()"><i class="fa-solid fa-bell"></i></button>
+            <button class="header-avatar profile-trigger" type="button">AD</button>
+          </div>
+        </header>
+
+        <div class="page-content">
+          <div id="ambulance-page-dashboard" class="page active">
+            <div class="page-header-row mb-4">
+              <div>
+                <h2 class="page-heading">Emergency Ride</h2>
+              </div>
+            </div>
+            <div id="amb-emergency-panel" class="hidden mb-4" style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px;">
+              <h3 style="color: #b91c1c; margin-top:0; font-size:18px;"><i class="fa-solid fa-triangle-exclamation"></i> Emergency Dispatches</h3>
+              <div id="amb-emergency-list" class="flex flex-col gap-3 mt-2">
+                <!-- SOS alerts will be appended here -->
+              </div>
+            </div>
+
+            <div id="amb-dispatch-list">
+              <div class="card p-4 text-center text-muted empty-state" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                <i class="fa-solid fa-check-circle" style="font-size: 32px; color: #10b981; margin-bottom: 8px;"></i>
+                <p>No active dispatches. You are available.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ───────────────── MODALS ───────────────── -->
+
+  <!-- Appointment Details Modal -->
+  <div id="modal-appointment-details" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <span class="close" onclick="closeModal('modal-appointment-details')">&times;</span>
+      <h3 style="margin-top:0; font-size: 18px; color: #1e293b;">Appointment Details</h3>
+      <div id="appt-details-body" style="margin-top: 16px;">
+        <!-- Injected via JS -->
+      </div>
+      <div id="appt-details-actions" style="margin-top: 24px; display: flex; gap: 12px;">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Doctor Appointment Action Modal -->
+  <div id="modal-doctor-appointment" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <span class="close" onclick="closeModal('modal-doctor-appointment')">&times;</span>
+      <h3 style="margin-top:0; font-size: 18px; color: #1e293b;">Manage Consultation</h3>
+      <div id="doc-appt-body" style="margin-top: 16px;">
+        <!-- Injected via JS -->
+      </div>
+      <div id="doc-appt-actions" style="margin-top: 24px; display: flex; flex-wrap: wrap; gap: 12px;">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="js/globals.js"></script>
+  <script src="js/country-codes.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/socket.js"></script>
+  <script src="js/patient.js"></script>
+  <script src="js/doctor.js"></script>
+  <script src="js/main.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>
