@@ -2142,7 +2142,7 @@ window.showPatientAppointmentTab = function (contentId) {
 // --- Vaccination Modal Logic ---
 window.openAddVaccinationModal = function() {
   const modal = document.getElementById('modal-add-vaccination');
-  if (modal) modal.classList.add('show');
+  if (modal) modal.classList.add('open');
 };
 
 document.addEventListener('DOMContentLoaded', function() {
