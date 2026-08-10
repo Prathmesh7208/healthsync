@@ -450,37 +450,6 @@ window.switchPatientPage = function (pageId, remember = true) {
   if (remember) recordAppNavigation('patient', pageId);
 };
 
-// --- Ambulance State Management ---
-let activeAmbulanceBooking = false;
-
-window.trackAmbulance = function (forceOpen) {
-  if (forceOpen === false) {
-    // Go back to services view
-    document.getElementById('ambulance-services-view').classList.remove('hidden');
-    document.getElementById('ambulance-tracking-view').classList.add('hidden');
-    return;
-  }
-  
-  if (!activeAmbulanceBooking) {
-    showToast('No active ambulance booking. Please book an ambulance first to track your ambulance.', 'warning');
-  } else {
-    document.getElementById('ambulance-services-view').classList.add('hidden');
-    document.getElementById('ambulance-tracking-view').classList.remove('hidden');
-  }
-};
-
-window.bookAmbulance = function () {
-  activeAmbulanceBooking = true;
-  showToast('Ambulance booked successfully!', 'success');
-  trackAmbulance(true); // Open tracking
-};
-
-window.cancelAmbulance = function () {
-  activeAmbulanceBooking = false;
-  showToast('Ambulance booking cancelled.', 'info');
-  trackAmbulance(false); // Go back to services
-};
-
 window.switchDoctorPage = function (pageId, remember = true) {
   toggleSidebar(true);
   document.querySelectorAll('#panel-doctor .nav-item').forEach(item => {
