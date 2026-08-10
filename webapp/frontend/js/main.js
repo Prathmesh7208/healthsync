@@ -93,21 +93,21 @@ async function restoreSession() {
   if (!saved) return;
   try {
     const session = JSON.parse(saved);
-    const response = await fetch(`${API_BASE}/auth/refresh`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({refreshToken:session.refreshToken}) });
+    const response = await fetch(`${API_BASE}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: session.refreshToken }) });
     const data = await response.json();
     if (!data.success) throw new Error();
-    currentUser = { ...session.user, token:data.token, refreshToken:session.refreshToken };
-    localStorage.setItem('healthsync-session', JSON.stringify({ user:currentUser, refreshToken:currentUser.refreshToken }));
+    currentUser = { ...session.user, token: data.token, refreshToken: session.refreshToken };
+    localStorage.setItem('healthsync-session', JSON.stringify({ user: currentUser, refreshToken: currentUser.refreshToken }));
     finishLogin();
   } catch { localStorage.removeItem('healthsync-session'); }
 }
 
 // Demo sessions use the same role panels as production, but their API calls are
 // intercepted by demo.js and never reach the production database.
-window.startDemoExperience = function(role, mobile) {
-  const roleMap = { patient:'PATIENT', doctor:'DOCTOR', reception:'RECEPTIONIST' };
+window.startDemoExperience = function (role, mobile) {
+  const roleMap = { patient: 'PATIENT', doctor: 'DOCTOR', reception: 'RECEPTIONIST' };
   if (!roleMap[role]) return false;
-  currentUser = { id:`demo-${role}`, patientId:'pat1', name: role === 'doctor' ? 'Dr. Kavya Iyer' : role === 'reception' ? 'Nisha Verma' : 'Aarav Mehta', mobile, role:roleMap[role], demo:true };
+  currentUser = { id: `demo-${role}`, patientId: 'pat1', name: role === 'doctor' ? 'Dr. Kavya Iyer' : role === 'reception' ? 'Nisha Verma' : 'Aarav Mehta', mobile, role: roleMap[role], demo: true };
   document.getElementById('auth-screen')?.classList.add('hidden');
   document.getElementById('app')?.classList.remove('hidden');
   document.getElementById('in-app-demo-banner')?.classList.remove('hidden');
@@ -117,7 +117,7 @@ window.startDemoExperience = function(role, mobile) {
   syncAllData();
   return true;
 };
-window.exitDemoExperience = function() {
+window.exitDemoExperience = function () {
   window.__HEALTHSYNC_DEMO_MODE__ = false;
   document.getElementById('in-app-demo-banner')?.classList.add('hidden');
   location.href = location.pathname;
@@ -125,7 +125,7 @@ window.exitDemoExperience = function() {
 
 function authMessage(message, isError = false) { const el = document.getElementById('auth-message'); if (el) { el.textContent = message; el.style.color = isError ? '#b91c1c' : ''; } }
 function setAuthBusy(buttonId, busy, idleLabel) { const button = document.getElementById(buttonId); if (button) { button.disabled = busy; button.textContent = busy ? 'Please wait…' : idleLabel; } }
-window.requestOtp = async function(event) {
+window.requestOtp = async function (event) {
   if (event) event.preventDefault();
   if (authMode === 'register') {
     const name = document.getElementById('register-name')?.value.trim() || '';
@@ -134,20 +134,20 @@ window.requestOtp = async function(event) {
     const clinic = document.getElementById('register-clinic')?.value.trim() || '';
     if (name.length < 2) return authMessage('Enter your full name to register.', true);
     if (role === 'DOCTOR' && (!specialization || !clinic)) return authMessage('Enter your specialization and clinic to register as a doctor.', true);
-    pendingRegistration = { fullName:name, requestedRole:role, specialization, clinicName:clinic };
+    pendingRegistration = { fullName: name, requestedRole: role, specialization, clinicName: clinic };
   } else pendingRegistration = null;
   pendingCountryCode = selectedCountryCode('auth-country-code');
   const localMobile = document.getElementById('auth-mobile').value.replace(/\D/g, '');
   if (pendingCountryCode === '+91' && !/^[6-9]\d{9}$/.test(localMobile)) return authMessage('Enter a valid 10-digit Indian mobile number.', true);
   pendingMobile = internationalPhone(pendingCountryCode, localMobile);
   if (!/^\+\d{7,15}$/.test(pendingMobile)) return authMessage('Enter a valid mobile number for the selected country code.', true);
-  
+
   // Persist pending mobile
   sessionStorage.setItem('healthsync-pending-mobile', pendingMobile);
 
   setAuthBusy('send-otp-btn', true, 'Send OTP');
   try {
-    const data = await requestJson('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile}) });
+    const data = await requestJson('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mobileNumber: pendingMobile }) });
     document.getElementById('mobile-login-form').classList.add('hidden');
     document.getElementById('otp-login-form').classList.remove('hidden');
     document.getElementById('auth-otp').focus();
@@ -156,8 +156,8 @@ window.requestOtp = async function(event) {
   } catch (error) { authMessage(error.message, true); }
   finally { setAuthBusy('send-otp-btn', false, 'Send OTP'); }
 };
-window.resendOtp = function() { requestOtp(null); };
-window.backToMobileLogin = function() {
+window.resendOtp = function () { requestOtp(null); };
+window.backToMobileLogin = function () {
   clearInterval(resendTimer);
   pendingMobile = '';
   sessionStorage.removeItem('healthsync-pending-mobile');
@@ -167,22 +167,22 @@ window.backToMobileLogin = function() {
   authMessage('You can edit your mobile number and request a new OTP.');
   document.getElementById('auth-mobile')?.focus();
 };
-function startResendCooldown() { let seconds=30; const button=document.getElementById('resend-otp-btn'); clearInterval(resendTimer); button.disabled=true; resendTimer=setInterval(()=>{ seconds--; button.textContent=seconds ? `Resend OTP (${seconds}s)` : 'Resend OTP'; if(!seconds){button.disabled=false;clearInterval(resendTimer);}},1000); }
-window.verifyOtp = async function(event) {
+function startResendCooldown() { let seconds = 30; const button = document.getElementById('resend-otp-btn'); clearInterval(resendTimer); button.disabled = true; resendTimer = setInterval(() => { seconds--; button.textContent = seconds ? `Resend OTP (${seconds}s)` : 'Resend OTP'; if (!seconds) { button.disabled = false; clearInterval(resendTimer); } }, 1000); }
+window.verifyOtp = async function (event) {
   event.preventDefault();
   const otpCode = document.getElementById('auth-otp').value.replace(/\D/g, '');
   if (!pendingMobile) return authMessage('Request a new OTP first.', true);
   if (!/^\d{6}$/.test(otpCode)) return authMessage('Enter the 6-digit OTP.', true);
   setAuthBusy('verify-otp-btn', true, 'Verify and sign in');
   try {
-    const data = await requestJson('/auth/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mobileNumber:pendingMobile,otpCode,...(pendingRegistration || {})}) });
-    currentUser = {...data.user, token:data.token, refreshToken:data.refreshToken};
-    localStorage.setItem('healthsync-session', JSON.stringify({user:currentUser, refreshToken:currentUser.refreshToken}));
+    const data = await requestJson('/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mobileNumber: pendingMobile, otpCode, ...(pendingRegistration || {}) }) });
+    currentUser = { ...data.user, token: data.token, refreshToken: data.refreshToken };
+    localStorage.setItem('healthsync-session', JSON.stringify({ user: currentUser, refreshToken: currentUser.refreshToken }));
     finishLogin();
   } catch (error) { authMessage(error.message, true); }
   finally { setAuthBusy('verify-otp-btn', false, 'Verify and sign in'); }
 };
-window.setAuthMode = function(mode) {
+window.setAuthMode = function (mode) {
   authMode = mode === 'register' ? 'register' : 'login';
   document.getElementById('registration-fields')?.classList.toggle('hidden', authMode !== 'register');
   document.getElementById('auth-mode-login')?.classList.toggle('active', authMode === 'login');
@@ -194,7 +194,7 @@ window.setAuthMode = function(mode) {
   if (button) button.textContent = registering ? 'Register and send OTP' : 'Send OTP';
   authMessage('');
 };
-window.toggleRegistrationFields = function() {
+window.toggleRegistrationFields = function () {
   const role = document.getElementById('register-role')?.value || 'PATIENT';
   document.getElementById('doctor-registration-fields')?.classList.toggle('hidden', role !== 'DOCTOR');
   const help = document.getElementById('registration-role-help');
@@ -215,7 +215,7 @@ function finishLogin() {
   connectSocket();
 }
 function panelForCurrentUser() { const role = String(currentUser?.role || '').toUpperCase(); return role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient'; }
-window.toggleProfileMenu = function(role) {
+window.toggleProfileMenu = function (role) {
   const menu = document.getElementById('profile-menu');
   if (!menu) return;
   if (!menu.classList.contains('hidden') && menu.dataset.role === role) { menu.classList.add('hidden'); return; }
@@ -226,10 +226,10 @@ window.toggleProfileMenu = function(role) {
   menu.innerHTML = `<div class="profile-menu-name">${escapeHtml(name)}</div><div class="profile-menu-role">${title}</div><button type="button" role="menuitem" onclick="openProfileSettings('${role}')"><i class="fa-solid fa-gear"></i> Account settings</button><button type="button" class="profile-logout" role="menuitem" onclick="logoutCurrentUser()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>`;
   menu.classList.remove('hidden');
 };
-window.openProfileSettings = function(role) { document.getElementById('profile-menu')?.classList.add('hidden'); if (role === panelForCurrentUser()) openPortalTool(role, 'settings'); else showToast('Switch to this workspace to manage its settings.', 'info'); };
+window.openProfileSettings = function (role) { document.getElementById('profile-menu')?.classList.add('hidden'); if (role === panelForCurrentUser()) openPortalTool(role, 'settings'); else showToast('Switch to this workspace to manage its settings.', 'info'); };
 document.addEventListener('click', event => { if (!event.target.closest('.profile-trigger') && !event.target.closest('#profile-menu')) document.getElementById('profile-menu')?.classList.add('hidden'); });
 
-async function fetchNotifications() { if (!currentUser) return; try { const res=await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data=await res.json(); renderNotifications(data.notifications || []); } catch {} }
+async function fetchNotifications() { if (!currentUser) return; try { const res = await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data = await res.json(); renderNotifications(data.notifications || []); } catch { } }
 
 async function fetchPendingEmergencies() {
   try {
@@ -278,7 +278,7 @@ function renderEmergencyAlertToDOM(data) {
               <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Distance</p>
             </div>
             <div>
-              <h5 style="margin: 0; font-size: 13px; font-weight: 700;">${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</h5>
+              <h5 style="margin: 0; font-size: 13px; font-weight: 700;">${new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</h5>
               <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Time of Request</p>
             </div>
           </div>
@@ -297,7 +297,7 @@ function renderEmergencyAlertToDOM(data) {
   });
 }
 
-window.resolveEmergency = async function(caseId) {
+window.resolveEmergency = async function (caseId) {
   if (!confirm('Are you sure you want to mark this emergency as resolved?')) return;
   try {
     const res = await fetch(`${API_BASE}/emergency/${caseId}/resolve`, { method: 'PUT' });
@@ -321,7 +321,7 @@ function renderNotifications(items) {
   const dot = document.getElementById('notification-dot');
   if (count) count.textContent = unread;
   if (dot) dot.classList.toggle('hidden', !unread);
-  
+
   const list = document.getElementById('notification-list');
   if (list) {
     list.innerHTML = items.length ? items.map(item => {
@@ -331,9 +331,9 @@ function renderNotifications(items) {
     }).join('') : '<div class="empty-state"><div class="es-icon">🔔</div><div class="es-text">You are all caught up</div></div>';
   }
 }
-window.openNotifications = async function() { await fetchNotifications(); openModal('modal-notifications'); };
-window.markNotificationRead = async function(id) { await fetch(`${API_BASE}/notifications/${id}/read`,{method:'POST'}); fetchNotifications(); };
-window.clearNotifications = async function() { if(!currentUser)return; await fetch(`${API_BASE}/notifications/clear`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:currentUser.id})}); fetchNotifications(); };
+window.openNotifications = async function () { await fetchNotifications(); openModal('modal-notifications'); };
+window.markNotificationRead = async function (id) { await fetch(`${API_BASE}/notifications/${id}/read`, { method: 'POST' }); fetchNotifications(); };
+window.clearNotifications = async function () { if (!currentUser) return; await fetch(`${API_BASE}/notifications/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }); fetchNotifications(); };
 
 async function syncAllData() {
   if (!currentUser) return;
@@ -373,8 +373,8 @@ function goToAppHistoryState(state) {
   const navigate = { patient: switchPatientPage, doctor: switchDoctorPage, reception: switchReceptionPage }[state.role];
   navigate?.(state.page, false);
 }
-window.goAppBack = function() { if (appHistoryIndex === 0) return; appHistoryIndex--; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
-window.goAppForward = function() { if (appHistoryIndex >= appHistory.length - 1) return; appHistoryIndex++; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
+window.goAppBack = function () { if (appHistoryIndex === 0) return; appHistoryIndex--; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
+window.goAppForward = function () { if (appHistoryIndex >= appHistory.length - 1) return; appHistoryIndex++; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
 window.addEventListener('popstate', event => {
   const state = event.state;
   if (!state?.healthsyncNavigation) return;
@@ -385,7 +385,7 @@ window.addEventListener('popstate', event => {
   updateAppHistoryButtons();
 });
 
-window.switchGlobalRole = function(role, remember = true) {
+window.switchGlobalRole = function (role, remember = true) {
   document.querySelectorAll('.role-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
 
@@ -410,7 +410,7 @@ window.switchGlobalRole = function(role, remember = true) {
   }
 };
 
-window.toggleSidebar = function(forceClose = false) {
+window.toggleSidebar = function (forceClose = false) {
   const activeSidebar = document.querySelector('.role-panel.active .sidebar') || document.querySelector('.sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   if (activeSidebar) {
@@ -427,7 +427,7 @@ window.toggleSidebar = function(forceClose = false) {
 // ---------------------------------------------------------------------------
 // NAVIGATION ROUTING
 // ---------------------------------------------------------------------------
-window.switchPatientPage = function(pageId, remember = true) {
+window.switchPatientPage = function (pageId, remember = true) {
   toggleSidebar(true);
   // Navigation active state
   document.querySelectorAll('#panel-patient .nav-item').forEach(item => {
@@ -446,10 +446,11 @@ window.switchPatientPage = function(pageId, remember = true) {
     const firstTab = document.querySelector('.records-menu-item');
     if (firstTab) switchRecordsSubtab(firstTab, 'timeline');
   }
+  if (pageId === 'doctors') renderPatientDoctorsList();
   if (remember) recordAppNavigation('patient', pageId);
 };
 
-window.switchDoctorPage = function(pageId, remember = true) {
+window.switchDoctorPage = function (pageId, remember = true) {
   toggleSidebar(true);
   document.querySelectorAll('#panel-doctor .nav-item').forEach(item => {
     item.classList.remove('active');
@@ -464,7 +465,7 @@ window.switchDoctorPage = function(pageId, remember = true) {
   if (remember) recordAppNavigation('doctor', pageId);
 };
 
-window.switchReceptionPage = function(pageId, remember = true) {
+window.switchReceptionPage = function (pageId, remember = true) {
   toggleSidebar(true);
   document.querySelectorAll('#panel-reception .nav-item').forEach(item => {
     item.classList.remove('active');
@@ -482,7 +483,7 @@ window.switchReceptionPage = function(pageId, remember = true) {
 // ---------------------------------------------------------------------------
 // SIDEBAR TOOLS — every navigation item opens a usable workspace.
 // ---------------------------------------------------------------------------
-const utilityTitles = { prescriptions:'Prescriptions', medicines:'Medicines', reminders:'Medicine Reminders', vaccinations:'Vaccination Reminders', family:'Family Accounts', 'voice-search':'AI Voice Search', availability:'Doctor Availability', messages:'Messages', settings:'Settings', help:'Help & Support', schedule:'Schedule', requests:'Patient Requests', earnings:'Earnings', reports:'Reports', patients:'Patients', doctors:'Doctors', 'follow-ups':'Follow-up Reminders', priority:'Emergency Priority Queue', billing:'Billing Entry' };
+const utilityTitles = { prescriptions: 'Prescriptions', medicines: 'Medicines', reminders: 'Medicine Reminders', vaccinations: 'Vaccination Reminders', family: 'Family Accounts', 'voice-search': 'AI Voice Search', availability: 'Doctor Availability', messages: 'Messages', settings: 'Settings', help: 'Help & Support', schedule: 'Schedule', requests: 'Patient Requests', earnings: 'Earnings', reports: 'Reports', patients: 'Patients', doctors: 'Doctors', 'follow-ups': 'Follow-up Reminders', priority: 'Emergency Priority Queue', billing: 'Billing Entry' };
 function getUtilityPage(role, tool) {
   const id = `${role}-page-tool-${tool}`;
   let page = document.getElementById(id);
@@ -491,7 +492,7 @@ function getUtilityPage(role, tool) {
   const container = panel.querySelector('.page-content');
   page = document.createElement('div'); page.id = id; page.className = 'page'; container.appendChild(page); return page;
 }
-function table(rows, headers) { return `<div class="card"><div class="card-body table-wrap"><table class="hs-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}" class="text-center text-muted">No records yet.</td></tr>`}</tbody></table></div></div>`; }
+function table(rows, headers) { return `<div class="card"><div class="card-body table-wrap"><table class="hs-table"><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}" class="text-center text-muted">No records yet.</td></tr>`}</tbody></table></div></div>`; }
 function localItems(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
 function saveLocalItems(key, values) { localStorage.setItem(key, JSON.stringify(values)); }
 
@@ -544,7 +545,7 @@ function healthInsight(profile) {
   const age = Number(profile.age);
   const sleep = age <= 17 ? '8–10 hours' : age >= 65 ? '7–8 hours' : '7–9 hours';
   const activity = profile.job === 'Desk-based / mostly sitting' ? 'Break up sitting time: stand, stretch, or walk for a few minutes each hour.' : profile.job === 'Shift work' ? 'Keep a consistent sleep window where possible and protect a dark, quiet rest period.' : profile.job === 'Physically active work' ? 'Balance activity with recovery, hydration, and regular meals.' : profile.job === 'Driving / travel-based work' ? 'Plan short movement and water breaks during long travel periods.' : profile.job === 'Student' ? 'Use regular meal, movement, and screen-break times during study blocks.' : 'Aim for regular movement across the week and include strength work when suitable.';
-  const activityFactors = { Student:1.3, 'Desk-based / mostly sitting':1.25, 'Business owner / entrepreneur':1.35, 'Mixed activity':1.45, 'Physically active work':1.65, 'Healthcare / service work':1.5, 'Driving / travel-based work':1.3, 'Homemaker / caregiver':1.45, 'Shift work':1.4, Retired:1.25, Other:1.35 };
+  const activityFactors = { Student: 1.3, 'Desk-based / mostly sitting': 1.25, 'Business owner / entrepreneur': 1.35, 'Mixed activity': 1.45, 'Physically active work': 1.65, 'Healthcare / service work': 1.5, 'Driving / travel-based work': 1.3, 'Homemaker / caregiver': 1.45, 'Shift work': 1.4, Retired: 1.25, Other: 1.35 };
   const sexAdjustment = profile.gender === 'Male' ? 5 : profile.gender === 'Female' ? -161 : -78;
   const bmr = 10 * Number(profile.weight) + 6.25 * Number(profile.height) - 5 * age + sexAdjustment;
   const hourAdjustment = Math.min(1.12, Math.max(.9, 1 + ((Number(profile.workHours || 8) - 8) * .015)));
@@ -571,7 +572,7 @@ function renderPatientHealthProfile() {
   const summary = document.getElementById('health-profile-summary');
   const form = document.getElementById('health-profile-form');
   if (form && profile) {
-    ['name','age','gender','job','height','weight','workHours','bloodGroup','emergencyName','emergencyPhone','allergies','conditions'].forEach(field => { const elementId = `profile-${field.replace('workHours', 'work-hours').replace('bloodGroup', 'blood-group').replace('emergencyName', 'emergency-name').replace('emergencyPhone', 'emergency-phone')}`; const input = document.getElementById(elementId); if (input) input.value = profile[field] ?? ''; });
+    ['name', 'age', 'gender', 'job', 'height', 'weight', 'workHours', 'bloodGroup', 'emergencyName', 'emergencyPhone', 'allergies', 'conditions'].forEach(field => { const elementId = `profile-${field.replace('workHours', 'work-hours').replace('bloodGroup', 'blood-group').replace('emergencyName', 'emergency-name').replace('emergencyPhone', 'emergency-phone')}`; const input = document.getElementById(elementId); if (input) input.value = profile[field] ?? ''; });
     const custom = document.getElementById('profile-custom-job'); if (custom) custom.value = profile.customJob || '';
     setCountryCodeValue('profile-emergency-country-code', profile.emergencyCountryCode || '+91');
     window.toggleCustomWorkField?.();
@@ -587,7 +588,7 @@ function renderPatientHealthProfile() {
   if (guide) { guide.innerHTML = content; renderProfileSafety(guide, profile); }
   if (summary) { summary.innerHTML = content; renderProfileSafety(summary, profile); }
 }
-window.saveHealthProfile = function(event) {
+window.saveHealthProfile = function (event) {
   event.preventDefault();
   const profile = {
     name: document.getElementById('profile-name').value.trim(), age: Number(document.getElementById('profile-age').value), gender: document.getElementById('profile-gender').value,
@@ -599,10 +600,10 @@ window.saveHealthProfile = function(event) {
   renderPatientHealthProfile();
   showToast('Your wellness guide has been updated.', 'success');
 };
-window.chooseProfilePhoto = function(source) {
+window.chooseProfilePhoto = function (source) {
   document.getElementById(source === 'camera' ? 'profile-photo-camera' : 'profile-photo-gallery')?.click();
 };
-window.saveProfilePhoto = function(file) {
+window.saveProfilePhoto = function (file) {
   if (!file) return;
   if (!file.type.startsWith('image/')) return showToast('Please choose an image file.', 'warning');
   if (file.size > 8 * 1024 * 1024) return showToast('Choose an image smaller than 8 MB.', 'warning');
@@ -628,7 +629,7 @@ window.saveProfilePhoto = function(file) {
   };
   reader.readAsDataURL(file);
 };
-window.removeProfilePhoto = function() {
+window.removeProfilePhoto = function () {
   const profile = getHealthProfile();
   if (!profile?.photoDataUrl) return showToast('There is no profile photo to remove.', 'warning');
   delete profile.photoDataUrl;
@@ -636,14 +637,14 @@ window.removeProfilePhoto = function() {
   renderPatientHealthProfile();
   showToast('Profile photo removed.', 'success');
 };
-window.toggleCustomWorkField = function() {
+window.toggleCustomWorkField = function () {
   const isOther = document.getElementById('profile-job')?.value === 'Other';
   const group = document.getElementById('profile-custom-job-group');
   const input = document.getElementById('profile-custom-job');
   group?.classList.toggle('hidden', !isOther);
   if (input) input.required = Boolean(isOther);
 };
-window.openPortalTool = function(role, tool, remember = true) {
+window.openPortalTool = function (role, tool, remember = true) {
   if (role === 'patient' && tool === 'reminders' && !remindersLoaded) {
     fetchReminders().then(() => openPortalTool(role, tool));
     return;
@@ -657,18 +658,18 @@ window.openPortalTool = function(role, tool, remember = true) {
 };
 function utilityContent(role, tool) {
   if (tool === 'settings') return settingsContent();
-  if (tool === 'prescriptions') return table(patientPrescriptions.map(rx => `<tr><td>${escapeHtml(rx.diagnosis)}</td><td>${escapeHtml(rx.doctor_name || rx.doctorName || '')}</td><td>${new Date(rx.created_at).toLocaleDateString('en-IN')}</td><td><button class="btn btn-secondary btn-xs" onclick="showToast('Prescription details are available in Health Records.', 'info')">View</button></td></tr>`).join(''), ['Diagnosis','Doctor','Date','Action']);
-  if (tool === 'medicines') { const meds = patientPrescriptions.flatMap(rx => { try{return JSON.parse(rx.medications_json || '[]')}catch{return []} }); return table(meds.map(m=>`<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.dosage || '')}</td><td>${escapeHtml(m.frequency || '')}</td><td>${escapeHtml(m.duration || '')}</td></tr>`).join(''), ['Medicine','Dosage','Frequency','Duration']); }
-  if (tool === 'reminders') { const reminders=localItems('healthsync-reminders'); return `<div class="card mb-3"><div class="card-body"><div class="form-row"><div class="form-group"><label class="form-label">Medicine</label><input id="reminder-name" class="form-control" placeholder="e.g. Paracetamol"></div><div class="form-group"><label class="form-label">Time</label><input id="reminder-time" class="form-control" type="time"></div></div><button class="btn btn-primary" onclick="addReminder()">Add reminder</button></div></div>${table(reminders.map((r,i)=>`<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.time)}</td><td><button class="btn btn-secondary btn-xs" onclick="removeReminder(${i})">Remove</button></td></tr>`).join(''), ['Medicine','Time','Action'])}`; }
-  if (tool === 'messages') { const messages=localItems(`healthsync-${role}-messages`); return `<div class="card mb-3"><div class="card-body"><div id="message-history">${messages.map(m=>`<p class="mb-2"><strong>${escapeHtml(m.from)}:</strong> ${escapeHtml(m.text)}</p>`).join('') || '<p class="text-muted">No messages yet.</p>'}</div><div class="form-row"><input id="message-text" class="form-control" placeholder="Write a message"><button class="btn btn-primary" onclick="sendPortalMessage('${role}')">Send</button></div></div></div>`; }
+  if (tool === 'prescriptions') return table(patientPrescriptions.map(rx => `<tr><td>${escapeHtml(rx.diagnosis)}</td><td>${escapeHtml(rx.doctor_name || rx.doctorName || '')}</td><td>${new Date(rx.created_at).toLocaleDateString('en-IN')}</td><td><button class="btn btn-secondary btn-xs" onclick="showToast('Prescription details are available in Health Records.', 'info')">View</button></td></tr>`).join(''), ['Diagnosis', 'Doctor', 'Date', 'Action']);
+  if (tool === 'medicines') { const meds = patientPrescriptions.flatMap(rx => { try { return JSON.parse(rx.medications_json || '[]') } catch { return [] } }); return table(meds.map(m => `<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.dosage || '')}</td><td>${escapeHtml(m.frequency || '')}</td><td>${escapeHtml(m.duration || '')}</td></tr>`).join(''), ['Medicine', 'Dosage', 'Frequency', 'Duration']); }
+  if (tool === 'reminders') { const reminders = localItems('healthsync-reminders'); return `<div class="card mb-3"><div class="card-body"><div class="form-row"><div class="form-group"><label class="form-label">Medicine</label><input id="reminder-name" class="form-control" placeholder="e.g. Paracetamol"></div><div class="form-group"><label class="form-label">Time</label><input id="reminder-time" class="form-control" type="time"></div></div><button class="btn btn-primary" onclick="addReminder()">Add reminder</button></div></div>${table(reminders.map((r, i) => `<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.time)}</td><td><button class="btn btn-secondary btn-xs" onclick="removeReminder(${i})">Remove</button></td></tr>`).join(''), ['Medicine', 'Time', 'Action'])}`; }
+  if (tool === 'messages') { const messages = localItems(`healthsync-${role}-messages`); return `<div class="card mb-3"><div class="card-body"><div id="message-history">${messages.map(m => `<p class="mb-2"><strong>${escapeHtml(m.from)}:</strong> ${escapeHtml(m.text)}</p>`).join('') || '<p class="text-muted">No messages yet.</p>'}</div><div class="form-row"><input id="message-text" class="form-control" placeholder="Write a message"><button class="btn btn-primary" onclick="sendPortalMessage('${role}')">Send</button></div></div></div>`; }
   if (tool === 'settings') return `<div class="card"><div class="card-body"><div class="form-group mb-3"><label class="form-label">Preferred language</label><select id="setting-language" class="form-control"><option>English</option><option>Hindi</option><option>Marathi</option></select></div><button class="btn btn-primary" onclick="saveSettings()">Save settings</button> <button class="btn btn-secondary" onclick="logoutCurrentUser()">Log out</button></div></div>`;
   if (tool === 'help') return `<div class="card"><div class="card-body"><h4 class="mb-2">Need help?</h4><p class="text-muted mb-3">Use the support form and the care team will receive your request.</p><textarea id="support-message" class="form-control mb-3" placeholder="Describe your issue"></textarea><button class="btn btn-primary" onclick="submitSupport()">Send support request</button></div></div>`;
-  if (tool === 'schedule') return table(todayAppointments.map(a=>`<tr><td>${escapeHtml(a.slot_time)}</td><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.status)}</td><td><button class="btn btn-secondary btn-xs" onclick="startConsultation('${a.id}')">Open</button></td></tr>`).join(''), ['Time','Patient','Status','Action']);
+  if (tool === 'schedule') return table(todayAppointments.map(a => `<tr><td>${escapeHtml(a.slot_time)}</td><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.status)}</td><td><button class="btn btn-secondary btn-xs" onclick="startConsultation('${a.id}')">Open</button></td></tr>`).join(''), ['Time', 'Patient', 'Status', 'Action']);
   if (tool === 'requests') return `<div class="card"><div class="card-body"><p class="text-muted">No pending access requests. Patient consent requests appear here when submitted.</p><button class="btn btn-primary" onclick="showToast('Request queue refreshed.', 'success')">Refresh requests</button></div></div>`;
-  if (tool === 'earnings') { const completed=todayAppointments.filter(a=>a.status==='COMPLETED').length; return `<div class="grid-col-3">${['Today', 'This week', 'This month'].map((label,i)=>`<div class="card"><div class="card-body"><div class="text-muted text-sm">${label}</div><div class="kpi-number">₹${completed * 500 * (i + 1)}</div><div class="text-sm">${completed * (i + 1)} completed visits</div></div></div>`).join('')}</div>`; }
+  if (tool === 'earnings') { const completed = todayAppointments.filter(a => a.status === 'COMPLETED').length; return `<div class="grid-col-3">${['Today', 'This week', 'This month'].map((label, i) => `<div class="card"><div class="card-body"><div class="text-muted text-sm">${label}</div><div class="kpi-number">₹${completed * 500 * (i + 1)}</div><div class="text-sm">${completed * (i + 1)} completed visits</div></div></div>`).join('')}</div>`; }
   if (tool === 'reports') return `<div class="card"><div class="card-body"><p class="mb-3">Export the current appointment register for your records.</p><button class="btn btn-primary" onclick="exportAppointmentsCsv()"><i class="fa-solid fa-download"></i> Download CSV report</button></div></div>`;
-  if (tool === 'patients') return table(todayAppointments.map(a=>`<tr><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.slot_time)}</td><td>${escapeHtml(a.status)}</td><td><button class="btn btn-secondary btn-xs" onclick="switchReceptionPage('appointments')">Open appointment</button></td></tr>`).join(''), ['Patient','Time','Status','Action']);
-  if (tool === 'doctors') return table(allDoctors.map(d=>`<tr><td>${escapeHtml(d.full_name)}</td><td>${escapeHtml(d.specialization)}</td><td>${d.available_today ? 'Available today' : 'Unavailable'}</td><td><button class="btn btn-secondary btn-xs" onclick="openBookAppointmentModalWithDoctor('${d.id}')">Book</button></td></tr>`).join(''), ['Doctor','Specialty','Availability','Action']);
+  if (tool === 'patients') return table(todayAppointments.map(a => `<tr><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.slot_time)}</td><td>${escapeHtml(a.status)}</td><td><button class="btn btn-secondary btn-xs" onclick="switchReceptionPage('appointments')">Open appointment</button></td></tr>`).join(''), ['Patient', 'Time', 'Status', 'Action']);
+  if (tool === 'doctors') return table(allDoctors.map(d => `<tr><td>${escapeHtml(d.full_name)}</td><td>${escapeHtml(d.specialization)}</td><td>${d.available_today ? 'Available today' : 'Unavailable'}</td><td><button class="btn btn-secondary btn-xs" onclick="openBookAppointmentModalWithDoctor('${d.id}')">Book</button></td></tr>`).join(''), ['Doctor', 'Specialty', 'Availability', 'Action']);
   if (tool === 'vaccinations') return reminderWorkspace('Vaccination', 'vaccine', 'healthsync-vaccinations');
   if (tool === 'family') return familyWorkspace();
   if (tool === 'voice-search') return `<div class="card"><div class="card-body"><p class="mb-3">Speak in English, Hindi, or Marathi to find doctors and specialties.</p><button class="btn btn-primary" onclick="startVoiceDoctorSearch()"><i class="fa-solid fa-microphone"></i> Start voice search</button><p id="voice-search-result" class="auth-message mt-3" aria-live="polite"></p></div></div>`;
@@ -691,27 +692,27 @@ async function fetchReminders() {
     const patientId = currentUser?.patientId || 'pat1';
     const response = await fetch(API_BASE + '/reminders?patientId=' + encodeURIComponent(patientId));
     const data = await response.json();
-    const rows = (data.reminders || []).map(item => ({ id:item.id, name:item.medicine_name, time:item.reminder_time }));
+    const rows = (data.reminders || []).map(item => ({ id: item.id, name: item.medicine_name, time: item.reminder_time }));
     saveLocalItems('healthsync-reminders', rows);
   } catch { showToast('Unable to load reminders.', 'error'); }
   remindersLoaded = true;
 }
-window.addReminder = async function() {
-  const name=document.getElementById('reminder-name').value.trim(), time=document.getElementById('reminder-time').value;
-  if(!name || !time) return showToast('Enter a medicine and time.', 'warning');
-  const response = await fetch(API_BASE + '/reminders', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ patientId:currentUser?.patientId || 'pat1', medicineName:name, reminderTime:time }) });
+window.addReminder = async function () {
+  const name = document.getElementById('reminder-name').value.trim(), time = document.getElementById('reminder-time').value;
+  if (!name || !time) return showToast('Enter a medicine and time.', 'warning');
+  const response = await fetch(API_BASE + '/reminders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patientId: currentUser?.patientId || 'pat1', medicineName: name, reminderTime: time }) });
   const data = await response.json();
-  if(!data.success) return showToast(data.message || 'Could not save reminder.', 'error');
-  remindersLoaded=false; openPortalTool('patient','reminders'); showToast('Reminder saved.', 'success');
+  if (!data.success) return showToast(data.message || 'Could not save reminder.', 'error');
+  remindersLoaded = false; openPortalTool('patient', 'reminders'); showToast('Reminder saved.', 'success');
 };
-window.removeReminder = async function(index) {
-  const rows=localItems('healthsync-reminders'), item=rows[index];
-  if(item?.id) await fetch(API_BASE + '/reminders/' + encodeURIComponent(item.id), { method:'DELETE' });
-  else { rows.splice(index,1); saveLocalItems('healthsync-reminders',rows); }
-  remindersLoaded=false; openPortalTool('patient','reminders'); showToast('Reminder removed.', 'success');
+window.removeReminder = async function (index) {
+  const rows = localItems('healthsync-reminders'), item = rows[index];
+  if (item?.id) await fetch(API_BASE + '/reminders/' + encodeURIComponent(item.id), { method: 'DELETE' });
+  else { rows.splice(index, 1); saveLocalItems('healthsync-reminders', rows); }
+  remindersLoaded = false; openPortalTool('patient', 'reminders'); showToast('Reminder removed.', 'success');
 };
-window.sendPortalMessage = function(role) { const input=document.getElementById('message-text'), text=input.value.trim(); if(!text) return; const key=`healthsync-${role}-messages`, rows=localItems(key); rows.push({from:'You',text}); saveLocalItems(key,rows); openPortalTool(role,'messages'); showToast('Message sent.', 'success'); };
-window.saveSettings = async function() {
+window.sendPortalMessage = function (role) { const input = document.getElementById('message-text'), text = input.value.trim(); if (!text) return; const key = `healthsync-${role}-messages`, rows = localItems(key); rows.push({ from: 'You', text }); saveLocalItems(key, rows); openPortalTool(role, 'messages'); showToast('Message sent.', 'success'); };
+window.saveSettings = async function () {
   const language = document.getElementById('setting-language').value;
   const notificationsEnabled = document.getElementById('setting-notifications')?.checked !== false;
   const smsEnabled = document.getElementById('setting-sms')?.checked !== false;
@@ -719,25 +720,25 @@ window.saveSettings = async function() {
   applyLanguage(language);
   if (!currentUser?.id) return showToast('Settings saved on this device. Sign in to sync them.', 'info');
   try {
-    const response = await fetch(API_BASE + '/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId:currentUser.id, language, notificationsEnabled, smsEnabled, reminderEnabled }) });
+    const response = await fetch(API_BASE + '/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, language, notificationsEnabled, smsEnabled, reminderEnabled }) });
     const data = await response.json();
     showToast(data.success ? 'Settings saved and synced.' : 'Could not sync settings.', data.success ? 'success' : 'error');
   } catch { showToast('Could not sync settings.', 'error'); }
 };
-window.submitSupport = function() { const text=document.getElementById('support-message').value.trim(); if(!text) return showToast('Describe your issue first.', 'warning'); const rows=localItems('healthsync-support'); rows.push({text,createdAt:new Date().toISOString()}); saveLocalItems('healthsync-support',rows); document.getElementById('support-message').value=''; showToast('Support request sent.', 'success'); };
-window.logoutCurrentUser = async function() {
-  if(currentUser?.refreshToken) {
+window.submitSupport = function () { const text = document.getElementById('support-message').value.trim(); if (!text) return showToast('Describe your issue first.', 'warning'); const rows = localItems('healthsync-support'); rows.push({ text, createdAt: new Date().toISOString() }); saveLocalItems('healthsync-support', rows); document.getElementById('support-message').value = ''; showToast('Support request sent.', 'success'); };
+window.logoutCurrentUser = async function () {
+  if (currentUser?.refreshToken) {
     try {
-      await fetch(`${API_BASE}/auth/logout`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refreshToken:currentUser.refreshToken})});
-    } catch(e) { console.error('Logout error', e); }
+      await fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: currentUser.refreshToken }) });
+    } catch (e) { console.error('Logout error', e); }
   }
   localStorage.removeItem('healthsync-session');
   sessionStorage.removeItem('healthsync-language-confirmed');
   sessionStorage.removeItem('healthsync-pending-mobile');
-  currentUser=null;
+  currentUser = null;
   location.reload();
 };
-window.exportAppointmentsCsv = function() { const rows=[['Patient','Doctor','Date','Time','Status'], ...todayAppointments.map(a=>[a.patient_name,a.doctor_name,a.slot_date,a.slot_time,a.status])]; const csv=rows.map(row=>row.map(value=>`"${String(value || '').replace(/"/g,'""')}"`).join(',')).join('\n'); const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); link.download='healthsync-appointments.csv'; link.click(); URL.revokeObjectURL(link.href); };
+window.exportAppointmentsCsv = function () { const rows = [['Patient', 'Doctor', 'Date', 'Time', 'Status'], ...todayAppointments.map(a => [a.patient_name, a.doctor_name, a.slot_date, a.slot_time, a.status])]; const csv = rows.map(row => row.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(',')).join('\n'); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = 'healthsync-appointments.csv'; link.click(); URL.revokeObjectURL(link.href); };
 
 // ---------------------------------------------------------------------------
 // DATA FETCHERS
@@ -831,12 +832,12 @@ function renderNextAppointment(appt) {
       </div>`;
     return;
   }
-  
+
   const dateObj = new Date(`${appt.slot_date}T12:00:00`);
-  const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', {month:'short'})} ${dateObj.getFullYear()}`;
+  const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', { month: 'short' })} ${dateObj.getFullYear()}`;
   const docName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync Doctor';
   const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'City Heart Clinic';
-    
+
   // Check live queue
   let queueInfoHtml = '';
   if (['CHECKED IN', 'WAITING', 'IN PROGRESS'].includes(String(appt.status).toUpperCase())) {
@@ -890,18 +891,18 @@ function renderNextAppointment(appt) {
     </div>`;
 }
 
-window.viewAppointmentDetails = function(id) {
+window.viewAppointmentDetails = function (id) {
   const appt = todayAppointments.find(a => a.id === id);
   if (!appt) return;
-  
+
   const body = document.getElementById('appt-details-body');
   const actions = document.getElementById('appt-details-actions');
-  
+
   const docName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync Doctor';
   const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'HealthSync Partner Clinic';
   const dateObj = new Date(`${appt.slot_date}T12:00:00`);
-  const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', {month:'short'})} ${dateObj.getFullYear()}`;
-  
+  const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', { month: 'short' })} ${dateObj.getFullYear()}`;
+
   body.innerHTML = `
     <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
       <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(docName)}</h4>
@@ -931,16 +932,16 @@ window.viewAppointmentDetails = function(id) {
       ${appt.token_number ? `<span style="display: inline-block; background: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-top: 4px; margin-left: 8px;">Token: ${escapeHtml(appt.token_number)}</span>` : ''}
     </div>
   `;
-  
+
   const mapsLink = `https://www.google.com/maps?q=${encodeURIComponent(clinic)}`;
   const canCancel = ['WAITING', 'CONFIRMED'].includes(String(appt.status).trim().toUpperCase());
-  
+
   actions.innerHTML = `
     <button class="btn btn-secondary" style="flex: 1;" onclick="window.open('${mapsLink}', '_blank')"><i class="fa-solid fa-location-arrow"></i> Get Directions</button>
     ${canCancel ? `<button class="btn btn-danger" style="flex: 1;" onclick="cancelAppointment('${appt.id}'); closeModal('modal-appointment-details');">Cancel</button>` : ''}
     ${canCancel ? `<button class="btn btn-primary" style="flex: 1;" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}'); closeModal('modal-appointment-details');">Reschedule</button>` : ''}
   `;
-  
+
   openModal('modal-appointment-details');
 };
 
@@ -1006,8 +1007,8 @@ function renderPatientDoctorsList() {
     </div>
   `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px; margin-top: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found matching your criteria</p><button class="btn btn-secondary mt-3" onclick="clearPatientDoctorSearch()">Clear Search</button></div>`;
 }
-window.handlePatientDocSearch = function() { renderPatientDoctorsList(); };
-window.clearPatientDoctorSearch = function() { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
+window.handlePatientDocSearch = function () { renderPatientDoctorsList(); };
+window.clearPatientDoctorSearch = function () { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
 
 function renderHealthRecordsList(records) {
   const container = document.getElementById('records-list-container');
@@ -1045,16 +1046,16 @@ function renderHealthRecordsList(records) {
   `).join('');
 }
 
-window.openSymptomDoctorsModal = function(symptom) {
+window.openSymptomDoctorsModal = function (symptom) {
   const container = document.getElementById('symptom-doctors-list');
   const title = document.getElementById('modal-symptom-title');
   if (!container || !title) return;
-  
+
   title.innerText = `Doctors for ${symptom}`;
-  
+
   const term = symptom.toLowerCase().split(' / ')[0]; // Handle "Swine Flu / Fever" etc.
   const doctors = allDoctors.filter(doc => [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
-  
+
   container.innerHTML = doctors.length ? doctors.map(doc => `
     <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
       <div style="display: flex; gap: 16px;">
@@ -1087,7 +1088,7 @@ window.openSymptomDoctorsModal = function(symptom) {
       </div>
     </div>
   `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found for ${symptom}</p></div>`;
-  
+
   const modal = document.getElementById('modal-symptom-doctors');
   if (modal) modal.classList.add('active');
 };
@@ -1111,13 +1112,13 @@ function renderPatientDashboardPrescriptions() {
   `).join('');
 }
 
-window.downloadPrescriptionPdf = function(rxId) {
+window.downloadPrescriptionPdf = function (rxId) {
   if (!currentUser?.token) return showToast('You must be logged in', 'error');
   const url = `${API_BASE}/prescriptions/pdf/${rxId}?token=${currentUser.token}`;
   window.open(url, '_blank');
 };
 
-window.searchDoctorsFromDashboard = function() {
+window.searchDoctorsFromDashboard = function () {
   const term = document.getElementById('dashboard-doctor-search')?.value.trim().toLowerCase() || '';
   switchPatientPage('doctors');
   const search = document.getElementById('pt-doc-search-input');
@@ -1126,43 +1127,43 @@ window.searchDoctorsFromDashboard = function() {
     search.dispatchEvent(new Event('input', { bubbles: true }));
   }
 };
-  let sosProgressInterval = null;
-  
-  window.startSOSCountdown = function() {
-    const progressEl = document.getElementById('sos-progress');
-    const textEl = document.getElementById('sos-btn-text');
-    if (!progressEl || !textEl) return;
-    
-    if (textEl.textContent === 'Dispatched') return; // already dispatched
-    
-    let progress = 0;
-    progressEl.style.width = '0%';
-    
-    sosProgressInterval = setInterval(() => {
-      progress += 100 / 30; // 3 seconds = 30 intervals of 100ms
-      progressEl.style.width = `${Math.min(progress, 100)}%`;
-    }, 100);
-    
-    sosTimer = setTimeout(() => {
-      clearInterval(sosProgressInterval);
-      textEl.textContent = 'Dispatched';
-      progressEl.style.width = '100%';
-      progressEl.style.background = '#16a34a';
-      window.showEmergencyHelp();
-    }, 3000);
-  };
-  
-  window.cancelSOSCountdown = function() {
-    const progressEl = document.getElementById('sos-progress');
-    const textEl = document.getElementById('sos-btn-text');
-    if (textEl && textEl.textContent === 'Dispatched') return;
-    
-    if (sosTimer) clearTimeout(sosTimer);
-    if (sosProgressInterval) clearInterval(sosProgressInterval);
-    if (progressEl) progressEl.style.width = '0%';
-  };
+let sosProgressInterval = null;
 
-  window.showEmergencyHelp = function() {
+window.startSOSCountdown = function () {
+  const progressEl = document.getElementById('sos-progress');
+  const textEl = document.getElementById('sos-btn-text');
+  if (!progressEl || !textEl) return;
+
+  if (textEl.textContent === 'Dispatched') return; // already dispatched
+
+  let progress = 0;
+  progressEl.style.width = '0%';
+
+  sosProgressInterval = setInterval(() => {
+    progress += 100 / 30; // 3 seconds = 30 intervals of 100ms
+    progressEl.style.width = `${Math.min(progress, 100)}%`;
+  }, 100);
+
+  sosTimer = setTimeout(() => {
+    clearInterval(sosProgressInterval);
+    textEl.textContent = 'Dispatched';
+    progressEl.style.width = '100%';
+    progressEl.style.background = '#16a34a';
+    window.showEmergencyHelp();
+  }, 3000);
+};
+
+window.cancelSOSCountdown = function () {
+  const progressEl = document.getElementById('sos-progress');
+  const textEl = document.getElementById('sos-btn-text');
+  if (textEl && textEl.textContent === 'Dispatched') return;
+
+  if (sosTimer) clearTimeout(sosTimer);
+  if (sosProgressInterval) clearInterval(sosProgressInterval);
+  if (progressEl) progressEl.style.width = '0%';
+};
+
+window.showEmergencyHelp = function () {
   showToast('Gathering exact live coordinates for Emergency SOS...', 'info');
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -1222,8 +1223,8 @@ function renderAppointmentsList() {
       cancelled: ['No cancelled appointments', 'Cancelled visits are kept here so your upcoming appointments stay uncluttered.', 'View upcoming appointments']
     }[type];
     const action = type === 'cancelled'
-        ? "showPatientAppointmentTab('pt-appt-upcoming')"
-        : "switchPatientPage('doctors')";
+      ? "showPatientAppointmentTab('pt-appt-upcoming')"
+      : "switchPatientPage('doctors')";
     return `<div class="empty-state appointment-empty-state"><div class="es-icon"><i class="fa-regular fa-calendar"></i></div><div class="es-text">${content[0]}</div><div class="es-sub">${content[1]}</div><button class="btn btn-primary btn-sm mt-3" onclick="${action}"><i class="fa-solid fa-calendar-plus"></i> ${content[2]}</button></div>`;
   };
 
@@ -1316,13 +1317,13 @@ function getBadgeClass(status) {
   return 'badge-secondary';
 }
 
-window.selectDoctorAppointment = function(id) {
+window.selectDoctorAppointment = function (id) {
   const appt = todayAppointments.find(a => a.id === id);
   if (!appt) return;
 
   const body = document.getElementById('doc-appt-body');
   const actions = document.getElementById('doc-appt-actions');
-  
+
   body.innerHTML = `
     <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
       <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(appt.patient_name)}</h4>
@@ -1355,7 +1356,7 @@ window.selectDoctorAppointment = function(id) {
   openModal('modal-doctor-appointment');
 };
 
-window.updateAppointmentStatus = async function(id, newStatus) {
+window.updateAppointmentStatus = async function (id, newStatus) {
   try {
     const res = await fetch(`${API_BASE}/appointments/${id}/status`, {
       method: 'PUT',
@@ -1399,7 +1400,7 @@ function renderLiveQueues() {
   renderMgmtQueue('all');
 }
 
-window.filterQueueTable = function(btn, filterStatus) {
+window.filterQueueTable = function (btn, filterStatus) {
   document.querySelectorAll('.q-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   renderMgmtQueue(filterStatus);
@@ -1510,7 +1511,7 @@ function updateKPIs(stats) {
 // ---------------------------------------------------------------------------
 // LAB RECORDS & SIDEBAR
 // ---------------------------------------------------------------------------
-window.switchRecordsSubtab = function(btn, type) {
+window.switchRecordsSubtab = function (btn, type) {
   document.querySelectorAll('.records-menu-item').forEach(m => m.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
@@ -1527,7 +1528,7 @@ function renderRecordsList(type) {
   if (type === 'timeline') {
     // Collect timeline events
     const events = [];
-    
+
     // 1. Appointments (Past)
     todayAppointments.forEach(appt => {
       const isPast = ['COMPLETED', 'CANCELLED'].includes(String(appt.status).toUpperCase());
@@ -1610,14 +1611,14 @@ let bookingDate = null;
 let bookingTime = null;
 let bookingStep = 1;
 
-window.openBookAppointmentModalWithDoctor = function(doctorId) {
+window.openBookAppointmentModalWithDoctor = function (doctorId) {
   bookingDoctor = allDoctors.find(d => String(d.id) === String(doctorId));
   if (!bookingDoctor) return;
   bookingDate = null;
   bookingTime = null;
   bookingStep = 1;
   bookingMode = 'IN_PERSON';
-  
+
   // Render doc info
   document.getElementById('booking-doc-info').innerHTML = `
     <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #64748b;">
@@ -1628,14 +1629,14 @@ window.openBookAppointmentModalWithDoctor = function(doctorId) {
       <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${escapeHtml(bookingDoctor.specialization)} • ₹${bookingDoctor.fee || bookingDoctor.consultation_fee || 500}</p>
     </div>
   `;
-  
+
   // Render Date List (Next 7 days)
   let dateHtml = '';
-  for(let i = 0; i < 7; i++) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() + i);
     const dateStr = d.toISOString().split('T')[0];
-    const dayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', {weekday:'short'});
+    const dayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum = d.getDate();
     dateHtml += `
       <div class="booking-date-card" id="date-card-${dateStr}" onclick="selectBookingDate('${dateStr}')" style="min-width: 70px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s;">
@@ -1649,16 +1650,16 @@ window.openBookAppointmentModalWithDoctor = function(doctorId) {
   document.getElementById('btn-booking-next').disabled = true;
   document.getElementById('btn-booking-next').textContent = 'Continue';
   document.getElementById('btn-booking-next').onclick = bookingNextStep;
-  
+
   showBookingStep(1);
   openModal('modal-book-appt');
 };
 
-window.selectBookingDate = async function(dateStr) {
+window.selectBookingDate = async function (dateStr) {
   bookingDate = dateStr;
   bookingTime = null;
   document.getElementById('btn-booking-next').disabled = true;
-  
+
   // Highlight selected date
   document.querySelectorAll('.booking-date-card').forEach(el => {
     el.style.background = 'transparent';
@@ -1670,9 +1671,9 @@ window.selectBookingDate = async function(dateStr) {
     selectedEl.style.background = '#eff6ff';
     selectedEl.style.borderColor = 'var(--blue-primary)';
   }
-  
+
   document.getElementById('booking-time-container').innerHTML = '<p class="text-muted text-sm">Loading slots...</p>';
-  
+
   try {
     const res = await fetch(`${API_BASE}/doctors/${bookingDoctor.id}/slots?date=${dateStr}`);
     const data = await res.json();
@@ -1680,26 +1681,26 @@ window.selectBookingDate = async function(dateStr) {
       document.getElementById('booking-time-container').innerHTML = '<p class="text-muted text-sm text-danger">No slots available on this date.</p>';
       return;
     }
-    
+
     // Group slots
     const morning = [], afternoon = [], evening = [];
     data.slots.forEach(s => {
       let hour = parseInt(s.time.split(':')[0]);
       if (s.time.includes('PM') && hour !== 12) hour += 12;
       if (s.time.includes('AM') && hour === 12) hour = 0;
-      
+
       if (hour < 12) morning.push(s);
       else if (hour < 17) afternoon.push(s);
       else evening.push(s);
     });
-    
+
     let html = '';
     const renderGroup = (title, slots) => {
       if (!slots.length) return '';
       let groupHtml = `<h5 style="margin: 10px 0 8px; font-size: 13px; color: var(--text-muted);">${title}</h5><div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">`;
       slots.forEach(s => {
         if (s.available) {
-          groupHtml += `<button class="time-slot-btn" id="time-slot-${s.time.replace(/[: ]/g,'-')}" onclick="selectBookingTime('${s.time}')" style="padding: 8px 12px; border: 1px solid var(--blue-primary); background: transparent; color: var(--blue-primary); border-radius: 6px; font-size: 13px; cursor: pointer;">${s.time}</button>`;
+          groupHtml += `<button class="time-slot-btn" id="time-slot-${s.time.replace(/[: ]/g, '-')}" onclick="selectBookingTime('${s.time}')" style="padding: 8px 12px; border: 1px solid var(--blue-primary); background: transparent; color: var(--blue-primary); border-radius: 6px; font-size: 13px; cursor: pointer;">${s.time}</button>`;
         } else {
           groupHtml += `<button disabled style="padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #94a3b8; border-radius: 6px; font-size: 13px; cursor: not-allowed; text-decoration: line-through;">${s.time}</button>`;
         }
@@ -1707,24 +1708,24 @@ window.selectBookingDate = async function(dateStr) {
       groupHtml += `</div>`;
       return groupHtml;
     };
-    
+
     html += renderGroup('Morning', morning);
     html += renderGroup('Afternoon', afternoon);
     html += renderGroup('Evening', evening);
-    
+
     document.getElementById('booking-time-container').innerHTML = html;
   } catch (err) {
     document.getElementById('booking-time-container').innerHTML = '<p class="text-muted text-sm text-danger">Failed to load slots.</p>';
   }
 };
 
-window.selectBookingTime = function(timeStr) {
+window.selectBookingTime = function (timeStr) {
   bookingTime = timeStr;
   document.querySelectorAll('.time-slot-btn').forEach(el => {
     el.style.background = 'transparent';
     el.style.color = 'var(--blue-primary)';
   });
-  const selectedEl = document.getElementById(`time-slot-${timeStr.replace(/[: ]/g,'-')}`);
+  const selectedEl = document.getElementById(`time-slot-${timeStr.replace(/[: ]/g, '-')}`);
   if (selectedEl) {
     selectedEl.style.background = 'var(--blue-primary)';
     selectedEl.style.color = '#fff';
@@ -1732,7 +1733,7 @@ window.selectBookingTime = function(timeStr) {
   document.getElementById('btn-booking-next').disabled = false;
 };
 
-window.bookingNextStep = function() {
+window.bookingNextStep = function () {
   if (bookingStep === 1) {
     // Show summary
     document.getElementById('summary-doc-name').textContent = bookingDoctor.name || bookingDoctor.full_name || 'Doctor';
@@ -1740,10 +1741,10 @@ window.bookingNextStep = function() {
     document.getElementById('summary-date').textContent = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('summary-time').textContent = bookingTime;
     document.getElementById('summary-fee').textContent = `₹${bookingDoctor.fee || bookingDoctor.consultation_fee || 500}`;
-    
+
     const patNameEl = document.getElementById('summary-pat-name');
     if (patNameEl) patNameEl.textContent = currentUser?.full_name || 'Patient';
-    
+
     document.getElementById('btn-booking-next').textContent = 'Confirm Appointment';
     showBookingStep(2);
   } else if (bookingStep === 2) {
@@ -1758,7 +1759,7 @@ function showBookingStep(step) {
   document.getElementById('booking-step-summary').classList.add('hidden');
   document.getElementById('booking-step-success').classList.add('hidden');
   document.getElementById('booking-footer').classList.remove('hidden');
-  
+
   if (step === 1) document.getElementById('booking-step-datetime').classList.remove('hidden');
   if (step === 2) document.getElementById('booking-step-summary').classList.remove('hidden');
   if (step === 3) {
@@ -1767,27 +1768,27 @@ function showBookingStep(step) {
   }
 }
 
-window.submitAppointmentBooking = async function() {
+window.submitAppointmentBooking = async function () {
   document.getElementById('btn-booking-next').disabled = true;
   document.getElementById('btn-booking-next').textContent = 'Confirming...';
-  
+
   try {
     const res = await fetch(`${API_BASE}/appointments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        doctorId: bookingDoctor.id, 
-        doctorName: bookingDoctor.name || bookingDoctor.full_name || 'Doctor', 
+      body: JSON.stringify({
+        doctorId: bookingDoctor.id,
+        doctorName: bookingDoctor.name || bookingDoctor.full_name || 'Doctor',
         patientId: currentUser?.id || 'pat1',
-        patientName: currentUser?.full_name || 'Patient', 
-        date: bookingDate, 
-        time: bookingTime, 
-        consultationType: 'IN_PERSON' 
+        patientName: currentUser?.full_name || 'Patient',
+        date: bookingDate,
+        time: bookingTime,
+        consultationType: 'IN_PERSON'
       })
     });
-    
+
     const data = await res.json();
-    
+
     if (res.status === 409) {
       showToast(data.message || 'Sorry, this slot was just booked.', 'error');
       // Go back to step 1 and refresh slots
@@ -1797,14 +1798,14 @@ window.submitAppointmentBooking = async function() {
       selectBookingDate(bookingDate); // Refresh slots
       return;
     }
-    
+
     if (data.success) {
       // Show success screen
       document.getElementById('success-doc-name').textContent = bookingDoctor.name || 'Doctor';
       document.getElementById('success-date').textContent = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('success-time').textContent = bookingTime;
       document.getElementById('success-appt-id').textContent = data.appointment.id;
-      
+
       showBookingStep(3);
       syncAllData(); // Refresh dashboards
     } else {
@@ -1820,11 +1821,11 @@ window.submitAppointmentBooking = async function() {
 // ---------------------------------------------------------------------------
 // PATIENT RECORD UPLOAD
 // ---------------------------------------------------------------------------
-window.openUploadRecordModal = function() {
+window.openUploadRecordModal = function () {
   openModal('modal-upload-record');
 };
 
-window.submitUploadRecord = function() {
+window.submitUploadRecord = function () {
   const name = document.getElementById('upload-doc-name')?.value;
   const doc = document.getElementById('upload-doc-doc')?.value || 'Self Upload';
   const file = document.getElementById('upload-doc-file')?.value;
@@ -1852,7 +1853,7 @@ window.submitUploadRecord = function() {
 // ---------------------------------------------------------------------------
 // RECEPTION WALK-IN REGISTRATION FORM
 // ---------------------------------------------------------------------------
-window.submitReceptionWalkinForm = async function() {
+window.submitReceptionWalkinForm = async function () {
   const name = document.getElementById('walkin-form-name')?.value.trim();
   const mobile = document.getElementById('walkin-form-mobile')?.value.trim();
   const mobileNumber = internationalPhone(selectedCountryCode('walkin-country-code'), mobile);
@@ -1905,11 +1906,11 @@ window.submitReceptionWalkinForm = async function() {
 // ---------------------------------------------------------------------------
 // RECEPTION QUICK TOKEN GENERATOR MODAL
 // ---------------------------------------------------------------------------
-window.openReceptionIssueTokenModal = function() {
+window.openReceptionIssueTokenModal = function () {
   openModal('modal-issue-token');
 };
 
-window.submitReceptionQuickToken = async function() {
+window.submitReceptionQuickToken = async function () {
   const name = document.getElementById('issue-token-patient-name')?.value.trim();
   const select = document.getElementById('issue-token-doctor-select');
   const docId = select?.value || 'doc1';
@@ -1939,7 +1940,7 @@ window.submitReceptionQuickToken = async function() {
 // ---------------------------------------------------------------------------
 // CALL / COMPLETE / NO-SHOW COMMANDS
 // ---------------------------------------------------------------------------
-window.callQueueNext = async function(token) {
+window.callQueueNext = async function (token) {
   try {
     const res = await fetch(`${API_BASE}/queue/call-next`, { method: 'POST' });
     const data = await res.json();
@@ -1952,7 +1953,7 @@ window.callQueueNext = async function(token) {
   }
 };
 
-window.completeQueueItem = async function(token) {
+window.completeQueueItem = async function (token) {
   // Simply call next to pop the current consultation item
   try {
     const res = await fetch(`${API_BASE}/queue/call-next`, { method: 'POST' });
@@ -1966,7 +1967,7 @@ window.completeQueueItem = async function(token) {
   }
 };
 
-window.markNoShow = async function(token) {
+window.markNoShow = async function (token) {
   try {
     const res = await fetch(`${API_BASE}/queue/no-show`, {
       method: 'POST',
@@ -1983,7 +1984,7 @@ window.markNoShow = async function(token) {
   }
 };
 
-window.cancelAppointment = async function(apptId) {
+window.cancelAppointment = async function (apptId) {
   try {
     const res = await fetch(`${API_BASE}/appointments/${apptId}/cancel`, { method: 'PUT' });
     const data = await res.json();
@@ -1996,7 +1997,7 @@ window.cancelAppointment = async function(apptId) {
   }
 };
 
-window.checkinAppointment = async function(apptId) {
+window.checkinAppointment = async function (apptId) {
   try {
     const res = await fetch(`${API_BASE}/reception/checkin/${apptId}`, { method: 'POST' });
     const data = await res.json();
@@ -2012,7 +2013,7 @@ window.checkinAppointment = async function(apptId) {
 // ---------------------------------------------------------------------------
 // DOCTOR PORTAL CONSULTATION FLOW
 // ---------------------------------------------------------------------------
-window.startConsultation = function(apptId) {
+window.startConsultation = function (apptId) {
   // Switch to patients details view
   switchDoctorPage('patients');
 };
@@ -2022,7 +2023,7 @@ window.startConsultation = function(apptId) {
 // ---------------------------------------------------------------------------
 let rxMedsList = [];
 
-window.openCreatePrescriptionPage = function() {
+window.openCreatePrescriptionPage = function () {
   switchDoctorPage('prescription');
   rxMedsList = [];
   document.getElementById('rx-form-date').value = new Date().toLocaleDateString('en-IN');
@@ -2051,21 +2052,21 @@ function renderRxFormMedTable() {
   `).join('');
 }
 
-window.addMedRowToRxForm = function() {
+window.addMedRowToRxForm = function () {
   rxMedsList.push({ name: '', dosage: '', frequency: '1-0-1', duration: '5 Days' });
   renderRxFormMedTable();
 };
 
-window.removeRxMedRow = function(idx) {
+window.removeRxMedRow = function (idx) {
   rxMedsList.splice(idx, 1);
   renderRxFormMedTable();
 };
 
-window.updateRxMedField = function(idx, field, value) {
+window.updateRxMedField = function (idx, field, value) {
   rxMedsList[idx][field] = value;
 };
 
-window.submitPrescription = async function() {
+window.submitPrescription = async function () {
   const diagnosis = document.getElementById('rx-form-diagnosis')?.value.trim();
   const instructions = document.getElementById('rx-form-instructions')?.value.trim();
 
@@ -2101,7 +2102,7 @@ window.submitPrescription = async function() {
   }
 };
 
-window.saveRxDraft = function() {
+window.saveRxDraft = function () {
   showToast('Prescription saved to clinical draft.', 'info');
   switchDoctorPage('dashboard');
 };
@@ -2109,7 +2110,7 @@ window.saveRxDraft = function() {
 // ---------------------------------------------------------------------------
 // VIEW / DURATION TABS HELPER
 // ---------------------------------------------------------------------------
-window.switchTab = function(btn, contentId) {
+window.switchTab = function (btn, contentId) {
   const parent = btn.parentElement;
   parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -2123,7 +2124,7 @@ window.switchTab = function(btn, contentId) {
 };
 
 // Used by the appointment empty states without relying on fragile inline DOM selectors.
-window.showPatientAppointmentTab = function(contentId) {
+window.showPatientAppointmentTab = function (contentId) {
   const target = document.getElementById(contentId);
   if (!target) return;
   const page = document.getElementById('patient-page-appointments');
