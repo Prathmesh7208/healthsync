@@ -102,7 +102,7 @@
             <div class="nav-item" onclick="openPortalTool('patient', 'reminders')">
               <span class="nav-icon"><i class="fa-regular fa-bell"></i></span> Reminders
             </div>
-            <div class="nav-item" onclick="openPortalTool('patient', 'vaccinations')">
+            <div class="nav-item" onclick="switchPatientPage('vaccinations')">
               <span class="nav-icon"><i class="fa-solid fa-syringe"></i></span> Vaccinations
             </div>
             <div class="nav-item" onclick="openPortalTool('patient', 'ambulance')">
@@ -422,7 +422,138 @@
             </div>
           </div>
 
-          <!-- 4. Patient Health Records Page -->
+          <!-- 5. Patient Vaccinations Page -->
+          <div id="patient-page-vaccinations" class="page" style="padding-top: 16px;">
+            <div class="page-header-row" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h2 class="page-heading" style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Vaccinations</h2>
+                <p class="page-subheading" style="color: #64748b; font-size: 15px;">Keep track of your vaccination history and upcoming doses.</p>
+              </div>
+              <button class="btn btn-primary" style="background-color: #4f46e5; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600;"><i class="fa-solid fa-plus"></i> Add Vaccination Record</button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px;">Vaccination Summary</h3>
+              <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <div style="background-color: #22c55e; color: white; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">
+                  <span style="font-size: 14px; opacity: 0.9;">Completed</span>
+                  <span style="font-size: 28px; font-weight: 700; line-height: 1.2; margin: 4px 0;">6</span>
+                  <span style="font-size: 14px; opacity: 0.9;">Doses Received</span>
+                </div>
+                <div style="background-color: #3b82f6; color: white; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">
+                  <span style="font-size: 14px; opacity: 0.9;">Upcoming</span>
+                  <span style="font-size: 28px; font-weight: 700; line-height: 1.2; margin: 4px 0;">1</span>
+                  <span style="font-size: 14px; opacity: 0.9;">Scheduled Soon</span>
+                </div>
+                <div style="background-color: #eab308; color: white; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">
+                  <span style="font-size: 14px; opacity: 0.9;">Due</span>
+                  <span style="font-size: 28px; font-weight: 700; line-height: 1.2; margin: 4px 0;">0</span>
+                  <span style="font-size: 14px; opacity: 0.9;">Awaiting Booking</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Layout (Left: Tables, Right: Filters/Search) -->
+            <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px;">
+              <!-- Left Column: Tables -->
+              <div style="flex: 1; min-width: 60%; display: flex; flex-direction: column; gap: 24px;">
+                
+                <!-- Upcoming Vaccinations Table -->
+                <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px;">Upcoming Vaccinations</h3>
+                  <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                      <thead>
+                        <tr style="background-color: #f8fafc;">
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 8px 0 0 8px;">Vaccine Name</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Dose</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Due Date</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Reminder Status</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 0 8px 8px 0;">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">Hepatitis B</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dose 2</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">15 Oct 2026</td>
+                          <td style="padding: 16px;">
+                            <span style="background-color: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                              <i class="fa-regular fa-clock"></i> 1 Week Before
+                            </span>
+                          </td>
+                          <td style="padding: 16px;">
+                            <button style="border: 1px solid #c7d2fe; color: #4f46e5; background: #e0e7ff; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">View Details</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Vaccination History Table -->
+                <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px;">Vaccination History</h3>
+                  <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                      <thead>
+                        <tr style="background-color: #f8fafc;">
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 8px 0 0 8px;">Vaccine Name</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Dose/Date</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Hospital</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Provider</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 0 8px 8px 0;">Certificate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                          <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">COVID-19 (Pfizer)</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dose 2<br><span style="font-weight: 400; font-size: 13px; color: #64748b;">10 Jan 2026</span></td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Global Health Hospital</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dr. A. Sharma</td>
+                          <td style="padding: 16px; display: flex; align-items: center; gap: 12px;">
+                            <button style="background-color: #22c55e; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">View Certificate</button>
+                            <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 24px;"></i>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">Hepatitis B</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dose 1<br><span style="font-weight: 400; font-size: 13px; color: #64748b;">12 Aug 2026</span></td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">City Clinic</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Clinic Staff</td>
+                          <td style="padding: 16px; display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                            <i class="fa-solid fa-file-pdf" style="color: #94a3b8; font-size: 24px;"></i>
+                            <span style="font-size: 13px; font-weight: 500; color: #64748b;">Not Uploaded</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+              
+              <!-- Right Column: Filter Box -->
+              <div style="flex: 0 0 280px;">
+                <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
+                  <div style="display: flex; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 20px;">
+                    <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8; font-size: 14px; margin-right: 8px;"></i>
+                    <input type="text" placeholder="Search vaccines..." style="border: none; outline: none; flex: 1; font-size: 14px; color: #0f172a; min-width: 0;">
+                  </div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button style="background-color: #4f46e5; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">All</button>
+                    <button style="background-color: #dcfce7; color: #166534; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Completed</button>
+                    <button style="background-color: #dbeafe; color: #1e40af; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Upcoming</button>
+                    <button style="background-color: #fef9c3; color: #854d0e; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Due</button>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          <!-- 6. Patient Health Records Page -->
           <div id="patient-page-health-records" class="page">
             <div class="page-header-row">
               <div>
