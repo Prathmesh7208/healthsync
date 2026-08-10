@@ -2138,3 +2138,64 @@ window.showPatientAppointmentTab = function (contentId) {
 // ---------------------------------------------------------------------------
 // TOAST NOTIFICATIONS
 // ---------------------------------------------------------------------------
+
+// --- Vaccination Modal Logic ---
+window.openAddVaccinationModal = function() {
+  const modal = document.getElementById('modal-add-vaccination');
+  if (modal) modal.classList.add('show');
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  const vacForm = document.getElementById('form-add-vaccination');
+  if (vacForm) {
+    vacForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('vaccine-name').value;
+      const dose = document.getElementById('vaccine-dose').value;
+      
+      const rawDate = document.getElementById('vaccine-date').value;
+      const dateObj = new Date(rawDate);
+      const dateOpts = { day: 'numeric', month: 'short', year: 'numeric' };
+      const formattedDate = dateObj.toLocaleDateString('en-GB', dateOpts);
+      
+      const provider = document.getElementById('vaccine-provider').value;
+      const certInput = document.getElementById('vaccine-certificate');
+      const hasCert = certInput && certInput.files.length > 0;
+      
+      let providerSplit = provider.split('/');
+      let hospital = providerSplit[0] ? providerSplit[0].trim() : '';
+      let doctor = providerSplit.length > 1 ? providerSplit[1].trim() : hospital;
+      
+      const tableBody = document.querySelector('#patient-page-vaccinations table tbody');
+      if (tableBody) {
+        const newRow = document.createElement('tr');
+        newRow.style.borderBottom = '1px solid #f1f5f9';
+        
+        let certHtml = '';
+        if (hasCert) {
+          certHtml = `<button style="background-color: #22c55e; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">View Certificate</button>
+                      <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 24px;"></i>`;
+        } else {
+          certHtml = `<span style="font-size: 13px; color: #94a3b8;">No document</span>`;
+        }
+        
+        newRow.innerHTML = `
+          <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">${name}</td>
+          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">${dose}<br><span style="font-weight: 400; font-size: 13px; color: #64748b;">${formattedDate}</span></td>
+          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">${hospital}</td>
+          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">${doctor}</td>
+          <td style="padding: 16px; display: flex; align-items: center; gap: 12px;">
+            ${certHtml}
+          </td>
+        `;
+        
+        tableBody.insertBefore(newRow, tableBody.firstChild);
+      }
+      
+      if (typeof showToast === 'function') showToast('Vaccination record added successfully!', 'success');
+      if (typeof closeAllModals === 'function') closeAllModals();
+      vacForm.reset();
+    });
+  }
+});
