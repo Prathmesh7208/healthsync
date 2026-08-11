@@ -441,6 +441,7 @@
 
           <!-- 1. Patient Dashboard Page -->
           <!-- 1. Patient Dashboard Page -->
+            <!-- 1. Patient Dashboard Page -->
             <div id="patient-page-dashboard" class="page active" style="padding-top: 16px;">
               <div class="new-dashboard-header" style="margin-bottom: 24px;">
                 <h2 class="page-heading" style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Hello, <span id="patient-dashboard-name">New</span> 👋</h2>
@@ -453,9 +454,9 @@
                 <div id="patient-dashboard-upcoming-appt"></div>
                 
                 <!-- Quick Actions Card -->
-                <div class="new-card quick-actions-card">
-                  <div class="new-card-header mb-3" style="padding-bottom: 8px;">
-                    <span class="fw-bold text-dark" style="font-size: 15px;">Quick Actions</span>
+                <div class="new-card quick-actions-card" style="background: transparent; box-shadow: none; padding: 0;">
+                  <div class="new-card-header mb-3" style="padding: 0 4px;">
+                    <span class="text-dark" style="font-size: 16px; font-weight: 500;">Quick Actions</span>
                   </div>
                   <div class="quick-actions-grid">
                     <div class="qa-item" onclick="switchPatientPage('doctors')">
@@ -467,11 +468,11 @@
                       <div class="qa-text">My<br>Appointments</div>
                     </div>
                     <div class="qa-item" onclick="switchPatientPage('health-records')">
-                      <div class="qa-icon-box" style="background:#fce7f3;"><i class="fa-solid fa-file-lines" style="color:#d946ef;"></i></div>
+                      <div class="qa-icon-box" style="background:#fae8ff;"><i class="fa-solid fa-file-lines" style="color:#d946ef;"></i></div>
                       <div class="qa-text">Health<br>Records</div>
                     </div>
                     <div class="qa-item" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()">
-                      <div class="qa-icon-box qa-red"><span style="font-weight: 800; font-size: 16px; color: #ef4444;">SOS</span></div>
+                      <div class="qa-icon-box qa-red" style="background:#fee2e2;"><span style="font-weight: 700; font-size: 15px; color: #ef4444;">SOS</span></div>
                       <div class="qa-text">Emergency<br>SOS</div>
                     </div>
                     <div class="qa-item" onclick="openPortalTool('patient', 'ambulance')">
@@ -491,7 +492,7 @@
                 <div class="new-card-header">
                   <div class="header-title">
                     <div class="icon-box-purple" style="background: #f3e8ff;"><i class="fa-solid fa-capsules" style="color: #9333ea;"></i></div>
-                    <span class="fw-bold text-dark" style="font-size: 15px;">Medicine Reminder</span>
+                    <span class="text-dark" style="font-size: 16px; font-weight: 500;">Medicine Reminder</span>
                   </div>
                   <a href="#" class="text-blue text-sm fw-bold" style="text-decoration: none;">View All</a>
                 </div>
@@ -513,23 +514,9 @@
                   <button class="btn btn-primary med-btn" style="border-radius: 8px; padding: 0 24px; font-weight: 600;">Mark as Taken</button>
                 </div>
               </div>
-
-              <!-- Health Insights Banner -->
-              <div class="new-card tip-banner mt-4" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
-                <div class="tip-content">
-                  <div class="tip-text-col">
-                    <h4 class="fw-bold text-dark" style="font-size: 16px; margin-bottom: 8px;">Stay Hydrated! 💧</h4>
-                    <p class="tip-text text-muted m-0" style="font-size: 14px;">Drinking water helps maintain the balance of body fluids. Your body is composed of about 60% water.</p>
-                  </div>
-                  <div class="tip-glass-illustration">
-                    <div style="font-size: 48px;">🥛</div>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
-            <!-- 3. Patient Doctors Page -->
+              <!-- 3. Patient Doctors Page -->
           <div id="patient-page-doctors" class="page" style="max-width: 1200px; margin: 0 auto;">
             <!-- Search Header Area -->
             <div class="jd-search-header mb-4" style="position: relative;">
@@ -730,7 +717,7 @@
 
       <!-- Main Area -->
       <div class="main-area">
-        <header class="top-header">
+        <header class="top-header new-top-header">
           <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
           <span class="page-title">Doctor Dashboard</span>
           <div class="role-tab-bar">

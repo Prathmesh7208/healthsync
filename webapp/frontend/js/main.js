@@ -864,7 +864,7 @@ function renderNextAppointment(appt) {
       </div>
       
       <div class="upcoming-doctor-info">
-        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(docName)}&background=random" alt="Doctor" class="doc-avatar-lg">
+        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(docName)}&background=5a9e46&color=fff" alt="Doctor" class="doc-avatar-lg">
         <div class="doc-details">
           <h4 class="fw-bold text-dark m-0" style="font-size: 16px;">${escapeHtml(docName)}</h4>
           <div class="doc-specialty text-muted" style="font-size: 13px; margin-top: 2px;">${appt.specialty || 'General Physician'}</div>
