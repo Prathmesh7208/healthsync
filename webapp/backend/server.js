@@ -296,63 +296,127 @@ const server = http.createServer((req, res) => {
           });
         }
 
+        else if (pathname.match(/^\/v1\/doctors\/([^\/]+)\/slots\/summary$/) && req.method === 'GET') {
+          const match = pathname.match(/^\/v1\/doctors\/([^\/]+)\/slots\/summary$/);
+          const doctorId = match[1];
+          const datesParam = url.searchParams.get('dates');
+          if (!datesParam) {
+            res.writeHead(400);
+            return res.end(JSON.stringify({ success: false, message: 'Missing dates param' }));
+          }
+          
+          const dateList = datesParam.split(',');
+          const totalSlotsPerDay = 14; 
+          
+          const placeholders = dateList.map(() => '?').join(',');
+          const queryParams = [doctorId, ...dateList];
+          
+          db.all(`SELECT slot_date, COUNT(*) as booked_count FROM appointments WHERE doctor_id = ? AND slot_date IN (${placeholders}) AND status = 'CONFIRMED' GROUP BY slot_date`, queryParams, (err, rows) => {
+            if (err) {
+              res.writeHead(500);
+              return res.end(JSON.stringify({ success: false, message: 'Database error' }));
+            }
+            
+            const bookedMap = {};
+            (rows || []).forEach(r => { bookedMap[r.slot_date] = r.booked_count; });
+            
+            const summary = {};
+            dateList.forEach(d => {
+              const booked = bookedMap[d] || 0;
+              const available = Math.max(0, totalSlotsPerDay - booked);
+              summary[d] = { available, total: totalSlotsPerDay };
+            });
+            
+            res.writeHead(200);
+            res.end(JSON.stringify({ success: true, summary }));
+          });
+        }
+
         else if (pathname.match(/^\/v1\/doctors\/([^\/]+)\/slots$/) && req.method === 'GET') {
           const match = pathname.match(/^\/v1\/doctors\/([^\/]+)\/slots$/);
           const doctorId = match[1];
-          const dateStr = url.searchParams.get('date') || 'Today';
+          const dateStr = url.searchParams.get('date');
           
-          const slots = [];
-          const startHour = 9;
-          const endHour = 18;
-          
-          // Deterministic availability based on doctor ID and date
-          let seed = 0;
-          for(let i=0; i<doctorId.length; i++) seed += doctorId.charCodeAt(i);
-          for(let i=0; i<dateStr.length; i++) seed += dateStr.charCodeAt(i);
-          
-          for (let h = startHour; h < endHour; h++) {
-            if (h === 13) continue; // Lunch
-            for (let m of ['00', '30']) {
-              let period = h >= 12 ? 'PM' : 'AM';
-              let hour12 = h > 12 ? h - 12 : h;
-              let timeStr = `${hour12}:${m} ${period}`;
-              
-              seed = (seed * 9301 + 49297) % 233280;
-              let isAvailable = (seed / 233280) > 0.4;
-              
-              slots.push({ time: timeStr, available: isAvailable });
-            }
+          if (!dateStr) {
+            res.writeHead(400);
+            return res.end(JSON.stringify({ success: false, message: 'Missing date param' }));
           }
           
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true, slots: slots }));
+          db.all(`SELECT slot_time FROM appointments WHERE doctor_id = ? AND slot_date = ? AND status = 'CONFIRMED'`, [doctorId, dateStr], (err, rows) => {
+            if (err) {
+              res.writeHead(500);
+              return res.end(JSON.stringify({ success: false, message: 'Database error' }));
+            }
+            
+            const bookedTimes = new Set((rows || []).map(r => r.slot_time));
+            const slots = [];
+            
+            const generateBlock = (startH, endH, isPM) => {
+              for (let h = startH; h < endH; h++) {
+                for (let m of ['00', '30']) {
+                  let hour12 = h;
+                  if (h > 12) hour12 = h - 12;
+                  let hs = hour12 < 10 ? `0${hour12}` : `${hour12}`;
+                  let period = isPM ? 'PM' : 'AM';
+                  if (h === 12) period = 'PM';
+                  let timeStr = `${hs}:${m} ${period}`;
+                  
+                  slots.push({
+                    time: timeStr,
+                    available: !bookedTimes.has(timeStr)
+                  });
+                }
+              }
+            };
+            
+            generateBlock(9, 13, false);
+            generateBlock(16, 19, true);
+            
+            res.writeHead(200);
+            res.end(JSON.stringify({ success: true, slots: slots }));
+          });
         }
   
+        
         else if (pathname === '/v1/appointments' && req.method === 'POST') {
-        db.get("SELECT COUNT(*) AS count FROM appointments", (err, row) => {
-          const nextNum = (row ? row.count : 0) + 17;
-          const token = "A" + nextNum;
-          const apptId = "apt-" + Date.now();
-          const qId = "q-" + Date.now();
-          const patName = parsedBody.patientName || "Neha Kulkarni";
           const docId = parsedBody.doctorId || "doc1";
-          const docName = parsedBody.doctorName || "Dr. Amit Patil";
           const dateStr = parsedBody.date || "Today";
           const timeStr = parsedBody.time || "11:30 AM";
-
-          db.run(`INSERT INTO appointments (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, status, token_number) VALUES (?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)`,
-            [apptId, "pat1", patName, docId, docName, dateStr, timeStr, token], () => {
-              db.run(`INSERT INTO queue_entries (id, appointment_id, token_number, patient_id, patient_name, doctor_id, status, checkin_time) VALUES (?, ?, ?, ?, ?, ?, 'Waiting', ?)`,
-                [qId, apptId, token, "pat1", patName, docId, timeStr], () => {
-                  res.writeHead(201);
-                  res.end(JSON.stringify({ 
-                    success: true, 
-                    appointment: { id: apptId, token: token, doctorName: docName, time: timeStr, status: "CONFIRMED" } 
-                  }));
+          const patName = parsedBody.patientName || "Neha Kulkarni";
+          const docName = parsedBody.doctorName || "Dr. Amit Patil";
+          
+          // Strict double booking check
+          db.get("SELECT id FROM appointments WHERE doctor_id = ? AND slot_date = ? AND slot_time = ? AND status = 'CONFIRMED'", [docId, dateStr, timeStr], (checkErr, existing) => {
+            if (checkErr) {
+              res.writeHead(500);
+              return res.end(JSON.stringify({ success: false, message: 'Database error' }));
+            }
+            if (existing) {
+              res.writeHead(409);
+              return res.end(JSON.stringify({ success: false, message: 'Sorry, this slot was just booked.' }));
+            }
+            
+            // Generate Appointment
+            db.get("SELECT COUNT(*) AS count FROM appointments", (err, row) => {
+              const nextNum = (row ? row.count : 0) + 17;
+              const token = "A" + nextNum;
+              const apptId = "apt-" + Date.now();
+              const qId = "q-" + Date.now();
+    
+              db.run(`INSERT INTO appointments (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, status, token_number) VALUES (?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)`,
+                [apptId, "pat1", patName, docId, docName, dateStr, timeStr, token], () => {
+                  db.run(`INSERT INTO queue_entries (id, appointment_id, token_number, patient_id, patient_name, doctor_id, status, checkin_time) VALUES (?, ?, ?, ?, ?, ?, 'Waiting', ?)`,
+                    [qId, apptId, token, "pat1", patName, docId, 'Waiting', timeStr], () => {
+                      res.writeHead(201);
+                      res.end(JSON.stringify({ 
+                        success: true, 
+                        appointment: { id: apptId, token: token, doctorName: docName, time: timeStr, status: "CONFIRMED" } 
+                      }));
+                    });
                 });
             });
-        });
-      }
+          });
+        }
 
       // Live Queue Tracker — Querying Database State
       else if (pathname === '/v1/queue/live' && req.method === 'GET') {
