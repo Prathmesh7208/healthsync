@@ -296,6 +296,38 @@ const server = http.createServer((req, res) => {
           });
         }
 
+        else if (pathname.match(/^\/v1\/doctors\/([^\/]+)\/slots$/) && req.method === 'GET') {
+          const match = pathname.match(/^\/v1\/doctors\/([^\/]+)\/slots$/);
+          const doctorId = match[1];
+          const dateStr = url.searchParams.get('date') || 'Today';
+          
+          const slots = [];
+          const startHour = 9;
+          const endHour = 18;
+          
+          // Deterministic availability based on doctor ID and date
+          let seed = 0;
+          for(let i=0; i<doctorId.length; i++) seed += doctorId.charCodeAt(i);
+          for(let i=0; i<dateStr.length; i++) seed += dateStr.charCodeAt(i);
+          
+          for (let h = startHour; h < endHour; h++) {
+            if (h === 13) continue; // Lunch
+            for (let m of ['00', '30']) {
+              let period = h >= 12 ? 'PM' : 'AM';
+              let hour12 = h > 12 ? h - 12 : h;
+              let timeStr = `${hour12}:${m} ${period}`;
+              
+              seed = (seed * 9301 + 49297) % 233280;
+              let isAvailable = (seed / 233280) > 0.4;
+              
+              slots.push({ time: timeStr, available: isAvailable });
+            }
+          }
+          
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, slots: slots }));
+        }
+  
         else if (pathname === '/v1/appointments' && req.method === 'POST') {
         db.get("SELECT COUNT(*) AS count FROM appointments", (err, row) => {
           const nextNum = (row ? row.count : 0) + 17;
