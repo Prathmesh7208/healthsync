@@ -546,7 +546,286 @@
 
             </div>
 
-            <!-- 1. Doctor Dashboard Page -->
+            <!-- 3. Patient Doctors Page -->
+          <div id="patient-page-doctors" class="page" style="max-width: 1200px; margin: 0 auto;">
+            <!-- Search Header Area -->
+            <div class="jd-search-header mb-4" style="position: relative;">
+              <div class="search-box" style="display: flex; align-items: center; background: white; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: 100%;">
+                <i class="fa-solid fa-magnifying-glass" style="color: #6b7280;"></i>
+                <input type="text" id="pt-doc-search-input" placeholder="Search by disease, doctor, or specialty..." oninput="handlePatientDocSearch()" style="border: none; outline: none; flex: 1; padding: 8px; font-size: 16px; min-width: 0;">
+                <i class="fa-solid fa-microphone" style="color: #0066cc; font-size: 18px; cursor: pointer;"></i>
+              </div>
+              <div class="mt-3 flex justify-between items-center" style="font-size: 14px; color: #4b5563;">
+                <span><i class="fa-solid fa-location-dot" style="color: #6b7280;"></i> Results in "Pune"</span>
+                <span style="color: #0066cc; font-weight: 500; cursor: pointer;"><i class="fa-solid fa-location-crosshairs"></i> Detect Location</span>
+              </div>
+            </div>
+
+            <h3 style="font-size: 1.1rem; font-weight: bold; margin-bottom: 16px; color: #111827;">Best Doctors - Book Appointment Online</h3>
+            <div id="patient-doctors-container" class="flex flex-col gap-4">
+              <!-- Doctors List will be loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- 5. Patient Vaccinations Page -->
+          <div id="patient-page-vaccinations" class="page" style="padding-top: 16px;">
+            <div class="page-header-row" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h2 class="page-heading" style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Vaccinations</h2>
+                <p class="page-subheading" style="color: #64748b; font-size: 15px;">Keep track of your vaccination history and upcoming doses.</p>
+              </div>
+              <button class="btn btn-primary" onclick="openAddVaccinationModal()" style="background-color: #4f46e5; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600;"><i class="fa-solid fa-plus"></i> Add Vaccination Record</button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px;">Vaccination Summary</h3>
+              <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <div style="background-color: #22c55e; color: white; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">
+                  <span style="font-size: 14px; opacity: 0.9;">Completed</span>
+                  <span style="font-size: 28px; font-weight: 700; line-height: 1.2; margin: 4px 0;">6</span>
+                  <span style="font-size: 14px; opacity: 0.9;">Doses Received</span>
+                </div>
+                <div style="background-color: #3b82f6; color: white; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">
+                  <span style="font-size: 14px; opacity: 0.9;">Upcoming</span>
+                  <span style="font-size: 28px; font-weight: 700; line-height: 1.2; margin: 4px 0;">1</span>
+                  <span style="font-size: 14px; opacity: 0.9;">Scheduled Soon</span>
+                </div>
+                <div style="background-color: #eab308; color: white; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">
+                  <span style="font-size: 14px; opacity: 0.9;">Due</span>
+                  <span style="font-size: 28px; font-weight: 700; line-height: 1.2; margin: 4px 0;">0</span>
+                  <span style="font-size: 14px; opacity: 0.9;">Awaiting Booking</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Layout (Left: Tables, Right: Filters/Search) -->
+            <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px;">
+              <!-- Left Column: Tables -->
+              <div style="flex: 1; min-width: 60%; display: flex; flex-direction: column; gap: 24px;">
+                
+                <!-- Upcoming Vaccinations Table -->
+                <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px;">Upcoming Vaccinations</h3>
+                  <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                      <thead>
+                        <tr style="background-color: #f8fafc;">
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 8px 0 0 8px;">Vaccine Name</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Dose</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Due Date</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Reminder Status</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 0 8px 8px 0;">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">Hepatitis B</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dose 2</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">15 Oct 2026</td>
+                          <td style="padding: 16px;">
+                            <span style="background-color: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                              <i class="fa-regular fa-clock"></i> 1 Week Before
+                            </span>
+                          </td>
+                          <td style="padding: 16px;">
+                            <button style="border: 1px solid #c7d2fe; color: #4f46e5; background: #e0e7ff; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">View Details</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Vaccination History Table -->
+                <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
+                  <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px;">Vaccination History</h3>
+                  <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                      <thead>
+                        <tr style="background-color: #f8fafc;">
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 8px 0 0 8px;">Vaccine Name</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Dose/Date</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Hospital</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a;">Provider</th>
+                          <th style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: #0f172a; border-radius: 0 8px 8px 0;">Certificate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                          <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">COVID-19 (Pfizer)</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dose 2<br><span style="font-weight: 400; font-size: 13px; color: #64748b;">10 Jan 2026</span></td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Global Health Hospital</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dr. A. Sharma</td>
+                          <td style="padding: 16px; display: flex; align-items: center; gap: 12px;">
+                            <button style="background-color: #22c55e; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">View Certificate</button>
+                            <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 24px;"></i>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">Hepatitis B</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Dose 1<br><span style="font-weight: 400; font-size: 13px; color: #64748b;">12 Aug 2026</span></td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">City Clinic</td>
+                          <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">Clinic Staff</td>
+                          <td style="padding: 16px; display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                            <i class="fa-solid fa-file-pdf" style="color: #94a3b8; font-size: 24px;"></i>
+                            <span style="font-size: 13px; font-weight: 500; color: #64748b;">Not Uploaded</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+              
+              <!-- Right Column: Filter Box -->
+              <div style="flex: 0 0 280px;">
+                <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
+                  <div style="display: flex; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 20px;">
+                    <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8; font-size: 14px; margin-right: 8px;"></i>
+                    <input type="text" placeholder="Search vaccines..." style="border: none; outline: none; flex: 1; font-size: 14px; color: #0f172a; min-width: 0;">
+                  </div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button style="background-color: #4f46e5; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">All</button>
+                    <button style="background-color: #dcfce7; color: #166534; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Completed</button>
+                    <button style="background-color: #dbeafe; color: #1e40af; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Upcoming</button>
+                    <button style="background-color: #fef9c3; color: #854d0e; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Due</button>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          <!-- 6. Patient Health Records Page -->
+          <div id="patient-page-health-records" class="page">
+            <div class="page-header-row">
+              <div>
+                <h2 class="page-heading">Health Records</h2>
+                <p class="page-subheading">Access your clinical reports and documentation</p>
+              </div>
+              <button class="btn btn-primary" onclick="openUploadRecordModal()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Report</button>
+            </div>
+
+            <div class="records-layout">
+              <!-- Records Sidebar -->
+              <div class="records-sidebar">
+                <div class="card">
+                  <nav style="padding: 10px 0;">
+                    <div class="records-menu-item active" onclick="switchRecordsSubtab(this, 'timeline')">
+                      <i class="fa-solid fa-clock-rotate-left"></i> Medical Timeline
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'lab-reports')">
+                      <i class="fa-solid fa-microscope"></i> Lab Reports
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'prescriptions')">
+                      <i class="fa-solid fa-file-prescription"></i> Prescriptions
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'immunization')">
+                      <i class="fa-solid fa-syringe"></i> Immunization
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'vitals')">
+                      <i class="fa-solid fa-heart-pulse"></i> Vitals
+                    </div>
+                    <div class="records-menu-item" onclick="switchRecordsSubtab(this, 'documents')">
+                      <i class="fa-solid fa-folder-open"></i> Documents
+                    </div>
+                  </nav>
+                </div>
+              </div>
+
+              <!-- Records List Content -->
+              <div class="records-content card">
+                <div class="card-header">
+                  <span class="card-title" id="records-subtab-title">Lab Reports</span>
+                </div>
+                <div class="card-body" id="records-list-container">
+                  <!-- Record items will be injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ======================================= -->
+    <!-- DOCTOR ROLE VIEW PANEL                  -->
+    <!-- ======================================= -->
+    <div id="panel-doctor" class="role-panel w-full">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo"><i class="fa-solid fa-user-md"></i></div>
+          <span class="sidebar-brand-name">HealthSync</span><button class="mobile-close-btn" type="button" aria-label="Close sidebar" onclick="toggleSidebar(true)"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Doctor Clinical Portal</div>
+          <div class="nav-item active" onclick="switchDoctorPage('dashboard')">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
+          </div>
+          <div class="nav-item" onclick="switchDoctorPage('appointments')">
+            <span class="nav-icon"><i class="fa-solid fa-calendar-days"></i></span> Appointments
+          </div>
+          <div class="nav-item" onclick="switchDoctorPage('patients')">
+            <span class="nav-icon"><i class="fa-solid fa-hospital-user"></i></span> Patients
+          </div>
+
+          <div class="nav-item" onclick="openPortalTool('doctor', 'schedule')">
+            <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Schedule
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'availability')"><span class="nav-icon"><i class="fa-solid fa-calendar-week"></i></span> Availability</div>
+
+
+
+
+          <div class="nav-item" onclick="openPortalTool('doctor', 'earnings')">
+            <span class="nav-icon"><i class="fa-solid fa-indian-rupee-sign"></i></span> Earnings
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'reports')">
+            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Reports
+          </div>
+          <div class="nav-item" onclick="openPortalTool('doctor', 'settings')">
+            <span class="nav-icon"><i class="fa-solid fa-gear"></i></span> Settings
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="sidebar-user profile-trigger" type="button" onclick="toggleProfileMenu('doctor')" aria-label="Open doctor profile menu">
+            <div class="avatar">AP</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-user-name">Dr. Priya Sharma</div>
+              <div class="sidebar-user-role">Cardiologist</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Area -->
+      <div class="main-area">
+        <header class="top-header new-top-header">
+          <button class="icon-btn mobile-menu-btn" type="button" aria-label="Open sidebar" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+          
+          <div class="new-search-bar">
+            <i class="fa-solid fa-magnifying-glass search-icon" style="color: #94a3b8; font-size: 14px; margin-left: 16px;"></i>
+            <input type="text" placeholder="Search doctors, tests, medicines..." class="new-search-input">
+          </div>
+          
+          <div class="header-icons">
+            <div class="new-notification-bell">
+              <i class="fa-regular fa-bell" style="font-size: 20px; color: #334155;"></i>
+              <span class="new-badge">3</span>
+            </div>
+            <div class="new-header-avatar" id="patient-header-avatar">NP</div>
+          </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="page-content">
+
+          <!-- 1. Doctor Dashboard Page -->
           <div id="doctor-page-dashboard" class="page active">
             <div class="page-header-row mb-4">
               <div>
