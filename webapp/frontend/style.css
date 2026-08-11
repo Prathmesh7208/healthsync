@@ -283,17 +283,19 @@ img { max-width: 100%; display: block; }
 }
 
 .mobile-menu-btn {
-  background: transparent;
-  border: none;
-  font-size: 20px;
-  color: var(--text-dark);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  border-radius: 4px;
-}
+    background: #f8fafc;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mobile-menu-btn:hover { background: #f1f5f9; }
 .mobile-menu-btn:hover {
   background: var(--page-bg);
 }
@@ -1519,20 +1521,24 @@ select.form-control { padding-right: 34px; }
 }
 
 .new-top-header {
-  background: #ffffff;
-  border-bottom: none;
-  padding: 0 32px;
-  justify-content: space-between;
-}
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-bottom: none;
+    padding: 0 32px;
+    justify-content: space-between;
+    position: relative;
+  }
 .new-search-bar {
-  display: flex;
-  align-items: center;
-  background: #f1f5f9;
-  border-radius: 100px;
-  flex: 1;
-  max-width: 400px;
-  margin: 0 24px;
-}
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 100px;
+    width: 460px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 .new-search-input {
   background: transparent;
   border: none;
