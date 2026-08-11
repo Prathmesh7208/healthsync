@@ -108,7 +108,7 @@ window.startDemoExperience = function (role, mobile) {
   const roleMap = { patient: 'PATIENT', doctor: 'DOCTOR', reception: 'RECEPTIONIST' };
   if (!roleMap[role]) return false;
   currentUser = { id: `demo-${role}`, patientId: 'pat1', name: role === 'doctor' ? 'Dr. Kavya Iyer' : role === 'reception' ? 'Nisha Verma' : 'Aarav Mehta', mobile, role: roleMap[role], demo: true };
-  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('auth-screen')?.classList.add('hidden'); document.getElementById('onboarding-flow')?.classList.add('hidden');
   document.getElementById('app')?.classList.remove('hidden');
   document.getElementById('in-app-demo-banner')?.classList.remove('hidden');
   switchGlobalRole(role === 'reception' ? 'reception' : role);
@@ -202,7 +202,7 @@ window.toggleRegistrationFields = function () {
 };
 function finishLogin() {
   document.getElementById('language-screen')?.classList.add('hidden');
-  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('auth-screen')?.classList.add('hidden'); document.getElementById('onboarding-flow')?.classList.add('hidden');
   document.getElementById('app')?.classList.remove('hidden');
   const role = String(currentUser?.role || 'PATIENT').toUpperCase();
   switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient');
@@ -2206,7 +2206,9 @@ let obTimer = null;
 window.selectOnboardingLanguage = function(btn, lang) {
   document.querySelectorAll('.language-choice').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  // Usually save this preference
+  setTimeout(() => {
+    goToStep('step-auth');
+  }, 400);
 }
 
 window.goToStep = function(stepId) {
