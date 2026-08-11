@@ -14,59 +14,251 @@
 <body>
   <!-- Sidebar overlay for mobile/collapsed menu -->
   <div id="sidebar-overlay" onclick="toggleSidebar(true)"></div>
-  <section id="language-screen" class="auth-screen language-screen" aria-labelledby="language-title">
-    <div class="auth-card language-card">
-      <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
-      <h1 id="language-title" data-i18n="Choose your language">Choose your language</h1>
-      <p class="auth-subtitle" data-i18n="You can change this later from Settings.">You can change this later from Settings.</p>
-      <div class="language-choice-grid" role="radiogroup" aria-label="Choose your language">
-        <button type="button" class="language-choice active" data-language="English" onclick="selectAppLanguage('English')"><strong>English</strong><span>English</span></button>
-        <button type="button" class="language-choice" data-language="Hindi" onclick="selectAppLanguage('Hindi')"><strong>हिन्दी</strong><span>Hindi</span></button>
-        <button type="button" class="language-choice" data-language="Marathi" onclick="selectAppLanguage('Marathi')"><strong>मराठी</strong><span>Marathi</span></button>
-      </div>
-      <button class="btn btn-primary w-full mt-3" type="button" onclick="continueToLogin()" data-i18n="Continue">Continue</button>
-    </div>
-  </section>
-
-  <section id="auth-screen" class="auth-screen hidden" aria-labelledby="auth-title">
-    <div class="auth-card auth-split-card">
-      <aside class="auth-showcase" aria-label="HealthSync care illustration">
-        <div class="auth-showcase-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
-        <div class="auth-doctor-art"><div class="doctor-halo"></div><div class="doctor-illustration"><i class="fa-solid fa-user-doctor"></i></div><div class="doctor-clipboard"><i class="fa-solid fa-clipboard-list"></i></div></div>
-        <div class="auth-stat stat-top"><i class="fa-solid fa-shield-heart"></i><span><strong>Private care</strong><small>Secure health records</small></span></div>
-        <div class="auth-stat stat-bottom"><i class="fa-solid fa-circle-check"></i><span><strong>Verified network</strong><small>Doctors and clinics</small></span></div>
-        <div class="auth-showcase-copy"><span class="eyebrow">HealthSync care</span><h2>Care that stays connected.</h2><p>Appointments, records, prescriptions, and clinic updates in one secure place.</p></div>
-      </aside>
-      <div class="auth-form-panel">
-      <div class="auth-brand"><i class="fa-solid fa-heart-pulse"></i> HealthSync</div>
-      <h1 id="auth-title">Welcome to better care</h1>
-      <p id="auth-subtitle" class="auth-subtitle">Sign in securely with your mobile number.</p>
-      <div class="auth-mode-tabs" role="tablist" aria-label="Account action"><button id="auth-mode-login" class="auth-mode-tab active" type="button" onclick="setAuthMode('login')">Log in</button><button id="auth-mode-register" class="auth-mode-tab" type="button" onclick="setAuthMode('register')">Register</button></div>
-      <form id="mobile-login-form" onsubmit="requestOtp(event); return false;">
-        <div id="registration-fields" class="hidden">
-          <div class="form-group"><label class="form-label" for="register-name">Full name <span class="req">*</span></label><input id="register-name" class="form-control" maxlength="80" autocomplete="name" placeholder="Your full name"></div>
-          <div class="form-group"><label class="form-label" for="register-role">Register as <span class="req">*</span></label><select id="register-role" class="form-control" onchange="toggleRegistrationFields()"><option value="PATIENT">Patient</option><option value="DOCTOR">Doctor</option><option value="RECEPTIONIST">Receptionist</option></select></div>
-          <div id="doctor-registration-fields" class="hidden"><div class="form-group"><label class="form-label" for="register-specialization">Specialization <span class="req">*</span></label><input id="register-specialization" class="form-control" maxlength="80" placeholder="e.g. General Medicine"></div><div class="form-group"><label class="form-label" for="register-clinic">Hospital / clinic <span class="req">*</span></label><input id="register-clinic" class="form-control" maxlength="100" placeholder="Your clinic or hospital"></div></div>
-          <p id="registration-role-help" class="auth-help">Your patient account will be ready immediately after OTP verification.</p>
+  
+  <!-- New Onboarding Flow -->
+  <section id="onboarding-flow" class="onboarding-screen" aria-labelledby="onboarding-title">
+    <div class="onboarding-card">
+      
+      <!-- Step 1: Language -->
+      <div id="step-language" class="onboarding-step active">
+        <div class="language-globe-container">
+          <div class="globe-art">
+            <div class="globe-circle">
+              <div class="globe-land g1"></div>
+              <div class="globe-land g2"></div>
+              <div class="globe-land g3"></div>
+            </div>
+            <span class="hello-pill english">Hello</span>
+            <span class="hello-pill hindi">नमस्ते</span>
+            <span class="hello-pill marathi">मराठी</span>
+            <span class="hello-pill hello2">हॅलो</span>
+          </div>
         </div>
-        <label class="form-label" for="auth-mobile">Mobile number</label>
-        <div class="auth-mobile-input"><select id="auth-country-code" class="country-code-select" aria-label="Country code"></select><input id="auth-mobile" class="form-control" inputmode="numeric" autocomplete="tel" maxlength="15" placeholder="Mobile number" required></div>
-        <button id="send-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Send OTP</button>
-        <button class="btn btn-secondary w-full mt-2" type="button" onclick="backToLanguageSelection()"><i class="fa-solid fa-arrow-left"></i> Back to language selection</button>
-      </form>
-      <form id="otp-login-form" class="hidden" onsubmit="verifyOtp(event); return false;">
-        <label class="form-label" for="auth-otp">Enter the 6-digit OTP</label>
-        <input id="auth-otp" class="form-control" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required>
-        <p class="auth-help">Enter the OTP sent to your registered mobile number.</p>
-        <button id="verify-otp-btn" class="btn btn-primary w-full mt-3" type="submit">Verify and sign in</button>
-        <button id="resend-otp-btn" class="btn btn-secondary w-full mt-2" type="button" onclick="resendOtp()" disabled>Resend OTP (30s)</button>
-        <button class="btn btn-secondary w-full mt-2" type="button" onclick="backToMobileLogin()"><i class="fa-solid fa-arrow-left"></i> Change mobile number</button>
-      </form>
-      <p id="auth-message" class="auth-message" aria-live="polite"></p>
+        <div class="onboarding-header">
+          <h2>Choose Your Language</h2>
+          <p>Select your preferred language to continue</p>
+        </div>
+        <div class="language-choice-grid">
+          <button type="button" class="language-choice active" onclick="selectOnboardingLanguage(this, 'English')">
+            <div class="lang-icon">A</div>
+            <div class="lang-text"><strong>English</strong><span>English</span></div>
+            <i class="fa-solid fa-circle-check check-icon"></i>
+          </button>
+          <button type="button" class="language-choice" onclick="selectOnboardingLanguage(this, 'Hindi')">
+            <div class="lang-icon green">हिं</div>
+            <div class="lang-text"><strong>हिंदी</strong><span>Hindi</span></div>
+            <i class="fa-solid fa-circle-check check-icon"></i>
+          </button>
+          <button type="button" class="language-choice" onclick="selectOnboardingLanguage(this, 'Marathi')">
+            <div class="lang-icon orange">म</div>
+            <div class="lang-text"><strong>मराठी</strong><span>Marathi</span></div>
+            <i class="fa-solid fa-circle-check check-icon"></i>
+          </button>
+        </div>
+        <button class="btn btn-primary w-full mt-4" onclick="goToStep('step-auth')">Continue <i class="fa-solid fa-arrow-right ml-2"></i></button>
       </div>
+
+      <!-- Step 2: Auth (Login / Register) -->
+      <div id="step-auth" class="onboarding-step hidden">
+        <div class="onboarding-top-bar">
+          <button type="button" class="back-btn" onclick="goToStep('step-language')"><i class="fa-solid fa-arrow-left"></i></button>
+          <span class="help-link">Help <i class="fa-regular fa-circle-question"></i></span>
+        </div>
+        <div class="onboarding-brand"><i class="fa-solid fa-heart-pulse text-red"></i> HealthSync</div>
+        
+        <div id="auth-header-login" class="onboarding-header">
+          <h2>Welcome back!</h2>
+          <p>Sign in to your account</p>
+        </div>
+        <div id="auth-header-register" class="onboarding-header hidden">
+          <h2>Create Account</h2>
+          <p>Enter your details to get started</p>
+        </div>
+
+        <div class="auth-tabs">
+          <button type="button" id="tab-login" class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+          <button type="button" id="tab-register" class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+        </div>
+
+        <form id="onboarding-auth-form" onsubmit="handleAuthSubmit(event); return false;">
+          <div id="register-fields" class="hidden">
+            <label class="form-label">Full Name</label>
+            <div class="input-with-icon mb-3">
+              <i class="fa-regular fa-user"></i>
+              <input type="text" id="ob-name" class="form-control" placeholder="Enter your full name">
+            </div>
+          </div>
+          
+          <label class="form-label">Mobile Number</label>
+          <div class="mobile-input-group">
+            <div class="country-code-box">
+              <span class="fi fi-in"></span> +91 <i class="fa-solid fa-chevron-down text-xs ml-1"></i>
+            </div>
+            <input type="tel" id="ob-mobile" class="form-control" placeholder="Enter mobile number" required>
+          </div>
+          
+          <p id="register-help-text" class="auth-help-text hidden mt-2">We will send you an OTP to verify</p>
+          
+          <button type="submit" class="btn btn-primary w-full mt-4">Send OTP <i class="fa-regular fa-paper-plane ml-2"></i></button>
+        </form>
+
+        <div id="social-login-section">
+          <div class="divider"><span>or continue with</span></div>
+          <button class="btn btn-outline w-full mb-3"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="social-icon"> Continue with Google</button>
+          <button class="btn btn-outline w-full"><i class="fa-brands fa-apple text-lg mr-2"></i> Continue with Apple</button>
+        </div>
+
+        <div class="secure-footer">
+          <i class="fa-solid fa-shield-halved text-green"></i> Your data is safe and secure with us
+        </div>
+      </div>
+
+      <!-- Step 3: OTP -->
+      <div id="step-otp" class="onboarding-step hidden">
+        <div class="onboarding-top-bar">
+          <button type="button" class="back-btn" onclick="goToStep('step-auth')"><i class="fa-solid fa-arrow-left"></i></button>
+          <span class="help-link">Help <i class="fa-regular fa-circle-question"></i></span>
+        </div>
+        <div class="onboarding-brand"><i class="fa-solid fa-heart-pulse text-red"></i> HealthSync</div>
+        
+        <div class="onboarding-header">
+          <h2>Verify Your Number</h2>
+          <p>Enter the OTP sent to</p>
+          <div class="otp-number-display mt-2">
+            <span class="fi fi-in"></span> <span id="display-otp-number">+91 98765 43210</span>
+          </div>
+        </div>
+
+        <div class="otp-input-group mt-4">
+          <input type="tel" class="otp-box" maxlength="1" onkeyup="moveToNext(this, event)">
+          <input type="tel" class="otp-box" maxlength="1" onkeyup="moveToNext(this, event)">
+          <input type="tel" class="otp-box" maxlength="1" onkeyup="moveToNext(this, event)">
+          <input type="tel" class="otp-box" maxlength="1" onkeyup="moveToNext(this, event)">
+          <input type="tel" class="otp-box" maxlength="1" onkeyup="moveToNext(this, event)">
+          <input type="tel" class="otp-box" maxlength="1" onkeyup="moveToNext(this, event)">
+        </div>
+
+        <div class="resend-text mt-4">
+          Didn't receive the OTP? <span id="resend-timer" class="text-blue fw-bold cursor-pointer">Resend in 00:45</span>
+        </div>
+
+        <button class="btn btn-primary w-full mt-4" onclick="handleOtpSubmit()">Verify OTP</button>
+        
+        <div class="divider"><span>or</span></div>
+        
+        <button class="btn btn-outline w-full" onclick="goToStep('step-auth')"><i class="fa-solid fa-pen text-sm mr-2"></i> Change Mobile Number</button>
+        
+        <div class="secure-footer mt-auto pt-4">
+          <i class="fa-solid fa-shield-halved text-green"></i> Your data is safe and secure with us
+        </div>
+      </div>
+
+      <!-- Step 4: Profile -->
+      <div id="step-profile" class="onboarding-step hidden">
+        <div class="onboarding-top-bar">
+          <button type="button" class="back-btn" onclick="goToStep('step-auth')"><i class="fa-solid fa-arrow-left"></i></button>
+          <span class="help-link">Help <i class="fa-regular fa-circle-question"></i></span>
+        </div>
+        <div class="onboarding-brand"><i class="fa-solid fa-heart-pulse text-red"></i> HealthSync</div>
+        
+        <div class="onboarding-progress mt-3">
+          <div class="progress-step completed">1</div>
+          <div class="progress-line completed"></div>
+          <div class="progress-step active">2</div>
+          <div class="progress-line"></div>
+          <div class="progress-step">3</div>
+        </div>
+        <div class="progress-labels">
+          <span>Mobile</span>
+          <span class="active">Profile</span>
+          <span>Done</span>
+        </div>
+
+        <div class="onboarding-header mt-4 mb-4">
+          <h2>Complete Your Profile</h2>
+          <p>Tell us more about yourself</p>
+        </div>
+
+        <form onsubmit="handleProfileSubmit(event); return false;">
+          <label class="form-label">Email (Optional)</label>
+          <div class="input-with-icon mb-3">
+            <i class="fa-regular fa-envelope"></i>
+            <input type="email" id="ob-email" class="form-control" placeholder="Enter your email">
+          </div>
+          
+          <label class="form-label">Date of Birth</label>
+          <div class="input-with-icon mb-3">
+            <i class="fa-regular fa-calendar"></i>
+            <input type="text" id="ob-dob" class="form-control" placeholder="DD / MM / YYYY">
+          </div>
+          
+          <label class="form-label">Gender</label>
+          <div class="gender-selection">
+            <label class="gender-box active">
+              <input type="radio" name="gender" value="Male" checked onclick="updateGenderSelection(this)">
+              <i class="fa-solid fa-person text-blue mb-1" style="font-size:20px;"></i> Male
+            </label>
+            <label class="gender-box">
+              <input type="radio" name="gender" value="Female" onclick="updateGenderSelection(this)">
+              <i class="fa-solid fa-person-dress text-pink mb-1" style="font-size:20px;"></i> Female
+            </label>
+            <label class="gender-box">
+              <input type="radio" name="gender" value="Other" onclick="updateGenderSelection(this)">
+              <i class="fa-solid fa-users text-orange mb-1" style="font-size:20px;"></i> Other
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-full mt-4">Create Account</button>
+        </form>
+
+        <div class="secure-footer mt-auto pt-4">
+          <i class="fa-solid fa-shield-halved text-green"></i> Your data is safe and secure with us
+        </div>
+      </div>
+
+      <!-- Step 5: Success -->
+      <div id="step-success" class="onboarding-step hidden">
+        <div class="confetti-container">
+          <div class="success-checkmark">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <div class="c1"></div><div class="c2"></div><div class="c3"></div><div class="c4"></div><div class="c5"></div>
+        </div>
+        
+        <div class="onboarding-header mt-4 mb-4 text-center">
+          <h2>Account Created!</h2>
+          <p>Welcome to HealthSync</p>
+        </div>
+        
+        <div class="feature-list-card">
+          <div class="feature-item">
+            <div class="feature-icon bg-blue-light"><i class="fa-regular fa-calendar-check text-blue"></i></div>
+            <span>Book doctor appointments</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon bg-green-light"><i class="fa-solid fa-file-medical text-green"></i></div>
+            <span>Manage health records</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon bg-red-light"><i class="fa-solid fa-shield-halved text-red"></i></div>
+            <span>Emergency SOS support</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon bg-blue-light2"><i class="fa-solid fa-file-prescription text-blue2"></i></div>
+            <span>Digital prescriptions</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon text-muted" style="background:transparent; border:1px solid #e2e8f0; font-size:10px;"><i class="fa-solid fa-ellipsis"></i></div>
+            <span>And much more...</span>
+          </div>
+        </div>
+        
+        <button type="button" class="btn btn-primary w-full mt-4" onclick="finishOnboarding()">Go to Dashboard <i class="fa-solid fa-arrow-right ml-2"></i></button>
+      </div>
+
     </div>
   </section>
-
+  
   <section id="demo-portal" class="demo-portal hidden" aria-live="polite"></section>
 
   <div id="app">
