@@ -18,16 +18,25 @@ db.serialize(() => {
   )`);
 
   // Patients Table
+  
   db.run(`CREATE TABLE IF NOT EXISTS patients (
-    id TEXT PRIMARY KEY,
-    user_id TEXT REFERENCES users(id),
-    healthsync_id TEXT UNIQUE NOT NULL,
-    full_name TEXT NOT NULL,
-    gender TEXT,
-    date_of_birth TEXT,
-    blood_group TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id),
+      healthsync_id TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
+      gender TEXT,
+      date_of_birth TEXT,
+      blood_group TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (!err) {
+        // Try to add email column gracefully if it doesn't exist
+        db.run(`ALTER TABLE patients ADD COLUMN email TEXT`, (alterErr) => {
+          // Ignored if already exists
+        });
+      }
+    });
+
 
   // Doctors Table
   db.run(`CREATE TABLE IF NOT EXISTS doctors (
@@ -252,7 +261,42 @@ const server = http.createServer((req, res) => {
       }
 
       // Appointment Booking Engine — Real Persistence into DB
-      else if (pathname === '/v1/appointments' && req.method === 'POST') {
+      
+        else if (pathname === '/v1/auth/profile' && req.method === 'POST') {
+          const authHeader = req.headers['authorization'];
+          const token = authHeader && authHeader.split(' ')[1];
+          
+          if (!token) {
+            res.writeHead(401);
+            return res.end(JSON.stringify({ success: false, message: 'Unauthorized' }));
+          }
+          
+          jwt.verify(token, JWT_SECRET, (err, decoded) => {
+            if (err) {
+              res.writeHead(403);
+              return res.end(JSON.stringify({ success: false, message: 'Invalid token' }));
+            }
+            
+            const userId = decoded.id;
+            const email = parsedBody.email || '';
+            const dob = parsedBody.dateOfBirth || '';
+            const gender = parsedBody.gender || '';
+            
+            // Only updating patients table. We assume user_id is the foreign key.
+            db.run(`UPDATE patients SET email = ?, date_of_birth = ?, gender = ? WHERE user_id = ?`, [email, dob, gender, userId], (updateErr) => {
+              if (updateErr) {
+                console.error('Error updating profile:', updateErr);
+                res.writeHead(500);
+                return res.end(JSON.stringify({ success: false, message: 'Failed to update profile' }));
+              }
+              
+              res.writeHead(200);
+              res.end(JSON.stringify({ success: true, message: 'Profile updated successfully' }));
+            });
+          });
+        }
+
+        else if (pathname === '/v1/appointments' && req.method === 'POST') {
         db.get("SELECT COUNT(*) AS count FROM appointments", (err, row) => {
           const nextNum = (row ? row.count : 0) + 17;
           const token = "A" + nextNum;

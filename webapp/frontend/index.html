@@ -41,17 +41,17 @@
         <div class="language-choice-grid">
           <button type="button" class="language-choice active" onclick="selectOnboardingLanguage(this, 'English')">
             <div class="lang-icon">A</div>
-            <div class="lang-text"><strong>English</strong><span>English</span></div>
+            <div class="lang-text"><strong>English</strong><span>Continue in English</span></div>
             <i class="fa-solid fa-circle-check check-icon"></i>
           </button>
           <button type="button" class="language-choice" onclick="selectOnboardingLanguage(this, 'Hindi')">
             <div class="lang-icon green">हिं</div>
-            <div class="lang-text"><strong>हिंदी</strong><span>Hindi</span></div>
+            <div class="lang-text"><strong>हिंदी</strong><span>हिंदी में जारी रखें</span></div>
             <i class="fa-solid fa-circle-check check-icon"></i>
           </button>
           <button type="button" class="language-choice" onclick="selectOnboardingLanguage(this, 'Marathi')">
             <div class="lang-icon orange">म</div>
-            <div class="lang-text"><strong>मराठी</strong><span>Marathi</span></div>
+            <div class="lang-text"><strong>मराठी</strong><span>मराठीत पुढे जा</span></div>
             <i class="fa-solid fa-circle-check check-icon"></i>
           </button>
         </div>
@@ -91,7 +91,24 @@
           
           <label class="form-label">Mobile Number</label>
             <div class="phone-field">
-              <select id="ob-country-code" class="country-code-select" aria-label="Country Code"></select>
+              
+              <div class="custom-country-dropdown" id="country-dropdown-container">
+                <button type="button" class="country-select-btn" id="country-select-btn" onclick="toggleCountryDropdown()">
+                  <span id="selected-country-flag">🇮🇳</span>
+                  <span id="selected-country-code">+91</span>
+                  <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 4px;"></i>
+                </button>
+                <div class="country-dropdown-menu hidden" id="country-dropdown-menu">
+                  <div class="country-search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="country-search-input" placeholder="Search country or code..." onkeyup="filterCountries()">
+                  </div>
+                  <ul class="country-list" id="country-list">
+                    <!-- Populated by JS -->
+                  </ul>
+                </div>
+              </div>
+  
               <input type="tel" id="ob-mobile" class="form-control" placeholder="Enter mobile number" required>
             </div>
           
@@ -102,8 +119,8 @@
 
         <div id="social-login-section">
           <div class="divider"><span>or continue with</span></div>
-          <button class="btn btn-outline w-full mb-3"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="social-icon"> Continue with Google</button>
-          <button class="btn btn-outline w-full"><i class="fa-brands fa-apple text-lg mr-2"></i> Continue with Apple</button>
+          <button type="button" class="btn btn-outline w-full mb-3" disabled style="opacity: 0.5; cursor: not-allowed;" title="Currently unavailable"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="social-icon"> Continue with Google</button>
+          <button type="button" class="btn btn-outline w-full" disabled style="opacity: 0.5; cursor: not-allowed;" title="Currently unavailable"><i class="fa-brands fa-apple text-lg mr-2"></i> Continue with Apple</button>
         </div>
 
         <div class="secure-footer">
@@ -151,6 +168,23 @@
         </div>
       </div>
 
+      
+      <!-- Step 3.5: Verifying -->
+      <div id="step-verifying" class="onboarding-step hidden">
+        <div class="onboarding-brand mt-4"><i class="fa-solid fa-heart-pulse text-red"></i> HealthSync</div>
+        
+        <div class="verifying-container text-center" style="margin-top: 60px;">
+          <div class="verifying-icon" style="font-size: 48px; color: #3b82f6; margin-bottom: 24px;">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h2 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Verifying...</h2>
+          <p style="color: #64748b; font-size: 15px; line-height: 1.5; max-width: 280px; margin: 0 auto;">
+            Please wait while we securely verify your mobile number.
+          </p>
+          <div class="loading-spinner mt-4" style="display: inline-block; width: 30px; height: 30px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+      </div>
+  
       <!-- Step 4: Profile -->
       <div id="step-profile" class="onboarding-step hidden">
         <div class="onboarding-top-bar">
@@ -1842,7 +1876,7 @@
   <script src="js/socket.js"></script>
   <script src="js/patient.js"></script>
   <script src="js/doctor.js"></script>
-  <script src="js/main.js?v=2786282104016"></script>
+  <script src="js/main.js?v=1786462170217"></script>
   <script src="demo.js"></script>
   <!-- 4. Add Vaccination Modal -->
   <div id="modal-add-vaccination" class="modal-backdrop">
