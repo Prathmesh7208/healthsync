@@ -2263,8 +2263,8 @@ window.handleAuthSubmit = async function(event) {
     return;
   }
   
-  window.pendingMobile = countryCode + mobile;
-  document.getElementById('display-otp-number').textContent = window.pendingMobile;
+  window.pendingMobile = mobile;
+  document.getElementById('display-otp-number').textContent = countryCode + ' ' + mobile;
   
   const btn = document.querySelector('#onboarding-auth-form button[type="submit"]');
   const originalText = btn.innerHTML;
