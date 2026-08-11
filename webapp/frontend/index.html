@@ -90,12 +90,10 @@
           </div>
           
           <label class="form-label">Mobile Number</label>
-          <div class="mobile-input-group">
-            <div class="country-code-box">
-              <span class="fi fi-in"></span> +91 <i class="fa-solid fa-chevron-down text-xs ml-1"></i>
+            <div class="phone-field">
+              <select id="ob-country-code" class="country-code-select" aria-label="Country Code"></select>
+              <input type="tel" id="ob-mobile" class="form-control" placeholder="Enter mobile number" required>
             </div>
-            <input type="tel" id="ob-mobile" class="form-control" placeholder="Enter mobile number" required>
-          </div>
           
           <p id="register-help-text" class="auth-help-text hidden mt-2">We will send you an OTP to verify</p>
           
@@ -364,36 +362,7 @@
               <!-- Top Row: Upcoming & Quick Actions -->
               <div class="new-dash-row-1">
                 <!-- Upcoming Appointment Card -->
-                <div class="new-card upcoming-card">
-                  <div class="new-card-header">
-                    <div class="header-title">
-                      <div class="icon-box-purple"><i class="fa-regular fa-calendar-check" style="color: #7c3aed; font-size: 16px;"></i></div>
-                      <span class="fw-bold text-dark" style="font-size: 15px;">Upcoming Appointment</span>
-                    </div>
-                    <button class="icon-btn-small" style="color: #94a3b8; background: transparent; border: none; font-size: 16px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                  </div>
-                  
-                  <div class="upcoming-doctor-info">
-                    <img src="https://ui-avatars.com/api/?name=Anjali+Sharma&background=random" alt="Doctor" class="doc-avatar-lg">
-                    <div class="doc-details">
-                      <h4 class="fw-bold text-dark m-0" style="font-size: 16px;">Dr. Anjali Sharma</h4>
-                      <div class="doc-specialty text-muted" style="font-size: 13px; margin-top: 2px;">Cardiologist</div>
-                      <div class="doc-location text-muted mt-1" style="font-size: 12px; margin-top: 6px;"><i class="fa-solid fa-location-dot" style="margin-right: 4px;"></i> Apollo Hospital, Mumbai</div>
-                    </div>
-                  </div>
-                  
-                  <div class="upcoming-datetime">
-                    <div class="dt-item"><i class="fa-regular fa-calendar" style="margin-right: 6px;"></i> 12 Aug 2026</div>
-                    <div class="dt-dot" style="margin: 0 12px; font-size: 20px; line-height: 0;">&bull;</div>
-                    <div class="dt-item"><i class="fa-regular fa-clock" style="margin-right: 6px;"></i> 05:00 PM</div>
-                    <div class="status-pill green-pill ml-auto">Confirmed</div>
-                  </div>
-                  
-                  <div class="upcoming-actions">
-                    <button class="btn btn-outline flex-1">View Details</button>
-                    <button class="btn btn-primary flex-1"><i class="fa-solid fa-video" style="margin-right: 8px;"></i> Join Consultation</button>
-                  </div>
-                </div>
+                <div id="patient-dashboard-upcoming-appt"></div>
                 
                 <!-- Quick Actions Card -->
                 <div class="new-card quick-actions-card">
@@ -413,18 +382,25 @@
                       <div class="qa-icon-box qa-purple"><i class="fa-solid fa-file-lines text-purple"></i></div>
                       <div class="qa-text">Health<br>Records</div>
                     </div>
-                    <div class="qa-item" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()">
-                      <div class="qa-icon-box qa-red"><span style="font-weight: 800; font-size: 13px; color: #dc2626;">SOS</span></div>
-                      <div class="qa-text">Emergency<br>SOS</div>
-                    </div>
-                    <div class="qa-item" onclick="openPortalTool('patient', 'ambulance')">
-                      <div class="qa-icon-box qa-blue2"><i class="fa-solid fa-truck-medical text-blue2"></i></div>
-                      <div class="qa-text">Book<br>Ambulance</div>
-                    </div>
                     <div class="qa-item" onclick="openPortalTool('patient', 'upload')">
                       <div class="qa-icon-box qa-orange"><i class="fa-solid fa-cloud-arrow-up text-orange"></i></div>
                       <div class="qa-text">Upload<br>Report</div>
                     </div>
+                  </div>
+                </div>
+
+                <!-- Emergency Actions -->
+                <div class="new-card emergency-actions-card mt-3">
+                  <div class="new-card-header mb-3" style="padding-bottom: 8px;">
+                    <span class="fw-bold text-dark" style="font-size: 15px;">Emergency Services</span>
+                  </div>
+                  <div style="display: flex; gap: 12px;">
+                    <button class="btn flex-1" style="background-color: #fef2f2; border: 1px solid #fecaca; color: #dc2626; font-weight: 600; min-height: 44px; padding: 0;" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()">
+                      <span style="font-weight: 800; margin-right: 6px; font-size: 13px;">SOS</span> Emergency
+                    </button>
+                    <button class="btn flex-1" style="background-color: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; font-weight: 600; min-height: 44px; padding: 0;" onclick="openPortalTool('patient', 'ambulance')">
+                      <i class="fa-solid fa-truck-medical" style="margin-right: 6px;"></i> Ambulance
+                    </button>
                   </div>
                 </div>
               </div>

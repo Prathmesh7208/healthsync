@@ -825,7 +825,7 @@ function renderNextAppointment(appt) {
   if (!container) return;
   if (!appt) {
     container.innerHTML = `
-      <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; text-align: center;">
+      <div class="new-card upcoming-card" style="align-items: center; justify-content: center; min-height: 120px; text-align: center; border-style: dashed; padding: 24px;">
         <i class="fa-regular fa-calendar-xmark" style="font-size: 24px; color: var(--text-muted); margin-bottom: 8px;"></i>
         <p style="font-size: 14px; color: var(--text-muted); margin: 0 0 12px 0;">No upcoming appointment</p>
         <button class="btn btn-primary btn-sm" onclick="switchPatientPage('doctors')">Book Appointment</button>
@@ -838,55 +838,50 @@ function renderNextAppointment(appt) {
   const docName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync Doctor';
   const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'City Heart Clinic';
 
-  // Check live queue
-  let queueInfoHtml = '';
-  if (['CHECKED IN', 'WAITING', 'IN PROGRESS'].includes(String(appt.status).toUpperCase())) {
-    const queueEntry = typeof liveQueueList !== 'undefined' ? liveQueueList.find(q => q.token === appt.token_number || q.patientId === appt.patient_id) : null;
-    let waitStr = 'Calculating...';
-    let ahead = '...';
-    if (queueEntry) {
-      const waitingList = liveQueueList.filter(q => q.status === 'Waiting');
-      const pos = waitingList.findIndex(q => q.token === queueEntry.token);
-      ahead = pos >= 0 ? pos : 0;
-      waitStr = `${ahead * 15} mins`; // Mock 15 mins per patient ahead
-      if (queueEntry.status === 'In Consultation') {
-        ahead = 0; waitStr = 'Consulting now';
-      }
+  const statusStr = String(appt.status).toUpperCase();
+  const isVideo = appt.type === 'video' || appt.appointment_type === 'video' || String(appt.mode).toLowerCase() === 'video';
+  const timeStr = appt.slot_time || appt.time || '05:00 PM';
+  
+  let consultationBtn = '';
+  if (isVideo) {
+    if (['CHECKED IN', 'WAITING', 'IN PROGRESS', 'ACTIVE', 'JOINED', 'CONFIRMED'].includes(statusStr)) {
+      consultationBtn = `<button class="btn btn-primary flex-1" onclick="if(typeof joinConsultation==='function') joinConsultation('${appt.id}'); else alert('Consultation starting soon!');"><i class="fa-solid fa-video" style="margin-right: 8px;"></i> Join Consultation</button>`;
+    } else {
+      consultationBtn = `<button class="btn btn-primary flex-1" disabled style="opacity: 0.6; cursor: not-allowed;"><i class="fa-solid fa-video" style="margin-right: 8px;"></i> Available at ${timeStr}</button>`;
     }
-    queueInfoHtml = `
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <p style="font-size: 11px; color: #166534; font-weight: 700; margin: 0; text-transform: uppercase;">Live Status</p>
-        <p style="font-size: 14px; color: #15803d; font-weight: 600; margin: 2px 0 0 0;">Token ${appt.token_number || 'Waitlist'}</p>
-      </div>
-      <div style="text-align: right;">
-        <p style="font-size: 11px; color: #166534; font-weight: 700; margin: 0; text-transform: uppercase;">Est. Wait</p>
-        <p style="font-size: 14px; color: #15803d; font-weight: 600; margin: 2px 0 0 0;">${waitStr} (${ahead} ahead)</p>
-      </div>
-    </div>`;
+  } else {
+    consultationBtn = `<button class="btn btn-primary flex-1"><i class="fa-solid fa-diamond-turn-right" style="margin-right: 8px;"></i> Get Directions</button>`;
   }
 
   container.innerHTML = `
-    <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
-      <div style="display: flex; gap: 16px;">
-        <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px;">🏥</div>
-        <div style="flex: 1;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <h4 style="font-weight: 700; font-size: 15px; margin: 0; color: #0f172a;">${escapeHtml(docName)}</h4>
-              <p style="font-size: 13px; color: var(--text-muted); margin: 2px 0;">Consultation</p>
-            </div>
-            <span style="background: #dcfce7; color: #16a34a; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: 600;">${escapeHtml(appt.status)}</span>
-          </div>
-          <div style="margin-top: 12px; font-size: 13px; color: var(--text-medium);">
-            <p style="margin: 4px 0;"><i class="fa-regular fa-clock" style="color: var(--text-muted); width: 16px;"></i> ${displayDate} • ${escapeHtml(appt.slot_time || appt.time)}</p>
-            <p style="margin: 4px 0;"><i class="fa-solid fa-location-dot" style="color: var(--text-muted); width: 16px;"></i> ${escapeHtml(clinic)}</p>
-          </div>
-          ${queueInfoHtml}
-          <div style="margin-top: 16px; text-align: right;">
-            <button onclick="viewAppointmentDetails('${appt.id}')" style="background: transparent; border: 1px solid #e2e8f0; color: #4f46e5; font-weight: 600; padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;">View Details</button>
-          </div>
+    <div class="new-card upcoming-card">
+      <div class="new-card-header">
+        <div class="header-title">
+          <div class="icon-box-purple"><i class="fa-regular fa-calendar-check" style="color: #7c3aed; font-size: 16px;"></i></div>
+          <span class="fw-bold text-dark" style="font-size: 15px;">Upcoming Appointment</span>
         </div>
+        <button class="icon-btn-small" style="color: #94a3b8; background: transparent; border: none; font-size: 16px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+      </div>
+      
+      <div class="upcoming-doctor-info">
+        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(docName)}&background=random" alt="Doctor" class="doc-avatar-lg">
+        <div class="doc-details">
+          <h4 class="fw-bold text-dark m-0" style="font-size: 16px;">${escapeHtml(docName)}</h4>
+          <div class="doc-specialty text-muted" style="font-size: 13px; margin-top: 2px;">${appt.specialty || 'General Physician'}</div>
+          <div class="doc-location text-muted mt-1" style="font-size: 12px; margin-top: 6px;"><i class="fa-solid fa-location-dot" style="margin-right: 4px;"></i> ${escapeHtml(clinic)}</div>
+        </div>
+      </div>
+      
+      <div class="upcoming-datetime">
+        <div class="dt-item"><i class="fa-regular fa-calendar" style="margin-right: 6px;"></i> ${displayDate}</div>
+        <div class="dt-dot" style="margin: 0 12px; font-size: 20px; line-height: 0;">&bull;</div>
+        <div class="dt-item"><i class="fa-regular fa-clock" style="margin-right: 6px;"></i> ${timeStr}</div>
+        <div class="status-pill green-pill ml-auto">${escapeHtml(appt.status || 'Confirmed')}</div>
+      </div>
+      
+      <div class="upcoming-actions">
+        <button class="btn btn-outline flex-1" onclick="if(typeof viewAppointmentDetails==='function') viewAppointmentDetails('${appt.id}')">View Details</button>
+        ${consultationBtn}
       </div>
     </div>`;
 }
@@ -2215,13 +2210,25 @@ window.selectOnboardingLanguage = function(btn, lang) {
 }
 
 window.goToStep = function(stepId) {
-  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.add('hidden'));
-  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
+  const current = document.querySelector('.onboarding-step.active');
+  const next = document.getElementById(stepId);
+  if (!next || current === next) return;
   
-  const step = document.getElementById(stepId);
-  if (step) {
-    step.classList.remove('hidden');
-    step.classList.add('active');
+  if (current) {
+    current.style.opacity = '0';
+    current.style.transition = 'opacity 0.2s';
+    setTimeout(() => {
+      current.classList.add('hidden');
+      current.classList.remove('active');
+      current.style.opacity = '';
+      current.style.transition = '';
+      
+      next.classList.remove('hidden');
+      next.classList.add('active');
+    }, 200);
+  } else {
+    next.classList.remove('hidden');
+    next.classList.add('active');
   }
 }
 
@@ -2242,14 +2249,22 @@ window.switchAuthTab = function(mode) {
 
 window.handleAuthSubmit = async function(event) {
   event.preventDefault();
-  const mobile = document.getElementById('ob-mobile').value.trim();
-  if (!mobile) return;
+  const mobile = document.getElementById('ob-mobile').value.replace(/\D/g, '');
+  const countryCode = document.getElementById('ob-country-code')?.value || '+91';
   
-  // Format the mobile
-  window.pendingMobile = '+91' + mobile; // Assuming +91 for now based on UI
+  if (countryCode === '+91' && !/^[6-9]\d{9}$/.test(mobile)) {
+    if (typeof showToast === 'function') showToast('Enter a valid 10-digit Indian mobile number.', 'error');
+    else alert('Enter a valid 10-digit Indian mobile number.');
+    return;
+  }
+  if (!/^\d{7,15}$/.test(mobile)) {
+    if (typeof showToast === 'function') showToast('Enter a valid mobile number.', 'error');
+    else alert('Enter a valid mobile number.');
+    return;
+  }
   
-  // Update UI to show the number
-  document.getElementById('display-otp-number').textContent = '+91 ' + mobile;
+  window.pendingMobile = countryCode + mobile;
+  document.getElementById('display-otp-number').textContent = window.pendingMobile;
   
   const btn = document.querySelector('#onboarding-auth-form button[type="submit"]');
   const originalText = btn.innerHTML;
@@ -2301,6 +2316,18 @@ window.moveToNext = function(input, event) {
     }
   }
 }
+
+window.handlePaste = function(e) {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+  if (!text) return;
+  const boxes = document.querySelectorAll('.otp-box');
+  for (let i = 0; i < boxes.length && i < text.length; i++) {
+    boxes[i].value = text[i];
+  }
+  if (text.length >= boxes.length) boxes[boxes.length - 1].focus();
+  else boxes[text.length].focus();
+};
 
 window.startObTimer = function() {
   let seconds = 45;
@@ -2379,7 +2406,7 @@ window.handleOtpSubmit = async function() {
     if (obMode === 'register') {
       goToStep('step-profile');
     } else {
-      goToStep('step-success'); // Show success screen for login too for visual flair
+      finishOnboarding(); // Skip success screen for returning user
     }
   } catch (error) {
     if (typeof showToast === 'function') showToast(error.message || "OTP Verification failed", 'error');
@@ -2401,23 +2428,32 @@ window.handleProfileSubmit = function(event) {
   goToStep('step-success');
 }
 
-window.finishOnboarding = function() {
-  // Hide onboarding, show dashboard
+window.finishOnboarding = async function() {
   document.getElementById('onboarding-flow').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   
   if (window.currentUser) {
     const role = String(window.currentUser.role || 'PATIENT').toUpperCase();
     window.switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient');
+    
+    // Set actual name
+    const dashNameEl = document.getElementById('patient-dashboard-name');
+    if (dashNameEl) {
+       dashNameEl.textContent = window.currentUser.name ? window.currentUser.name.split(' ')[0] : 'Patient';
+    }
+    
+    // Fetch actual profile and data
+    try {
+      if (typeof window.syncAllData === 'function') await window.syncAllData();
+    } catch(e) {}
+    
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
     if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
     if ((role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') && typeof window.fetchPendingEmergencies === 'function') {
       window.fetchPendingEmergencies();
     }
-    if (typeof window.syncAllData === 'function') window.syncAllData();
     if (typeof window.connectSocket === 'function') window.connectSocket();
   } else {
-    // Mock login fallback just in case
     window.currentUser = { id: 'demo-patient', name: 'Demo Patient', role: 'PATIENT', demo: true };
     window.switchGlobalRole('patient');
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
