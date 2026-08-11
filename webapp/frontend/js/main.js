@@ -2423,9 +2423,3 @@ window.finishOnboarding = function() {
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
   }
 }
-window.currentUser) {
-    window.currentUser = { id: 'demo-patient', name: 'Demo Patient', role: 'PATIENT', demo: true };
-    window.switchGlobalRole('patient');
-    if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
-  }
-}
