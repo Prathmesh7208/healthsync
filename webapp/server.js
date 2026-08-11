@@ -472,7 +472,7 @@ const server = http.createServer(async (req, res) => {
 
   // ── API Router (/v1/) ───────────────────────────────────────────────────
   if (pathname.startsWith('/v1/')) {
-    const isPublicRoute = pathname.startsWith('/v1/auth') || pathname.startsWith('/v1/doctors/search') || pathname === '/v1/health';
+    const isPublicRoute = pathname.startsWith('/v1/auth') || pathname.startsWith('/v1/doctors/search') || pathname.match(/^\/v1\/doctors\/([^/]+)\/slots(\/summary)?$/) || pathname === '/v1/health';
     
     if (!isPublicRoute) {
       let authHeader = req.headers.authorization;
@@ -751,9 +751,39 @@ function apiRouter(req, res, pathname, url, body) {
   }
 
   // ── Get Doctor Slots (Real Availability) ──────────────────────────────────
+
+  if (pathname.match(/^\/v1\/doctors\/([^/]+)\/slots\/summary$/) && method === 'GET') {
+    const match = pathname.match(/^\/v1\/doctors\/([^/]+)\/slots\/summary$/);
+    const docId = match[1];
+    const datesParam = url.searchParams.get('dates');
+    if (!datesParam) return json(res, 400, { success: false, message: 'Missing dates param' });
+    
+    const dateList = datesParam.split(',');
+    const totalSlotsPerDay = 14; 
+    const placeholders = dateList.map(() => '?').join(',');
+    const queryParams = [docId, ...dateList];
+    
+    db.all(`SELECT slot_date, COUNT(*) as booked_count FROM appointments WHERE doctor_id = ? AND slot_date IN (${placeholders}) AND status = 'CONFIRMED' GROUP BY slot_date`, queryParams, (err, rows) => {
+      if (err) return json(res, 500, { success: false, message: 'Database error' });
+      
+      const bookedMap = {};
+      (rows || []).forEach(r => { bookedMap[r.slot_date] = r.booked_count; });
+      
+      const summary = {};
+      dateList.forEach(d => {
+        const booked = bookedMap[d] || 0;
+        const available = Math.max(0, totalSlotsPerDay - booked);
+        summary[d] = { available, total: totalSlotsPerDay };
+      });
+      
+      json(res, 200, { success: true, summary });
+    });
+    return;
+  }
+
   if (pathname.match(/^\/v1\/doctors\/([^/]+)\/slots$/) && method === 'GET') {
     const docId = pathname.split('/')[3];
-    const dateStr = parsedUrl.searchParams.get('date'); // YYYY-MM-DD
+    const dateStr = url.searchParams.get('date'); // YYYY-MM-DD
     if (!dateStr) return json(res, 400, { success: false, message: 'Date is required' });
 
     const parts = dateStr.split('-');
@@ -907,36 +937,41 @@ function apiRouter(req, res, pathname, url, body) {
     const reason   = body.reasonForVisit || '';
     const clinic   = body.clinicName || 'HealthSync Multispeciality Hospital';
 
-    db.get('SELECT COUNT(*) AS c FROM appointments', (err, rowCount) => {
-      const nextNum  = (rowCount?.c || 0) + 17;
-      const token    = 'A' + nextNum;
-      const apptId   = 'apt-' + uid();
-      const qId      = 'q-'   + uid();
+    db.get("SELECT id FROM appointments WHERE doctor_id = ? AND slot_date = ? AND slot_time = ? AND status = 'CONFIRMED'", [docId, date, time], (checkErr, existing) => {
+      if (checkErr) return json(res, 500, { success: false, message: 'Database error' });
+      if (existing) return json(res, 409, { success: false, message: 'Sorry, this slot was just booked.' });
+      
+      db.get('SELECT COUNT(*) AS c FROM appointments', (err, rowCount) => {
+        const nextNum  = (rowCount?.c || 0) + 17;
+        const token    = 'A' + nextNum;
+        const apptId   = 'apt-' + uid();
+        const qId      = 'q-'   + uid();
 
-      db.run(
-        `INSERT INTO appointments 
-           (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, consultation_type, token_number, patient_type, reason_for_visit, clinic_name)
-         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-         WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE doctor_id=? AND slot_date=? AND slot_time=? AND status != 'Cancelled')`,
-        [apptId, patId, patName, docId, docName, date, time, body.consultationType === 'ONLINE' ? 'ONLINE' : 'IN_PERSON', token, patType, reason, clinic, docId, date, time],
-        function(err) {
-          if (err) return json(res, 500, { success: false, message: 'Database error' });
-          if (this.changes === 0) {
-            return json(res, 409, { success: false, message: 'Sorry, this slot was just booked. Please select another available time.' });
+        db.run(
+          `INSERT INTO appointments 
+             (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, consultation_type, token_number, patient_type, reason_for_visit, clinic_name)
+           SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+           WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE doctor_id=? AND slot_date=? AND slot_time=? AND status != 'Cancelled')`,
+          [apptId, patId, patName, docId, docName, date, time, body.consultationType === 'ONLINE' ? 'ONLINE' : 'IN_PERSON', token, patType, reason, clinic, docId, date, time],
+          function(err) {
+            if (err) return json(res, 500, { success: false, message: 'Database error' });
+            if (this.changes === 0) {
+              return json(res, 409, { success: false, message: 'Sorry, this slot was just booked. Please select another available time.' });
+            }
+            
+            db.run(
+              `INSERT INTO queue_entries
+                 (id, appointment_id, token_number, patient_id, patient_name, doctor_id, status, checkin_time)
+               VALUES (?, ?, ?, ?, ?, ?, 'Waiting', ?)`,
+              [qId, apptId, token, patId, patName, docId, time],
+              () => json(res, 201, {
+                success: true,
+                appointment: { id: apptId, token, doctorName: docName, date, time, status: 'CONFIRMED', clinicName: clinic, patientType: patType }
+              })
+            );
           }
-          
-          db.run(
-            `INSERT INTO queue_entries
-               (id, appointment_id, token_number, patient_id, patient_name, doctor_id, status, checkin_time)
-             VALUES (?, ?, ?, ?, ?, ?, 'Waiting', ?)`,
-            [qId, apptId, token, patId, patName, docId, time],
-            () => json(res, 201, {
-              success: true,
-              appointment: { id: apptId, token, doctorName: docName, date, time, status: 'CONFIRMED', clinicName: clinic, patientType: patType }
-            })
-          );
-        }
-      );
+        );
+      });
     });
     return;
   }
