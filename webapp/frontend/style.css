@@ -2932,3 +2932,9 @@ select.form-control { padding-right: 34px; }
     box-shadow: none;
     padding: 0;
   }
+
+
+/* Added by fixing script for responsive grid */
+@media (max-width: 768px) {
+  .row.g-3 > div { width: 100%; }
+}

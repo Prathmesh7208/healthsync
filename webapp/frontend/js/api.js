@@ -8,6 +8,7 @@ async function requestJson(path, options = {}) {
     options.headers = headers;
     response = await fetch(`${API_BASE}${path}`, options);
   } catch {
+    if (typeof showToast === 'function') showToast('Cannot connect to HealthSync. Check your internet connection.', 'error');
     throw new Error('Cannot connect to HealthSync. Check your internet connection and try again.');
   }
 
@@ -22,7 +23,9 @@ async function requestJson(path, options = {}) {
     data = await response.json().catch(() => null);
   }
   if (!response.ok || !data?.success) {
-    throw new Error(data?.message || `HealthSync returned an error (${response.status}).`);
+    const errMsg = data?.message || `HealthSync returned an error (${response.status}).`;
+    if (typeof showToast === 'function') showToast(errMsg, 'error');
+    throw new Error(errMsg);
   }
   return data;
 }

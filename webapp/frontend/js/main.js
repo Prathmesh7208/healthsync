@@ -36,16 +36,37 @@ document.addEventListener('DOMContentLoaded', () => {
     startResendCooldown(); // restart cooldown display
   }
 
-  const hash = window.location.hash;
-  if (hash && hash.startsWith('#')) {
-    const parts = hash.substring(1).split('/');
-    if (parts.length === 2) {
-      history.replaceState({ healthsyncNavigation: true, role: parts[0], page: parts[1] }, '', hash);
-      setTimeout(() => goToAppHistoryState({ role: parts[0], page: parts[1] }), 50);
+  const savedSession = localStorage.getItem('healthsync-session');
+  if (!savedSession) {
+    // Unauthenticated: hide app, show onboarding
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.classList.add('hidden');
+    const obFlow = document.getElementById('onboarding-flow');
+    if (obFlow) obFlow.classList.remove('hidden');
+    
+    // Clear hash to prevent direct dashboard routing
+    if (window.location.hash) {
+      history.replaceState(null, '', ' ');
     }
   } else {
-    history.replaceState({ healthsyncNavigation: true, role: 'patient', page: 'dashboard' }, '', '#patient/dashboard');
+    // Authenticated (pending restoreSession verify)
+    const obFlow = document.getElementById('onboarding-flow');
+    if (obFlow) obFlow.classList.add('hidden');
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.classList.remove('hidden');
+    
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#')) {
+      const parts = hash.substring(1).split('/');
+      if (parts.length === 2) {
+        history.replaceState({ healthsyncNavigation: true, role: parts[0], page: parts[1] }, '', hash);
+        setTimeout(() => goToAppHistoryState({ role: parts[0], page: parts[1] }), 50);
+      }
+    } else {
+      history.replaceState({ healthsyncNavigation: true, role: 'patient', page: 'dashboard' }, '', '#patient/dashboard');
+    }
   }
+  
   renderPatientHealthProfile();
   startHealthTipRotation();
   restoreSession();
@@ -61,8 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set today's date input min limit
   const bookingDateInput = document.getElementById('booking-date-input');
   if (bookingDateInput) {
-    bookingDateInput.value = new Date().toISOString().split('T')[0];
-    bookingDateInput.min = new Date().toISOString().split('T')[0];
+    if(bookingDateInput) bookingDateInput.value = new Date().toISOString().split('T')[0];
+    if(bookingDateInput) bookingDateInput.min = new Date().toISOString().split('T')[0];
   }
 
   // Setup periodic refresh
@@ -99,7 +120,14 @@ async function restoreSession() {
     currentUser = { ...session.user, token: data.token, refreshToken: session.refreshToken };
     localStorage.setItem('healthsync-session', JSON.stringify({ user: currentUser, refreshToken: currentUser.refreshToken }));
     finishLogin();
-  } catch { localStorage.removeItem('healthsync-session'); }
+  } catch { 
+      localStorage.removeItem('healthsync-session');
+      if (typeof window.logoutCurrentUser === 'function') {
+        window.logoutCurrentUser();
+      } else {
+        location.reload();
+      }
+    }
 }
 
 // Demo sessions use the same role panels as production, but their API calls are
@@ -335,6 +363,84 @@ window.openNotifications = async function () { await fetchNotifications(); openM
 window.markNotificationRead = async function (id) { await fetch(`${API_BASE}/notifications/${id}/read`, { method: 'POST' }); fetchNotifications(); };
 window.clearNotifications = async function () { if (!currentUser) return; await fetch(`${API_BASE}/notifications/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }); fetchNotifications(); };
 
+
+async function renderDashboardReminders() {
+  const container = document.querySelector('.medicine-card .medicine-box');
+  if (!container) return;
+  if (!currentUser) return;
+  
+  container.innerHTML = '<div class="text-center p-4 text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading reminders...</div>';
+  
+  try {
+    const data = await requestJson('/reminders?patientId=' + encodeURIComponent(currentUser.patientId || currentUser.id));
+    const reminders = data?.reminders || [];
+    
+    if (reminders.length === 0) {
+      container.innerHTML = '<div class="card p-4 text-center text-muted empty-state"><i class="fa-solid fa-pills" style="font-size: 24px; color: #cbd5e1; margin-bottom: 8px;"></i><p style="font-size:13px; margin:0;">No medicines scheduled today</p></div>';
+      return;
+    }
+    
+    const nextRem = reminders[0];
+    container.innerHTML = `
+      <div class="med-info" style="flex:1;">
+        <div class="med-next fw-bold text-dark" style="font-size: 14px;">Scheduled: <span class="text-orange" style="color: #f59e0b;">${escapeHtml(nextRem.reminder_time)}</span></div>
+        <h4 class="fw-bold text-dark mt-2" style="font-size: 16px;">${escapeHtml(nextRem.medicine_name)}</h4>
+        <div class="text-muted text-sm mt-1" style="font-size: 13px;">${escapeHtml(nextRem.dosage || 'Standard Dose')}</div>
+      </div>
+      <div class="med-icon-big">
+        <div class="pill-illustration">
+          <div style="background: #e0e7ff; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+             <i class="fa-solid fa-pills" style="color: #4f46e5; font-size: 24px;"></i>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = '<div class="card p-4 text-center text-red-500 empty-state">Failed to load reminders.</div>';
+  }
+}
+
+
+async function renderDashboardVaccinations() {
+  const container = document.querySelector('h3:contains("Vaccination History")')?.nextElementSibling?.querySelector('tbody');
+  // Wait, in vanilla JS :contains doesn't work. We find the container by querying elements.
+  const headings = document.querySelectorAll('h3');
+  let vaccContainer = null;
+  headings.forEach(h => {
+    if (h.textContent.includes('Vaccination History')) {
+      vaccContainer = h.nextElementSibling.querySelector('tbody');
+    }
+  });
+  if (!vaccContainer) return;
+  
+  vaccContainer.innerHTML = '<tr><td colspan="5" class="text-center text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading history...</td></tr>';
+  
+  try {
+    const data = await requestJson('/records');
+    const records = (data?.records || []).filter(r => r.type === 'Vaccination');
+    
+    if (records.length === 0) {
+      vaccContainer.innerHTML = '<tr><td colspan="5" class="text-center text-muted empty-state" style="padding: 24px;">No vaccination history found.</td></tr>';
+      return;
+    }
+    
+    vaccContainer.innerHTML = records.map(r => `
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 16px; font-size: 14px; font-weight: 600; color: #0f172a;">${escapeHtml(r.title)}</td>
+        <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">${escapeHtml(r.date)}</td>
+        <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">${escapeHtml(r.doctor_name || 'N/A')}</td>
+        <td style="padding: 16px; font-size: 14px; color: #0f172a; font-weight: 500;">${escapeHtml(r.description || 'N/A')}</td>
+        <td style="padding: 16px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 20px;"></i>
+          <span style="font-size: 13px; font-weight: 500; color: #64748b;">Record</span>
+        </td>
+      </tr>
+    `).join('');
+  } catch(err) {
+    vaccContainer.innerHTML = '<tr><td colspan="5" class="text-center text-red-500">Failed to load vaccination history.</td></tr>';
+  }
+}
+
 async function syncAllData() {
   if (!currentUser) return;
   await Promise.all([
@@ -342,7 +448,7 @@ async function syncAllData() {
     fetchAppointmentsToday(),
     fetchPrescriptions(),
     fetchNextAppointment(),
-    fetchHealthRecords()
+    fetchHealthRecords(), fetchVaccinations()
   ]);
   renderDoctorPatientReports();
 }
@@ -660,8 +766,52 @@ function utilityContent(role, tool) {
   if (tool === 'settings') return settingsContent();
   if (tool === 'prescriptions') return table(patientPrescriptions.map(rx => `<tr><td>${escapeHtml(rx.diagnosis)}</td><td>${escapeHtml(rx.doctor_name || rx.doctorName || '')}</td><td>${new Date(rx.created_at).toLocaleDateString('en-IN')}</td><td><button class="btn btn-secondary btn-xs" onclick="showToast('Prescription details are available in Health Records.', 'info')">View</button></td></tr>`).join(''), ['Diagnosis', 'Doctor', 'Date', 'Action']);
   if (tool === 'medicines') { const meds = patientPrescriptions.flatMap(rx => { try { return JSON.parse(rx.medications_json || '[]') } catch { return [] } }); return table(meds.map(m => `<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.dosage || '')}</td><td>${escapeHtml(m.frequency || '')}</td><td>${escapeHtml(m.duration || '')}</td></tr>`).join(''), ['Medicine', 'Dosage', 'Frequency', 'Duration']); }
-  if (tool === 'reminders') { const reminders = localItems('healthsync-reminders'); return `<div class="card mb-3"><div class="card-body"><div class="form-row"><div class="form-group"><label class="form-label">Medicine</label><input id="reminder-name" class="form-control" placeholder="e.g. Paracetamol"></div><div class="form-group"><label class="form-label">Time</label><input id="reminder-time" class="form-control" type="time"></div></div><button class="btn btn-primary" onclick="addReminder()">Add reminder</button></div></div>${table(reminders.map((r, i) => `<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.time)}</td><td><button class="btn btn-secondary btn-xs" onclick="removeReminder(${i})">Remove</button></td></tr>`).join(''), ['Medicine', 'Time', 'Action'])}`; }
-  if (tool === 'messages') { const messages = localItems(`healthsync-${role}-messages`); return `<div class="card mb-3"><div class="card-body"><div id="message-history">${messages.map(m => `<p class="mb-2"><strong>${escapeHtml(m.from)}:</strong> ${escapeHtml(m.text)}</p>`).join('') || '<p class="text-muted">No messages yet.</p>'}</div><div class="form-row"><input id="message-text" class="form-control" placeholder="Write a message"><button class="btn btn-primary" onclick="sendPortalMessage('${role}')">Send</button></div></div></div>`; }
+  if (tool === 'reminders') {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Sort logic
+    const sorted = [...fetchedReminders].sort((a,b) => a.reminder_time.localeCompare(b.reminder_time));
+    
+    const todayHTML = sorted.map(r => {
+        let taken = [];
+        try { taken = JSON.parse(r.taken_dates || '[]'); } catch(e){}
+        const isTaken = taken.includes(todayStr);
+        return `<div class="card mb-2"><div class="card-body" style="display:flex; justify-content:space-between; align-items:center;">
+           <div>
+             <h5 style="margin:0; color:${isTaken ? '#94a3b8' : '#0f172a'}; text-decoration:${isTaken ? 'line-through' : 'none'}">${escapeHtml(r.medicine_name)} ${r.dosage ? '('+escapeHtml(r.dosage)+')' : ''}</h5>
+             <small class="text-muted"><i class="fa-regular fa-clock"></i> ${r.reminder_time} ${r.frequency ? '| '+escapeHtml(r.frequency) : ''}</small>
+           </div>
+           <div style="display:flex; gap:8px;">
+             ${!isTaken ? `<button class="btn btn-primary btn-sm" onclick="markMedicineTaken('${r.id}')"><i class="fa-solid fa-check"></i> Taken</button>` : `<span class="text-success"><i class="fa-solid fa-check-circle"></i></span>`}
+             <button class="btn btn-danger btn-sm" onclick="deleteMedicineReminder('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+           </div>
+        </div></div>`;
+    }).join('') || '<p class="text-muted">No medicines found.</p>';
+
+    return `<div class="container-fluid">
+       <h4 class="mb-3">Medicine Reminders</h4>
+       <div class="row">
+          <div class="col-md-7">
+             ${todayHTML}
+          </div>
+          <div class="col-md-5">
+             <div class="card"><div class="card-body">
+                <h5 class="mb-3">Add Medicine</h5>
+                <input id="new-med-name" class="form-control mb-2" placeholder="Medicine Name (e.g. Paracetamol)*">
+                <input id="new-med-dosage" class="form-control mb-2" placeholder="Dosage (e.g. 500mg)">
+                <input id="new-med-freq" class="form-control mb-2" placeholder="Frequency (e.g. Once daily)">
+                <div style="display:flex; gap:8px;" class="mb-2">
+                    <input id="new-med-start" type="date" class="form-control" title="Start Date">
+                    <input id="new-med-end" type="date" class="form-control" title="End Date">
+                </div>
+                <input id="new-med-time" type="time" class="form-control mb-3" title="Reminder Time*">
+                <button class="btn btn-primary w-100" onclick="addMedicineReminder()">Save Medicine</button>
+             </div></div>
+          </div>
+       </div>
+    </div>`;
+  }
+    if (tool === 'messages') { const messages = localItems(`healthsync-${role}-messages`); return `<div class="card mb-3"><div class="card-body"><div id="message-history">${messages.map(m => `<p class="mb-2"><strong>${escapeHtml(m.from)}:</strong> ${escapeHtml(m.text)}</p>`).join('') || '<p class="text-muted">No messages yet.</p>'}</div><div class="form-row"><input id="message-text" class="form-control" placeholder="Write a message"><button class="btn btn-primary" onclick="sendPortalMessage('${role}')">Send</button></div></div></div>`; }
   if (tool === 'settings') return `<div class="card"><div class="card-body"><div class="form-group mb-3"><label class="form-label">Preferred language</label><select id="setting-language" class="form-control"><option>English</option><option>Hindi</option><option>Marathi</option></select></div><button class="btn btn-primary" onclick="saveSettings()">Save settings</button> <button class="btn btn-secondary" onclick="logoutCurrentUser()">Log out</button></div></div>`;
   if (tool === 'help') return `<div class="card"><div class="card-body"><h4 class="mb-2">Need help?</h4><p class="text-muted mb-3">Use the support form and the care team will receive your request.</p><textarea id="support-message" class="form-control mb-3" placeholder="Describe your issue"></textarea><button class="btn btn-primary" onclick="submitSupport()">Send support request</button></div></div>`;
   if (tool === 'schedule') return table(todayAppointments.map(a => `<tr><td>${escapeHtml(a.slot_time)}</td><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.status)}</td><td><button class="btn btn-secondary btn-xs" onclick="startConsultation('${a.id}')">Open</button></td></tr>`).join(''), ['Time', 'Patient', 'Status', 'Action']);
@@ -670,7 +820,76 @@ function utilityContent(role, tool) {
   if (tool === 'reports') return `<div class="card"><div class="card-body"><p class="mb-3">Export the current appointment register for your records.</p><button class="btn btn-primary" onclick="exportAppointmentsCsv()"><i class="fa-solid fa-download"></i> Download CSV report</button></div></div>`;
   if (tool === 'patients') return table(todayAppointments.map(a => `<tr><td>${escapeHtml(a.patient_name)}</td><td>${escapeHtml(a.slot_time)}</td><td>${escapeHtml(a.status)}</td><td><button class="btn btn-secondary btn-xs" onclick="switchReceptionPage('appointments')">Open appointment</button></td></tr>`).join(''), ['Patient', 'Time', 'Status', 'Action']);
   if (tool === 'doctors') return table(allDoctors.map(d => `<tr><td>${escapeHtml(d.full_name)}</td><td>${escapeHtml(d.specialization)}</td><td>${d.available_today ? 'Available today' : 'Unavailable'}</td><td><button class="btn btn-secondary btn-xs" onclick="openBookAppointmentModalWithDoctor('${d.id}')">Book</button></td></tr>`).join(''), ['Doctor', 'Specialty', 'Availability', 'Action']);
-  if (tool === 'vaccinations') return reminderWorkspace('Vaccination', 'vaccine', 'healthsync-vaccinations');
+  if (tool === 'ambulance') {
+    // Standard ambulance booking UI
+    setTimeout(fetchAmbulanceRequests, 100);
+    return `<div class="container-fluid">
+       <h4 class="mb-3">Ambulance Services</h4>
+       <div class="row">
+          <div class="col-md-7">
+             <h5 class="mb-3">Active Requests</h5>
+             <div id="amb-requests-list">
+                <p class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>
+             </div>
+          </div>
+          <div class="col-md-5">
+             <div class="card"><div class="card-body">
+                <h5 class="mb-3">Request Ambulance</h5>
+                <input id="amb-pickup" class="form-control mb-2" placeholder="Pickup Location*">
+                <select id="amb-type" class="form-control mb-2">
+                   <option value="Basic Life Support">Basic Life Support (BLS)</option>
+                   <option value="Advanced Life Support">Advanced Life Support (ALS/ICU)</option>
+                   <option value="Patient Transport">Patient Transport (Non-Emergency)</option>
+                </select>
+                <input id="amb-contact" class="form-control mb-3" placeholder="Contact Number*">
+                <button class="btn btn-primary w-100" onclick="submitAmbulanceRequest()">Submit Request</button>
+             </div></div>
+          </div>
+       </div>
+    </div>`;
+  }
+  if (tool === 'vaccinations') {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Sort logic
+    const sorted = [...fetchedVaccinations].sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    const vacHTML = sorted.map(r => {
+        const isUpcoming = r.next_due_date && r.next_due_date >= todayStr;
+        return `<div class="card mb-2"><div class="card-body" style="display:flex; justify-content:space-between; align-items:center; border-left: 4px solid ${isUpcoming ? '#eab308' : '#10b981'};">
+           <div>
+             <h5 style="margin:0; color:#0f172a;">${escapeHtml(r.vaccine_name)} ${r.dose ? '(Dose: '+escapeHtml(r.dose)+')' : ''}</h5>
+             <small class="text-muted"><i class="fa-regular fa-calendar"></i> Given: ${escapeHtml(r.date)} | Clinic: ${escapeHtml(r.clinic || 'N/A')}</small>
+             ${r.next_due_date ? `<div style="font-size:12px; color:${isUpcoming ? '#b45309' : '#64748b'}; margin-top:4px;"><i class="fa-solid fa-clock-rotate-left"></i> Next Due: ${r.next_due_date}</div>` : ''}
+           </div>
+           <div>
+             <button class="btn btn-danger btn-sm" onclick="deleteVaccination('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+           </div>
+        </div></div>`;
+    }).join('') || '<p class="text-muted">No vaccinations found.</p>';
+
+    return `<div class="container-fluid">
+       <h4 class="mb-3">Vaccinations</h4>
+       <div class="row">
+          <div class="col-md-7">
+             ${vacHTML}
+          </div>
+          <div class="col-md-5">
+             <div class="card"><div class="card-body">
+                <h5 class="mb-3">Add Vaccine</h5>
+                <input id="new-vac-name" class="form-control mb-2" placeholder="Vaccine Name (e.g. COVID-19)*">
+                <input id="new-vac-dose" class="form-control mb-2" placeholder="Dose (e.g. 1st Dose)">
+                <input id="new-vac-clinic" class="form-control mb-2" placeholder="Clinic/Hospital">
+                <label class="text-xs text-muted mb-0">Date Given*</label>
+                <input id="new-vac-date" type="date" class="form-control mb-2" title="Date Given*">
+                <label class="text-xs text-muted mb-0">Next Due Date (Optional)</label>
+                <input id="new-vac-next" type="date" class="form-control mb-3" title="Next Due Date">
+                <button class="btn btn-primary w-100" onclick="addVaccination()">Save Vaccine</button>
+             </div></div>
+          </div>
+       </div>
+    </div>`;
+  }
   if (tool === 'family') return familyWorkspace();
   if (tool === 'voice-search') return `<div class="card"><div class="card-body"><p class="mb-3">Speak in English, Hindi, or Marathi to find doctors and specialties.</p><button class="btn btn-primary" onclick="startVoiceDoctorSearch()"><i class="fa-solid fa-microphone"></i> Start voice search</button><p id="voice-search-result" class="auth-message mt-3" aria-live="polite"></p></div></div>`;
   if (tool === 'availability') return `<div class="card"><div class="card-body"><p class="mb-3">Check a doctor's consultation calendar before booking.</p><button class="btn btn-primary" onclick="showAvailability()">Load availability</button><div id="availability-results" class="mt-3"></div></div></div>`;
@@ -1140,12 +1359,11 @@ window.startSOSCountdown = function () {
   }, 100);
 
   sosTimer = setTimeout(() => {
-    clearInterval(sosProgressInterval);
-    textEl.textContent = 'Dispatched';
-    progressEl.style.width = '100%';
-    progressEl.style.background = '#16a34a';
-    window.showEmergencyHelp();
-  }, 3000);
+        clearInterval(sosProgressInterval);
+        textEl.textContent = 'Triggering';
+        progressEl.style.width = '100%';
+        window.showEmergencyHelp();
+      }, 3000);
 };
 
 window.cancelSOSCountdown = function () {
@@ -1181,20 +1399,46 @@ window.showEmergencyHelp = function () {
 };
 
 async function triggerEmergencySOS(lat, lng) {
-  if (typeof appSocket !== 'undefined' && appSocket && appSocket.connected) {
-    appSocket.emit('sos_trigger', {
-      patientId: currentUser?.patientId || 'pat1',
-      patientName: currentUser?.name || 'Emergency Patient',
-      phone: currentUser?.mobile || '9999999999',
-      lat: lat,
-      lng: lng,
-      address: 'Current Location'
-    });
-    showToast('Emergency SOS triggered! Waiting for hospital response...', 'success');
-  } else {
-    showToast('Cannot connect to emergency services. Please call an ambulance directly.', 'error');
+    if (typeof appSocket !== 'undefined' && appSocket && appSocket.connected) {
+      appSocket.emit('sos_trigger', {
+        patientId: currentUser?.patientId || 'pat1',
+        patientName: currentUser?.name || 'Emergency Patient',
+        phone: currentUser?.mobile || '9999999999',
+        lat: lat,
+        lng: lng,
+        address: 'Current Location'
+      });
+      showToast('Emergency SOS triggered!', 'success');
+      showSOSActiveModal();
+    } else {
+      showToast('Cannot connect to emergency services. Please call an ambulance directly.', 'error');
+    }
   }
-}
+  
+  function showSOSActiveModal() {
+      let m = document.getElementById('sos-active-modal');
+      if (!m) {
+          m = document.createElement('div');
+          m.id = 'sos-active-modal';
+          m.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+          document.body.appendChild(m);
+      }
+      m.innerHTML = `<div class="card" style="width:100%;max-width:400px;">
+        <div class="card-body text-center" style="padding: 30px 20px;">
+          <div class="mb-3">
+             <i class="fa-solid fa-truck-medical fa-beat" style="font-size:40px;color:#ef4444;"></i>
+          </div>
+          <h3 class="mb-2 text-danger">Emergency SOS Active</h3>
+          <p class="text-muted mb-4" id="sos-modal-status">Pending: Waiting for nearby hospital to assign an ambulance...</p>
+          <div id="sos-modal-driver-info" class="mb-4" style="display:none; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+             <h5 class="mb-1" style="color:#0f172a; font-weight:600;"><i class="fa-solid fa-user"></i> <span id="sos-driver-name"></span></h5>
+             <div class="text-muted mb-2"><i class="fa-solid fa-truck"></i> <span id="sos-driver-vehicle"></span></div>
+             <a id="sos-driver-call" href="#" class="btn btn-success btn-sm w-100"><i class="fa-solid fa-phone"></i> Call Driver</a>
+          </div>
+          <button class="btn btn-outline w-100" onclick="document.getElementById('sos-active-modal').remove()">Close Window</button>
+        </div>
+      </div>`;
+  }
 
 
 // ---------------------------------------------------------------------------
@@ -1578,7 +1822,17 @@ function renderRecordsList(type) {
     return;
   }
 
-  const filtered = patientRecords.filter(r => r.type === type);
+  
+        // Map UI subtabs to database types
+        let dbType = 'Documents';
+        if (type === 'documents') dbType = 'Documents';
+        else if (type === 'lab-reports') dbType = 'Lab Report';
+        else if (type === 'immunization') dbType = 'Immunization';
+        else if (type === 'prescriptions') dbType = 'Prescription';
+        else if (type === 'vitals') dbType = 'Vitals';
+        
+        const filtered = fetchedHealthRecords.filter(r => type === 'all' || r.type === dbType);
+    
   if (filtered.length === 0) {
     container.innerHTML = `<div class="empty-state"><div class="es-icon"><i class="fa-regular fa-folder-open"></i></div><div class="es-text">No health records yet.</div><div class="es-sub">Upload reports to see them here.</div></div>`;
     return;
@@ -1793,19 +2047,7 @@ window.selectBookingDate = async function (dateStr) {
     document.getElementById('btn-booking-next').disabled = false;
   };
 
-  window.selectBookingTime = function (timeStr) {
-  bookingTime = timeStr;
-  document.querySelectorAll('.time-slot-btn').forEach(el => {
-    el.style.background = 'transparent';
-    el.style.color = 'var(--blue-primary)';
-  });
-  const selectedEl = document.getElementById(`time-slot-${timeStr.replace(/[: ]/g, '-')}`);
-  if (selectedEl) {
-    selectedEl.style.background = 'var(--blue-primary)';
-    selectedEl.style.color = '#fff';
-  }
-  document.getElementById('btn-booking-next').disabled = false;
-};
+  ;
 
 window.bookingNextStep = function () {
   if (bookingStep === 1) {
@@ -2283,7 +2525,7 @@ let obMode = 'login';
 let obTimer = null;
 
 window.selectOnboardingLanguage = function(btn, lang) {
-  document.querySelectorAll('.language-choice').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   setTimeout(() => {
     goToStep('step-auth');
@@ -2329,129 +2571,64 @@ window.switchAuthTab = function(mode) {
 }
 
 window.handleAuthSubmit = async function(event) {
-  event.preventDefault();
-  const mobile = document.getElementById('ob-mobile').value.replace(/\D/g, '');
-  const countryCode = document.getElementById('ob-country-code')?.value || '+91';
-  
-  if (countryCode === '+91' && !/^[6-9]\d{9}$/.test(mobile)) {
-    if (typeof showToast === 'function') showToast('Enter a valid 10-digit Indian mobile number.', 'error');
-    else alert('Enter a valid 10-digit Indian mobile number.');
-    return;
-  }
-  if (!/^\d{7,15}$/.test(mobile)) {
-    if (typeof showToast === 'function') showToast('Enter a valid mobile number.', 'error');
-    else alert('Enter a valid mobile number.');
-    return;
-  }
-  
-  window.pendingMobile = mobile;
-  document.getElementById('display-otp-number').textContent = countryCode + ' ' + mobile;
-  
-  const btn = document.querySelector('#onboarding-auth-form button[type="submit"]');
-  const originalText = btn.innerHTML;
-  btn.innerHTML = 'Sending...';
-  btn.disabled = true;
-  
-  // API Call
-  try {
-    const data = await requestJson('/auth/login', { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ mobileNumber: window.pendingMobile }) 
-    });
+    event.preventDefault();
+    const mobileInput = document.getElementById('ob-mobile');
+    const mobile = mobileInput ? mobileInput.value.trim().replace(/\D/g, '') : '';
     
-    // Show dev OTP
-    if (data.otp) {
-      if (typeof showToast === 'function') showToast('Development OTP: ' + data.otp, 'info');
-      else alert('Development OTP: ' + data.otp);
+    if (!mobile || mobile.length < 5) {
+      if (typeof showToast === 'function') showToast('Please enter a valid mobile number.', 'error');
+      else alert('Please enter a valid mobile number.');
+      return;
     }
     
-    // Go to OTP step
-    goToStep('step-otp');
-    startObTimer();
+    const fullMobile = selectedCountry.code + mobile;
+    window.pendingMobile = fullMobile;
     
-    // Focus first box
-    setTimeout(() => {
-      const firstBox = document.querySelector('.otp-box');
-      if (firstBox) firstBox.focus();
-    }, 100);
-  } catch (error) {
-    if (typeof showToast === 'function') showToast(error.message || "Failed to send OTP", 'error');
-    else alert(error.message || "Failed to send OTP");
-  } finally {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-  }
-}
-
-window.moveToNext = function(input, event) {
-  if (input.value.length === 1) {
-    const next = input.nextElementSibling;
-    if (next) next.focus();
-  }
-  if (event.key === 'Backspace' && input.value.length === 0) {
-    const prev = input.previousElementSibling;
-    if (prev) {
-      prev.focus();
-      prev.value = '';
+    const displayEl = document.getElementById('display-otp-number');
+    if (displayEl) {
+      displayEl.innerHTML = `<span style="margin-right:8px">${selectedCountry.flag}</span> ${selectedCountry.code} ${mobile}`;
     }
-  }
-}
-
-window.handlePaste = function(e) {
-  e.preventDefault();
-  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-  if (!text) return;
-  const boxes = document.querySelectorAll('.otp-box');
-  for (let i = 0; i < boxes.length && i < text.length; i++) {
-    boxes[i].value = text[i];
-  }
-  if (text.length >= boxes.length) boxes[boxes.length - 1].focus();
-  else boxes[text.length].focus();
+    
+    const btn = document.querySelector('#onboarding-auth-form button[type="submit"]');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Sending OTP...';
+    }
+    
+    try {
+      const data = await requestJson('/auth/login', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ mobileNumber: window.pendingMobile }) 
+      });
+      
+      if (data.otp) {
+        const boxes = document.querySelectorAll('.otp-box');
+        if (boxes.length === 6 && data.otp.length === 6) {
+          for(let i=0; i<6; i++) {
+            boxes[i].value = data.otp[i];
+          }
+        }
+      }
+      
+      goToStep('step-otp');
+      startObTimer();
+      
+      setTimeout(() => {
+        document.querySelector('.otp-box')?.focus();
+      }, 100);
+      
+    } catch(e) {
+      if (typeof showToast === 'function') showToast(e.message || 'Failed to send OTP', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = obMode === 'register' ? 'Register and send OTP <i class="fa-regular fa-paper-plane ml-2"></i>' : 'Send OTP <i class="fa-regular fa-paper-plane ml-2"></i>';
+      }
+    }
 };
 
-window.startObTimer = function() {
-  let seconds = 45;
-  const display = document.getElementById('resend-timer');
-  clearInterval(obTimer);
-  
-  display.onclick = null;
-  display.classList.remove('cursor-pointer');
-  display.style.color = '#64748b'; // Gray out
-  display.textContent = 'Resend in 00:45';
-  
-  obTimer = setInterval(() => {
-    seconds--;
-    const secStr = seconds < 10 ? '0' + seconds : seconds;
-    display.textContent = 'Resend in 00:' + secStr;
-    
-    if (seconds <= 0) {
-      clearInterval(obTimer);
-      display.textContent = 'Resend now';
-      display.classList.add('cursor-pointer');
-      display.style.color = '#2563eb'; // Blue
-      display.onclick = async () => {
-         display.textContent = 'Sending...';
-         try {
-           const data = await requestJson('/auth/login', { 
-              method: 'POST', 
-              headers: { 'Content-Type': 'application/json' }, 
-              body: JSON.stringify({ mobileNumber: window.pendingMobile }) 
-           });
-           if (data.otp) {
-             if (typeof showToast === 'function') showToast('Development OTP: ' + data.otp, 'info');
-             else alert('Development OTP: ' + data.otp);
-           }
-           startObTimer(); // Restart timer
-         } catch (err) {
-           if (typeof showToast === 'function') showToast(err.message, 'error');
-           display.textContent = 'Resend now'; // Revert
-         }
-      };
-    }
-  }, 1000);
-}
-
+// Override handleOtpSubmit to include Verifying state and timeout
 window.handleOtpSubmit = async function() {
   const otpBoxes = document.querySelectorAll('.otp-box');
   let otpCode = '';
@@ -2482,7 +2659,8 @@ window.handleOtpSubmit = async function() {
     });
     
     window.currentUser = { ...data.user, token: data.token, refreshToken: data.refreshToken };
-    localStorage.setItem('healthsync-session', JSON.stringify({ user: window.currentUser, refreshToken: window.currentUser.refreshToken }));
+      if (typeof window.connectSocket === 'function') window.connectSocket();
+      localStorage.setItem('healthsync-session', JSON.stringify({ user: window.currentUser, refreshToken: window.currentUser.refreshToken }));
     
     if (obMode === 'register') {
       goToStep('step-profile');
@@ -2605,172 +2783,152 @@ window.filterCountries = function() {
 
 // Override handleAuthSubmit to include validation
 window.handleAuthSubmit = async function(event) {
-  event.preventDefault();
-  const mobileInput = document.getElementById('ob-mobile');
-  const mobile = mobileInput ? mobileInput.value.trim().replace(/\D/g, '') : '';
-  
-  if (!mobile || mobile.length < 5) {
-    if (typeof showToast === 'function') showToast('Please enter a valid mobile number.', 'error');
-    else alert('Please enter a valid mobile number.');
-    return;
-  }
-  
-  // Format based on country code
-  const fullMobile = mobile; // Backend currently assumes raw number. If we wanted, we'd prefix with selectedCountry.code
-  window.pendingMobile = fullMobile;
-  
-  // Update UI to show the number
-  const displayEl = document.getElementById('display-otp-number');
-  if (displayEl) {
-    displayEl.innerHTML = `<span style="margin-right:8px">${selectedCountry.flag}</span> ${selectedCountry.code} ${fullMobile}`;
-  }
-  
-  // Show sending state on button
-  const btn = document.querySelector('#onboarding-auth-form button[type="submit"]');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = 'Sending OTP...';
-  }
-  
-  try {
-    const data = await requestJson('/auth/login', { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ mobileNumber: window.pendingMobile }) 
-    });
+    event.preventDefault();
+    const mobileInput = document.getElementById('ob-mobile');
+    const mobile = mobileInput ? mobileInput.value.trim().replace(/\D/g, '') : '';
     
-    if (data.otp) {
-      // Auto-fill dev OTP
-      const boxes = document.querySelectorAll('.otp-box');
-      if (boxes.length === 6 && data.otp.length === 6) {
-        for(let i=0; i<6; i++) {
-          boxes[i].value = data.otp[i];
+    if (!mobile || mobile.length < 5) {
+      if (typeof showToast === 'function') showToast('Please enter a valid mobile number.', 'error');
+      else alert('Please enter a valid mobile number.');
+      return;
+    }
+    
+    const fullMobile = selectedCountry.code + mobile;
+    window.pendingMobile = fullMobile;
+    
+    const displayEl = document.getElementById('display-otp-number');
+    if (displayEl) {
+      displayEl.innerHTML = `<span style="margin-right:8px">${selectedCountry.flag}</span> ${selectedCountry.code} ${mobile}`;
+    }
+    
+    const btn = document.querySelector('#onboarding-auth-form button[type="submit"]');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Sending OTP...';
+    }
+    
+    try {
+      const data = await requestJson('/auth/login', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ mobileNumber: window.pendingMobile }) 
+      });
+      
+      if (data.otp) {
+        const boxes = document.querySelectorAll('.otp-box');
+        if (boxes.length === 6 && data.otp.length === 6) {
+          for(let i=0; i<6; i++) {
+            boxes[i].value = data.otp[i];
+          }
         }
       }
+      
+      goToStep('step-otp');
+      startObTimer();
+      
+      setTimeout(() => {
+        document.querySelector('.otp-box')?.focus();
+      }, 100);
+      
+    } catch(e) {
+      if (typeof showToast === 'function') showToast(e.message || 'Failed to send OTP', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = obMode === 'register' ? 'Register and send OTP <i class="fa-regular fa-paper-plane ml-2"></i>' : 'Send OTP <i class="fa-regular fa-paper-plane ml-2"></i>';
+      }
     }
-    
-    // Go to OTP step
-    goToStep('step-otp');
-    startObTimer();
-    
-    // Focus first box
-    setTimeout(() => {
-      document.querySelector('.otp-box')?.focus();
-    }, 100);
-    
-  } catch(e) {
-    if (typeof showToast === 'function') showToast(e.message || 'Failed to send OTP', 'error');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = obMode === 'register' ? 'Register and send OTP <i class="fa-regular fa-paper-plane ml-2"></i>' : 'Send OTP <i class="fa-regular fa-paper-plane ml-2"></i>';
-    }
-  }
 };
 
 // Override handleOtpSubmit to include Verifying state and timeout
 window.handleOtpSubmit = async function() {
-  const otpCode = Array.from(document.querySelectorAll('.otp-box')).map(b => b.value).join('');
+  const otpBoxes = document.querySelectorAll('.otp-box');
+  let otpCode = '';
+  otpBoxes.forEach(box => otpCode += box.value);
+  
   if (otpCode.length !== 6) {
-    if (typeof showToast === 'function') showToast('Please enter a valid 6-digit OTP.', 'error');
-    else alert('Please enter a valid 6-digit OTP.');
+    if (typeof showToast === 'function') showToast("Please enter 6-digit OTP", 'error');
+    else alert("Please enter 6-digit OTP");
     return;
   }
   
-  // Transition to explicitly verifying state
-  goToStep('step-verifying');
+  const btn = document.querySelector('#step-otp .btn-primary');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = 'Verifying...';
+  btn.disabled = true;
   
   try {
-    // Add Promise.race for explicit timeout (10 seconds)
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout. Unable to verify OTP.')), 10000));
-    const verifyPromise = requestJson('/auth/verify', { 
+    let registrationData = {};
+    if (obMode === 'register') {
+      const name = document.getElementById('ob-name').value.trim();
+      registrationData = { fullName: name, requestedRole: 'PATIENT' };
+    }
+    
+    const data = await requestJson('/auth/verify', { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ mobileNumber: window.pendingMobile, otpCode }) 
+      body: JSON.stringify({ mobileNumber: window.pendingMobile, otpCode, ...registrationData }) 
     });
     
-    const data = await Promise.race([verifyPromise, timeoutPromise]);
-    
     window.currentUser = { ...data.user, token: data.token, refreshToken: data.refreshToken };
-    localStorage.setItem('healthsync-session', JSON.stringify({ user: window.currentUser, refreshToken: window.currentUser.refreshToken }));
-    
-    // Auto-login via connect socket if required
-    if (typeof window.connectSocket === 'function') window.connectSocket();
+      if (typeof window.connectSocket === 'function') window.connectSocket();
+      localStorage.setItem('healthsync-session', JSON.stringify({ user: window.currentUser, refreshToken: window.currentUser.refreshToken }));
     
     if (obMode === 'register') {
       goToStep('step-profile');
     } else {
       finishOnboarding(); // Skip success screen for returning user
     }
-    
   } catch (error) {
-    goToStep('step-otp'); // Revert back to OTP on error
-    if (typeof showToast === 'function') showToast(error.message || "Invalid OTP. Please check the code and try again.", 'error');
-    else alert(error.message || "Invalid OTP. Please check the code and try again.");
-    
-    // Clear boxes on invalid
-    const boxes = document.querySelectorAll('.otp-box');
-    boxes.forEach(b => b.value = '');
-    if (boxes[0]) boxes[0].focus();
-  }
-};
-
-// Override profile submit to actually save data
-window.handleProfileSubmit = async function(event) {
-  event.preventDefault();
-  
-  const nameInput = document.getElementById('ob-name');
-  const emailInput = document.getElementById('ob-email');
-  const dobInput = document.getElementById('ob-dob');
-  const genderInput = document.querySelector('input[name="gender"]:checked');
-  
-  const name = nameInput ? nameInput.value.trim() : '';
-  const email = emailInput ? emailInput.value.trim() : '';
-  const dob = dobInput ? dobInput.value.trim() : '';
-  const gender = genderInput ? genderInput.value : '';
-  
-  if (!name && obMode === 'register') {
-     // Name might be entered in the previous step, fetch it
-     // Wait, there's no name input on profile screen? The mock showed full name on the register tab.
-  }
-  
-  const btn = document.querySelector('#step-profile button[type="submit"]');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = 'Creating Account...';
-  }
-  
-  try {
-    await requestJson('/auth/profile', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${window.currentUser ? window.currentUser.token : ''}`
-      },
-      body: JSON.stringify({ email, dateOfBirth: dob, gender })
-    });
-    
-    // Update local currentUser object
-    if (window.currentUser) {
-       window.currentUser.email = email;
-       window.currentUser.dob = dob;
-       window.currentUser.gender = gender;
-       localStorage.setItem('healthsync-session', JSON.stringify({ user: window.currentUser, refreshToken: window.currentUser.refreshToken }));
-    }
-    
-    goToStep('step-success');
-    
-  } catch(e) {
-    if (typeof showToast === 'function') showToast(e.message || 'Failed to save profile', 'error');
+    if (typeof showToast === 'function') showToast(error.message || "OTP Verification failed", 'error');
+    else alert(error.message || "OTP Verification failed");
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = 'Create Account';
-    }
+    btn.innerHTML = originalText;
+    btn.disabled = false;
   }
-};
+}
 
-// Initialize things on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-  renderCountryList(countries);
-});
+window.updateGenderSelection = function(radio) {
+  document.querySelectorAll('.gender-box').forEach(b => b.classList.remove('active'));
+  radio.closest('.gender-box').classList.add('active');
+}
+
+window.handleProfileSubmit = function(event) {
+  event.preventDefault();
+  // Move to success screen
+  goToStep('step-success');
+}
+
+window.finishOnboarding = async function() {
+  document.getElementById('onboarding-flow').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  
+  if (window.currentUser) {
+    const role = String(window.currentUser.role || 'PATIENT').toUpperCase();
+    window.switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient');
+    
+    // Set actual name
+    const dashNameEl = document.getElementById('patient-dashboard-name');
+    if (dashNameEl) {
+       dashNameEl.textContent = window.currentUser.name ? window.currentUser.name.split(' ')[0] : 'Patient';
+    }
+    
+    // Fetch actual profile and data
+    try {
+      if (typeof window.syncAllData === 'function') await window.syncAllData();
+    } catch(e) {}
+    
+    if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+    if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
+    if ((role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') && typeof window.fetchPendingEmergencies === 'function') {
+      window.fetchPendingEmergencies();
+    }
+    if (typeof window.connectSocket === 'function') window.connectSocket();
+  } else {
+    window.currentUser = { id: 'demo-patient', name: 'Demo Patient', role: 'PATIENT', demo: true };
+    window.switchGlobalRole('patient');
+    if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+  }
+}
+
+

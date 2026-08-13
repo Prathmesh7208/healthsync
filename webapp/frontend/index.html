@@ -363,7 +363,7 @@
   </section>
 <section id="demo-portal" class="demo-portal hidden" aria-live="polite"></section>
 
-  <div id="app">
+  <div id="app" class="hidden">
     <!-- ======================================= -->
     <!-- PATIENT ROLE VIEW PANEL                 -->
     <!-- ======================================= -->
@@ -511,30 +511,37 @@
                     <div class="icon-box-purple" style="background: #f3e8ff;"><i class="fa-solid fa-capsules" style="color: #9333ea;"></i></div>
                     <span class="text-dark" style="font-size: 16px; font-weight: 500;">Medicine Reminder</span>
                   </div>
-                  <a href="#" class="text-blue text-sm fw-bold" style="text-decoration: none;">View All</a>
+                  <a href="javascript:void(0)" onclick="switchPatientPage('appointments')" class="text-blue text-sm fw-bold" style="text-decoration: none;">View All</a>
                 </div>
                 
-                <div class="medicine-box mt-3">
-                  <div class="med-info">
-                    <div class="med-next fw-bold text-dark" style="font-size: 14px;">Next Dose in <span class="text-orange" style="color: #f59e0b;">1h 30m</span></div>
-                    <h4 class="fw-bold text-dark mt-2" style="font-size: 16px;">Amlodipine 5mg</h4>
-                    <div class="text-muted text-sm mt-1" style="font-size: 13px;">1 Tablet &bull; After Breakfast</div>
-                    <div class="text-blue fw-bold text-sm mt-3" style="color: #4f46e5;"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i> 08:00 AM</div>
-                  </div>
-                  <div class="med-icon-big">
-                    <div class="pill-illustration">
-                      <div style="background: #e0e7ff; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; position: relative;">
-                         <i class="fa-solid fa-pills" style="color: #f43f5e; font-size: 28px; transform: rotate(-30deg);"></i>
-                      </div>
-                    </div>
-                  </div>
+                <div class="row mt-3">
+    <div class="col-6">
+      <div class="hs-stat-card" style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; text-align: center;">
+         <div id="patient-dashboard-medicines">
+            <div class="hs-stat-val text-muted"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            <p class="hs-stat-sub">Loading medicines...</p>
+         </div>
+         <button class="btn btn-outline btn-sm w-100 mt-2" onclick="openPortalTool('patient', 'reminders')">Manage</button>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="hs-stat-card" style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; text-align: center;">
+         <div id="patient-dashboard-vaccines">
+            <div class="hs-stat-val text-muted"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            <p class="hs-stat-sub">Loading vaccines...</p>
+         </div>
+         <button class="btn btn-outline btn-sm w-100 mt-2" onclick="openPortalTool('patient', 'vaccinations')">Manage</button>
+      </div>
+    </div>
+  </div>
+  </div></div>
                   <button class="btn btn-primary med-btn" style="border-radius: 8px; padding: 0 24px; font-weight: 600;">Mark as Taken</button>
                 </div>
               </div>
             </div>
 
               <!-- 3. Patient Doctors Page -->
-          <div id="patient-page-doctors" class="page" style="max-width: 1200px; margin: 0 auto;">
+          <div id="patient-page-doctors" class="page" class="container-fluid" style="padding-top: 16px;">
             <!-- Search Header Area -->
             <div class="jd-search-header mb-4" style="position: relative;">
               <div class="search-box" style="display: flex; align-items: center; background: white; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: 100%;">
@@ -567,7 +574,7 @@
             <!-- Summary Cards -->
             <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
               <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px;">Vaccination Summary</h3>
-              <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+              <div class="row g-3">
                 <div style="background-color: #22c55e; color: white; border-radius: 12px; padding: 16px; display: flex; flex-direction: column;">
                   <span style="font-size: 14px; opacity: 0.9;">Completed</span>
                   <span style="font-size: 28px; font-weight: 700; line-height: 1.2; margin: 4px 0;">6</span>
@@ -587,9 +594,9 @@
             </div>
 
             <!-- Main Layout (Left: Tables, Right: Filters/Search) -->
-            <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px;">
+            <div class="row g-4 mb-4">
               <!-- Left Column: Tables -->
-              <div style="flex: 1; min-width: 60%; display: flex; flex-direction: column; gap: 24px;">
+              <div class="col-lg-8 d-flex flex-column gap-4">
                 
                 <!-- Upcoming Vaccinations Table -->
                 <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
@@ -873,7 +880,7 @@
                   <!-- List item template injected via JS -->
                 </div>
                 <div style="padding: 16px; text-align: center; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 0 0 12px 12px;">
-                  <a href="#" style="color: #4f46e5; font-size: 13px; font-weight: 600;" onclick="switchDoctorPage('patients')">View All</a>
+                  <a href="javascript:void(0)" style="color: #4f46e5; font-size: 13px; font-weight: 600;" onclick="switchDoctorPage('patients')">View All</a>
                 </div>
               </div>
 
@@ -895,7 +902,7 @@
                   </div>
                   
                   <div style="text-align: right; margin-bottom: 24px;">
-                    <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchDoctorPage('patients')">View Full Profile</a>
+                    <a href="javascript:void(0)" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchDoctorPage('patients')">View Full Profile</a>
                   </div>
 
                   <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 20px;">
@@ -1256,7 +1263,7 @@
               <div class="card" style="border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
                 <div class="card-header" style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                   <span class="card-title" style="font-size: 16px; font-weight: 700;">Recent Appointments</span>
-                  <a href="#" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchReceptionPage('appointments')">View All</a>
+                  <a href="javascript:void(0)" style="font-size: 12px; color: #4f46e5; font-weight: 600;" onclick="switchReceptionPage('appointments')">View All</a>
                 </div>
                 <div class="card-body table-wrap" style="padding: 0;">
                   <table class="hs-table" id="rec-schedule-appointments-table" style="width: 100%; border-collapse: collapse;">
@@ -1771,7 +1778,7 @@
   <!-- ───────────────── MODALS ───────────────── -->
 
   <!-- Appointment Details Modal -->
-  <div id="modal-appointment-details" class="modal">
+  <div id="modal-appointment-details" class="modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
     <div class="modal-content" style="max-width: 450px;">
       <span class="close" onclick="closeModal('modal-appointment-details')">&times;</span>
       <h3 style="margin-top:0; font-size: 18px; color: #1e293b;">Appointment Details</h3>
@@ -1785,7 +1792,7 @@
   </div>
 
   <!-- Doctor Appointment Action Modal -->
-  <div id="modal-doctor-appointment" class="modal">
+  <div id="modal-doctor-appointment" class="modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
     <div class="modal-content" style="max-width: 450px;">
       <span class="close" onclick="closeModal('modal-doctor-appointment')">&times;</span>
       <h3 style="margin-top:0; font-size: 18px; color: #1e293b;">Manage Consultation</h3>
@@ -1806,7 +1813,7 @@
   <script src="js/socket.js"></script>
   <script src="js/patient.js"></script>
   <script src="js/doctor.js"></script>
-  <script src="js/main.js?v=1786462170217"></script>
+  <script src="js/main.js?v=1786616333703"></script>
   <script src="demo.js"></script>
   <!-- 4. Add Vaccination Modal -->
   <div id="modal-add-vaccination" class="modal-backdrop">
@@ -1815,7 +1822,7 @@
         <h3>Add Vaccination Record</h3>
         <button class="modal-close" onclick="closeAllModals()">&times;</button>
       </div>
-      <form id="form-add-vaccination" style="margin: 0; padding: 0;">
+      <form id="form-add-vaccination" style="margin: 0; padding: 0;" onsubmit="handleVaccinationSubmit(event)">
         <div class="modal-body">
           <div class="form-group mb-3">
             <label class="form-label">Vaccine Name *</label>
@@ -1857,5 +1864,24 @@
       </form>
     </div>
   </div>
+
+  <!-- Notifications Modal -->
+  <div id="modal-notifications" class="modal-overlay hidden" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;" onclick="if(event.target===this) closeModal('modal-notifications')">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Notifications</h3>
+        <div>
+          <button class="btn btn-outline btn-sm" style="margin-right:8px;" onclick="clearNotifications()">Clear All</button>
+          <button class="close-modal" onclick="closeModal('modal-notifications')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto; padding: 0;">
+        <div id="notification-list">
+           <div class="text-center p-4 text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -32,12 +32,44 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 db.serialize(() => {
   db.run('PRAGMA foreign_keys = ON');
 
+const originalDbRun = db.run.bind(db);
+db.run = function(sql, params, callback) {
+  if (typeof params === 'function') { callback = params; params = []; }
+  return originalDbRun(sql, params, function(err) {
+    if (err) console.error('[DB RUN ERROR]', err.message, sql);
+    if (callback) callback.call(this, err);
+  });
+};
+const originalDbGet = db.get.bind(db);
+db.get = function(sql, params, callback) {
+  if (typeof params === 'function') { callback = params; params = []; }
+  return originalDbGet(sql, params, function(err, row) {
+    if (err) console.error('[DB GET ERROR]', err.message, sql);
+    if (callback) callback.call(this, err, row);
+  });
+};
+const originalDbAll = db.all.bind(db);
+db.all = function(sql, params, callback) {
+  if (typeof params === 'function') { callback = params; params = []; }
+  return originalDbAll(sql, params, function(err, rows) {
+    if (err) console.error('[DB ALL ERROR]', err.message, sql);
+    if (callback) callback.call(this, err, rows);
+  });
+};
+
+
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     mobile_number TEXT UNIQUE NOT NULL,
     role TEXT NOT NULL DEFAULT 'PATIENT',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  
+  // Alter patients to add missing fields
+  db.run("ALTER TABLE patients ADD COLUMN email TEXT;", () => {});
+  db.run("ALTER TABLE patients ADD COLUMN phone TEXT;", () => {});
+  db.run("ALTER TABLE patients ADD COLUMN photo_data_url TEXT;", () => {});
 
   db.run(`CREATE TABLE IF NOT EXISTS patients (
     id TEXT PRIMARY KEY,
@@ -180,7 +212,18 @@ db.serialize(() => {
     id TEXT PRIMARY KEY, patient_id TEXT NOT NULL, heart_rate TEXT, blood_pressure TEXT,
     weight_kg REAL, blood_sugar TEXT, recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-  db.run(`CREATE TABLE IF NOT EXISTS medicine_reminders (
+  
+  db.run("ALTER TABLE medicine_reminders ADD COLUMN frequency TEXT", (err) => {});
+  db.run("ALTER TABLE medicine_reminders ADD COLUMN start_date TEXT", (err) => {});
+  db.run("ALTER TABLE medicine_reminders ADD COLUMN end_date TEXT", (err) => {});
+  db.run("ALTER TABLE medicine_reminders ADD COLUMN taken_dates TEXT DEFAULT '[]'", (err) => {});
+
+  db.run(`CREATE TABLE IF NOT EXISTS vaccinations (
+    id TEXT PRIMARY KEY, patient_id TEXT NOT NULL, vaccine_name TEXT NOT NULL,
+    dose TEXT, date TEXT NOT NULL, clinic TEXT, next_due_date TEXT
+  )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS medicine_reminders (
     id TEXT PRIMARY KEY, patient_id TEXT NOT NULL, medicine_name TEXT NOT NULL,
     dosage TEXT, reminder_time TEXT NOT NULL, repeat_rule TEXT NOT NULL DEFAULT 'DAILY',
     start_date TEXT, end_date TEXT, is_active INTEGER NOT NULL DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -199,7 +242,18 @@ db.serialize(() => {
     document_type TEXT NOT NULL, file_name TEXT NOT NULL, storage_path TEXT, notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-  db.run(`CREATE TABLE IF NOT EXISTS medical_records (
+  
+  // Attempt to add file columns to medical_records if they don't exist
+  db.run("ALTER TABLE medical_records ADD COLUMN file_data TEXT", (err) => {
+    if (err && err.message.includes('duplicate column')) { /* ignore */ }
+    else if (err) console.error('[DB RUN ERROR]', err.message);
+  });
+  db.run("ALTER TABLE medical_records ADD COLUMN file_name TEXT", (err) => {
+    if (err && err.message.includes('duplicate column')) { /* ignore */ }
+    else if (err) console.error('[DB RUN ERROR]', err.message);
+  });
+
+    db.run(`CREATE TABLE IF NOT EXISTS medical_records (
     id TEXT PRIMARY KEY, patient_id TEXT NOT NULL, title TEXT NOT NULL, description TEXT,
     date TEXT NOT NULL, doctor_name TEXT, type TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`, () => {
@@ -226,6 +280,13 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY, actor_user_id TEXT, action TEXT NOT NULL, entity_type TEXT NOT NULL,
     entity_id TEXT, metadata_json TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  
+  db.run(`CREATE TABLE IF NOT EXISTS ambulance_requests (
+    id TEXT PRIMARY KEY, patient_id TEXT NOT NULL, pickup_location TEXT,
+    emergency_type TEXT, contact_number TEXT, status TEXT DEFAULT 'Pending',
+    driver_id TEXT, estimated_arrival TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS emergency_cases (
@@ -336,7 +397,7 @@ db.serialize(() => {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const crypto = require('crypto');
-const JWT_SECRET = 'healthsync-super-secret-key-1234';
+const JWT_SECRET = process.env.JWT_SECRET || 'healthsync-super-secret-key-1234';
 
 // Dependency-free HS256 JWT Utility
 function jwtSign(payload, expiresInSeconds = 3600) {
@@ -465,7 +526,7 @@ const server = http.createServer(async (req, res) => {
   const pathname = url.pathname;
 
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
@@ -875,6 +936,36 @@ function apiRouter(req, res, pathname, url, body) {
     return;
   }
 
+  if (pathname === '/v1/records' && method === 'POST') {
+    if (!req.user || req.user.role !== 'PATIENT') {
+      return json(res, 403, { success: false, message: 'Forbidden' });
+    }
+    const recId = 'rec-' + uid();
+    const { title, description, doctor_name, type, file_data, file_name, date } = body;
+    db.run(
+      'INSERT INTO medical_records (id, patient_id, title, description, date, doctor_name, type, file_data, file_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [recId, req.user.userId, title || 'Document', description || '', date || new Date().toISOString().split('T')[0], doctor_name || 'Self', type || 'Documents', file_data || null, file_name || 'document.pdf'],
+      (err) => {
+        if (err) return json(res, 500, { success: false, message: 'DB Error' });
+        json(res, 201, { success: true, recordId: recId });
+      }
+    );
+    return;
+  }
+
+  if (pathname.startsWith('/v1/records/') && method === 'DELETE') {
+    if (!req.user || req.user.role !== 'PATIENT') {
+      return json(res, 403, { success: false, message: 'Forbidden' });
+    }
+    const recId = pathname.split('/')[3];
+    db.run('DELETE FROM medical_records WHERE id = ? AND patient_id = ?', [recId, req.user.userId], function(err) {
+      if (err) return json(res, 500, { success: false, message: 'DB Error' });
+      json(res, 200, { success: true, message: 'Deleted successfully' });
+    });
+    return;
+  }
+
+
   if (pathname.startsWith('/v1/appointments/') && pathname.endsWith('/cancel') && method === 'PUT') {
     const parts = pathname.split('/');
     const apptId = parts[3];
@@ -964,10 +1055,16 @@ function apiRouter(req, res, pathname, url, body) {
                  (id, appointment_id, token_number, patient_id, patient_name, doctor_id, status, checkin_time)
                VALUES (?, ?, ?, ?, ?, ?, 'Waiting', ?)`,
               [qId, apptId, token, patId, patName, docId, time],
-              () => json(res, 201, {
-                success: true,
-                appointment: { id: apptId, token, doctorName: docName, date, time, status: 'CONFIRMED', clinicName: clinic, patientType: patType }
-              })
+              () => {
+                const notifId = 'notif-' + uid();
+                const msg = `Appointment confirmed with ${docName} on ${date} at ${time}.`;
+                db.run('INSERT INTO notifications (id, user_id, message, status) VALUES (?, ?, ?, ?)', [notifId, patId, msg, 'UNREAD']);
+                
+                json(res, 201, {
+                  success: true,
+                  appointment: { id: apptId, token, doctorName: docName, date, time, status: 'CONFIRMED', clinicName: clinic, patientType: patType }
+                });
+              }
             );
           }
         );
@@ -1314,16 +1411,26 @@ function apiRouter(req, res, pathname, url, body) {
 
   if (pathname.startsWith('/v1/patients/') && pathname.endsWith('/profile') && method === 'GET') {
     const patientId = pathname.split('/')[3];
-    return db.get('SELECT p.*, c.address, c.city, c.emergency_contact_name, c.emergency_contact_phone, m.allergies, m.chronic_conditions FROM patients p LEFT JOIN patient_contacts c ON c.patient_id=p.id LEFT JOIN patient_medical_profiles m ON m.patient_id=p.id WHERE p.id=?', [patientId],
-      (err, profile) => json(res, profile ? 200 : 404, { success:!!profile, profile }));
+    return db.get('SELECT p.*, c.address, c.city, c.emergency_contact_name, c.emergency_contact_phone, m.allergies, m.chronic_conditions FROM patients p LEFT JOIN patient_contacts c ON c.patient_id=p.id LEFT JOIN patient_medical_profiles m ON m.patient_id=p.id WHERE p.id=?', [patientId], (err, row) => {
+      json(res, 200, { success: true, profile: row });
+    });
   }
+  
   if (pathname.startsWith('/v1/patients/') && pathname.endsWith('/profile') && method === 'PUT') {
     const patientId = pathname.split('/')[3];
-    db.run('UPDATE patients SET full_name=?, gender=?, date_of_birth=?, blood_group=? WHERE id=?', [body.fullName || '', body.gender || '', body.dateOfBirth || '', body.bloodGroup || '', patientId]);
-    db.run('INSERT INTO patient_contacts (id,patient_id,address,city,emergency_contact_name,emergency_contact_phone,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(patient_id) DO UPDATE SET address=excluded.address, city=excluded.city, emergency_contact_name=excluded.emergency_contact_name, emergency_contact_phone=excluded.emergency_contact_phone, updated_at=CURRENT_TIMESTAMP',
-      ['contact-' + uid(), patientId, body.address || '', body.city || '', body.emergencyContactName || '', body.emergencyContactPhone || '']);
-    db.run('INSERT INTO patient_medical_profiles (patient_id,allergies,chronic_conditions,updated_at) VALUES (?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(patient_id) DO UPDATE SET allergies=excluded.allergies, chronic_conditions=excluded.chronic_conditions, updated_at=CURRENT_TIMESTAMP',
-      [patientId, body.allergies || '', body.chronicConditions || ''], () => { audit(body.userId, 'UPDATE_PROFILE', 'patient', patientId); json(res, 200, { success:true }); });
+    db.run('UPDATE patients SET full_name=?, gender=?, date_of_birth=?, blood_group=?, email=?, phone=?, photo_data_url=? WHERE id=?', 
+      [body.fullName || '', body.gender || '', body.dateOfBirth || '', body.bloodGroup || '', body.email || '', body.phone || '', body.photoDataUrl || null, patientId], (err) => {
+      if (err) console.error(err);
+      db.run('INSERT INTO patient_contacts (id,patient_id,address,city,emergency_contact_name,emergency_contact_phone,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(patient_id) DO UPDATE SET address=excluded.address, city=excluded.city, emergency_contact_name=excluded.emergency_contact_name, emergency_contact_phone=excluded.emergency_contact_phone, updated_at=CURRENT_TIMESTAMP',
+        ['contact-' + uid(), patientId, body.address || '', body.city || '', body.emergencyContactName || '', body.emergencyContactPhone || ''], (err2) => {
+          if (err2) console.error(err2);
+          db.run('INSERT INTO patient_medical_profiles (patient_id,allergies,chronic_conditions,updated_at) VALUES (?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(patient_id) DO UPDATE SET allergies=excluded.allergies, chronic_conditions=excluded.chronic_conditions, updated_at=CURRENT_TIMESTAMP',
+            [patientId, body.allergies || '', body.chronicConditions || ''], () => { 
+                audit(body.userId, 'UPDATE_PROFILE', 'patient', patientId); 
+                json(res, 200, { success:true }); 
+            });
+      });
+    });
     return;
   }
 
@@ -1367,7 +1474,38 @@ function apiRouter(req, res, pathname, url, body) {
   }
 
   // ── 404 ─────────────────────────────────────────────────────────────────
-  json(res, 404, { error:'Endpoint not found', path:pathname });
+  
+  // --- VACCINATIONS ---
+  if (pathname === '/v1/vaccinations' && method === 'GET') {
+    return db.all('SELECT * FROM vaccinations WHERE patient_id=? ORDER BY date DESC', [req.user.userId], (err, rows) => {
+      json(res, 200, { success: true, vaccinations: rows || [] });
+    });
+  }
+  if (pathname === '/v1/vaccinations' && method === 'POST') {
+    if (!body.vaccineName || !body.date) return json(res, 400, { success: false, message: 'vaccineName and date required' });
+    const id = 'vac-' + Date.now();
+    return db.run('INSERT INTO vaccinations (id, patient_id, vaccine_name, dose, date, clinic, next_due_date) VALUES (?,?,?,?,?,?,?)',
+      [id, req.user.userId, body.vaccineName, body.dose || '', body.date, body.clinic || '', body.nextDueDate || ''],
+      () => json(res, 201, { success: true, vaccination: { id } })
+    );
+  }
+
+  // --- AMBULANCE REQUESTS ---
+  if (pathname === '/v1/ambulance-requests' && method === 'GET') {
+    return db.all('SELECT * FROM ambulance_requests WHERE patient_id=? ORDER BY created_at DESC', [req.user.userId], (err, rows) => {
+      json(res, 200, { success: true, requests: rows || [] });
+    });
+  }
+  if (pathname === '/v1/ambulance-requests' && method === 'POST') {
+    if (!body.location || !body.type) return json(res, 400, { success: false, message: 'location and type required' });
+    const id = 'amb-req-' + Date.now();
+    return db.run('INSERT INTO ambulance_requests (id, patient_id, pickup_location, emergency_type, contact_number) VALUES (?,?,?,?,?)',
+      [id, req.user.userId, body.location, body.type, body.contactNumber || ''],
+      () => json(res, 201, { success: true, request: { id } })
+    );
+  }
+
+    console.log('404ing:', method, pathname); json(res, 404, { error:'Endpoint not found', path:pathname });
 }
 
 // ─── Start ───────────────────────────────────────────────────────────────────
@@ -1446,16 +1584,22 @@ io.on('connection', (socket) => {
 
   socket.on('dispatch_ambulance', (data) => {
     const { caseId, hospitalId } = data;
-    db.run(`UPDATE emergency_cases SET status = 'Ambulance Dispatched', hospital_id = ? WHERE id = ?`, [hospitalId, caseId], () => {
-      db.get('SELECT * FROM emergency_cases WHERE id = ?', [caseId], (err, caseData) => {
-        io.to('AMBULANCE').emit('ambulance_dispatched', caseData);
-        // Notify patient
-        io.to(caseData.patient_id).emit('sos_status_update', { caseId, status: 'Ambulance Dispatched' });
-        // Update receptionist
-        io.to('RECEPTIONIST').emit('sos_status_update', { caseId, status: 'Ambulance Dispatched' });
-      });
+    // For demo purposes, we randomly assign a seed driver if one isn't specified
+    db.get('SELECT * FROM ambulance_drivers LIMIT 1', (err, driver) => {
+       const driverInfo = driver || { full_name: 'Unknown Driver', vehicle_number: 'Unknown Vehicle' };
+       
+       db.run(`UPDATE emergency_cases SET status = 'Ambulance Dispatched', hospital_id = ? WHERE id = ?`, [hospitalId, caseId], () => {
+         db.get('SELECT * FROM emergency_cases WHERE id = ?', [caseId], (err, caseData) => {
+           if (!caseData) return;
+           const payload = { ...caseData, driver_name: driverInfo.full_name, vehicle_number: driverInfo.vehicle_number };
+           io.to('AMBULANCE').emit('ambulance_dispatched', payload);
+           io.to(caseData.patient_id).emit('sos_status_update', { caseId, status: 'Ambulance Dispatched', driver: driverInfo });
+           io.to('RECEPTIONIST').emit('sos_status_update', { caseId, status: 'Ambulance Dispatched' });
+         });
+       });
     });
   });
+
 
   socket.on('resolve_emergency', (data) => {
     const { caseId } = data;
