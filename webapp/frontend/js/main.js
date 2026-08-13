@@ -244,15 +244,19 @@ function finishLogin() {
 }
 function panelForCurrentUser() { const role = String(currentUser?.role || '').toUpperCase(); return role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient'; }
 window.toggleProfileMenu = function (role) {
-  const menu = document.getElementById('profile-menu');
-  if (!menu) return;
-  if (!menu.classList.contains('hidden') && menu.dataset.role === role) { menu.classList.add('hidden'); return; }
-  const fallback = role === 'doctor' ? 'Dr. Priya Sharma' : role === 'reception' ? 'Receptionist Desk' : 'Patient';
-  const name = role === panelForCurrentUser() ? (currentUser?.name || fallback) : fallback;
-  const title = role === 'doctor' ? 'Doctor account' : role === 'reception' ? 'Reception desk' : 'Patient account';
-  menu.dataset.role = role;
-  menu.innerHTML = `<div class="profile-menu-name">${escapeHtml(name)}</div><div class="profile-menu-role">${title}</div><button type="button" role="menuitem" onclick="openProfileSettings('${role}')"><i class="fa-solid fa-gear"></i> Account settings</button><button type="button" class="profile-logout" role="menuitem" onclick="logoutCurrentUser()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>`;
-  menu.classList.remove('hidden');
+    const menu = document.getElementById('profile-menu');
+    if (!menu) return;
+    if (!menu.classList.contains('hidden') && menu.dataset.role === role) { menu.classList.add('hidden'); return; }
+    const fallback = role === 'doctor' ? 'Dr. Priya Sharma' : role === 'reception' ? 'Receptionist Desk' : 'Patient';
+    const name = role === panelForCurrentUser() ? (currentUser?.name || fallback) : fallback;
+    const title = role === 'doctor' ? 'Doctor account' : role === 'reception' ? 'Reception desk' : 'Patient account';
+    menu.dataset.role = role;
+    menu.innerHTML = `<div class="profile-menu-name">${escapeHtml(name)}</div><div class="profile-menu-role">${title}</div>
+      ${role === 'patient' ? `<button type="button" role="menuitem" onclick="switchPatientPage('dashboard'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-solid fa-user"></i> Profile</button>
+      <button type="button" role="menuitem" onclick="switchPatientPage('appointments'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-solid fa-calendar"></i> My Appointments</button>` : ''}
+      <button type="button" role="menuitem" onclick="openProfileSettings('${role}')"><i class="fa-solid fa-gear"></i> Account settings</button>
+      <button type="button" class="profile-logout" role="menuitem" onclick="logoutCurrentUser()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>`;
+    menu.classList.remove('hidden');
 };
 window.openProfileSettings = function (role) { document.getElementById('profile-menu')?.classList.add('hidden'); if (role === panelForCurrentUser()) openPortalTool(role, 'settings'); else showToast('Switch to this workspace to manage its settings.', 'info'); };
 document.addEventListener('click', event => { if (!event.target.closest('.profile-trigger') && !event.target.closest('#profile-menu')) document.getElementById('profile-menu')?.classList.add('hidden'); });
@@ -483,6 +487,16 @@ window.goAppBack = function () { if (appHistoryIndex === 0) return; appHistoryIn
 window.goAppForward = function () { if (appHistoryIndex >= appHistory.length - 1) return; appHistoryIndex++; goToAppHistoryState(appHistory[appHistoryIndex]); updateAppHistoryButtons(); };
 window.addEventListener('popstate', event => {
   const state = event.state;
+  
+  // Close any open modals that don't match the new state
+  document.querySelectorAll('.modal-backdrop.open').forEach(m => {
+    if (!state?.modalOpen || state.modalId !== m.id) {
+      m.classList.remove('open');
+    }
+  });
+
+  if (state?.modalOpen) return; // If we navigated INTO a modal state, do nothing else
+  
   if (!state?.healthsyncNavigation) return;
   const index = appHistory.findIndex(item => item.role === state.role && item.page === state.page);
   if (index >= 0) appHistoryIndex = index;
@@ -946,17 +960,20 @@ window.saveSettings = async function () {
 };
 window.submitSupport = function () { const text = document.getElementById('support-message').value.trim(); if (!text) return showToast('Describe your issue first.', 'warning'); const rows = localItems('healthsync-support'); rows.push({ text, createdAt: new Date().toISOString() }); saveLocalItems('healthsync-support', rows); document.getElementById('support-message').value = ''; showToast('Support request sent.', 'success'); };
 window.logoutCurrentUser = async function () {
-  if (currentUser?.refreshToken) {
-    try {
-      await fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: currentUser.refreshToken }) });
-    } catch (e) { console.error('Logout error', e); }
-  }
-  localStorage.removeItem('healthsync-session');
-  sessionStorage.removeItem('healthsync-language-confirmed');
-  sessionStorage.removeItem('healthsync-pending-mobile');
-  currentUser = null;
-  location.reload();
-};
+    if (currentUser?.refreshToken) {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: currentUser.refreshToken }) });
+      } catch (e) { console.error('Logout error', e); }
+    }
+    localStorage.removeItem('healthsync-session');
+    sessionStorage.removeItem('healthsync-language-confirmed');
+    sessionStorage.removeItem('healthsync-pending-mobile');
+    currentUser = null;
+    disconnectSocket();
+    
+    // Secure logout: Use replace to prevent back button navigation to protected dashboard pages
+    window.location.replace(window.location.pathname);
+  };
 window.exportAppointmentsCsv = function () { const rows = [['Patient', 'Doctor', 'Date', 'Time', 'Status'], ...todayAppointments.map(a => [a.patient_name, a.doctor_name, a.slot_date, a.slot_time, a.status])]; const csv = rows.map(row => row.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(',')).join('\n'); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = 'healthsync-appointments.csv'; link.click(); URL.revokeObjectURL(link.href); };
 
 // ---------------------------------------------------------------------------

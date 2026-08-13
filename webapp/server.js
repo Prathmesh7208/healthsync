@@ -578,8 +578,14 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404, { 'Content-Type': 'text/html' });
       res.end('<h2>404 — HealthSync: Resource not found</h2>');
     } else {
-      res.writeHead(200, { 'Content-Type': contentTypes[ext] || 'text/plain' });
-      res.end(content);
+      const headers = { 'Content-Type': contentTypes[ext] || 'text/plain' };
+        if (ext === '.html') {
+          headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+          headers['Pragma'] = 'no-cache';
+          headers['Expires'] = '0';
+        }
+        res.writeHead(200, headers);
+        res.end(content);
     }
   });
 });
