@@ -18,10 +18,22 @@ function showToast(msg, type = 'success') {
 // ---------------------------------------------------------------------------
 function openModal(id) {
   document.getElementById(id)?.classList.add('open');
+  // Push state to enable Android back button support
+  history.pushState({ modalOpen: true, modalId: id }, '', location.href);
 }
+
+window.closeModal = function(id) {
+  document.getElementById(id)?.classList.remove('open');
+  if (history.state && history.state.modalOpen && history.state.modalId === id) {
+    history.back(); // Pop the modal state from history
+  }
+};
 
 window.closeAllModals = function() {
   document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+  if (history.state && history.state.modalOpen) {
+    history.back(); // Pop the modal state from history
+  }
 };
 
 window.onclick = function(event) {
