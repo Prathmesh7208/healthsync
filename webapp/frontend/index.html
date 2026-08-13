@@ -449,7 +449,7 @@
               <i class="fa-regular fa-bell"></i>
               <span class="new-badge">3</span>
             </div>
-            <div class="new-header-avatar" id="patient-header-avatar">NP</div>
+            <div class="new-header-avatar profile-trigger" id="patient-header-avatar" onclick="toggleProfileMenu('patient')" style="cursor:pointer;">NP</div>
           </div>
         </header>
 
@@ -537,7 +537,34 @@
               </div>
             </div>
 
-              <!-- 3. Patient Doctors Page -->
+              
+  <!-- Patient Appointments Page -->
+  <div id="patient-page-appointments" class="page" style="padding-top: 16px;">
+    <div class="new-dashboard-header" style="margin-bottom: 24px;">
+      <h2 class="page-heading" style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">My Appointments</h2>
+      <p class="page-subheading" style="color: #64748b; font-size: 15px;">View and manage your visits</p>
+    </div>
+    
+    <div class="custom-tabs">
+      <button class="tab-btn active" onclick="showPatientAppointmentTab('pt-appt-upcoming')">Upcoming</button>
+      <button class="tab-btn" onclick="showPatientAppointmentTab('pt-appt-completed')">Completed</button>
+      <button class="tab-btn" onclick="showPatientAppointmentTab('pt-appt-cancelled')">Cancelled</button>
+    </div>
+    
+    <div class="card p-0" style="background: transparent; box-shadow: none;">
+      <div id="pt-appt-upcoming" class="tab-content active">
+        <div id="pt-upcoming-appt-container" class="flex flex-col gap-4"></div>
+      </div>
+      <div id="pt-appt-completed" class="tab-content">
+        <div id="pt-completed-appt-container" class="flex flex-col gap-4"></div>
+      </div>
+      <div id="pt-appt-cancelled" class="tab-content">
+        <div id="pt-cancelled-appt-container" class="flex flex-col gap-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Patient Doctors Page -->
           <div id="patient-page-doctors" class="page" class="container-fluid" style="padding-top: 16px;">
             <!-- Search Header Area -->
             <div class="jd-search-header mb-4" style="position: relative;">
@@ -809,7 +836,7 @@
               <i class="fa-regular fa-bell" style="font-size: 20px; color: #334155;"></i>
               <span class="new-badge">3</span>
             </div>
-            <div class="new-header-avatar" id="patient-header-avatar">NP</div>
+            <div class="new-header-avatar profile-trigger" id="patient-header-avatar" onclick="toggleProfileMenu('patient')" style="cursor:pointer;">NP</div>
           </div>
         </header>
 
@@ -1164,7 +1191,7 @@
               <i class="fa-regular fa-bell" style="font-size: 20px; color: #334155;"></i>
               <span class="new-badge">3</span>
             </div>
-            <div class="new-header-avatar" id="patient-header-avatar">NP</div>
+            <div class="new-header-avatar profile-trigger" id="patient-header-avatar" onclick="toggleProfileMenu('patient')" style="cursor:pointer;">NP</div>
           </div>
         </header>
 
@@ -1810,7 +1837,7 @@
   <script src="js/socket.js"></script>
   <script src="js/patient.js"></script>
   <script src="js/doctor.js"></script>
-  <script src="js/main.js?v=1786634163990"></script>
+  <script src="js/main.js?v=1786639290802"></script>
   <script src="demo.js"></script>
   <!-- 4. Add Vaccination Modal -->
   <div id="modal-add-vaccination" class="modal-backdrop">
@@ -1880,5 +1907,7 @@
     </div>
   </div>
 
+  <!-- Profile Menu -->
+  <div id="profile-menu" class="hidden" data-role=""></div>
 </body>
 </html>
