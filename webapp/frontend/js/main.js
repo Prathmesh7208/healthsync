@@ -49,45 +49,34 @@ document.addEventListener('DOMContentLoaded', () => {
       history.replaceState(null, '', ' ');
     }
   } else {
-    // Authenticated (pending restoreSession verify)
+    // Authenticated (pending verify)
     const obFlow = document.getElementById('onboarding-flow');
     if (obFlow) obFlow.classList.add('hidden');
     const appEl = document.getElementById('app');
-    if (appEl) appEl.classList.remove('hidden');
-    
-    const hash = window.location.hash;
-    if (hash && hash.startsWith('#')) {
-      const parts = hash.substring(1).split('/');
-      if (parts.length === 2) {
-        history.replaceState({ healthsyncNavigation: true, role: parts[0], page: parts[1] }, '', hash);
-        setTimeout(() => goToAppHistoryState({ role: parts[0], page: parts[1] }), 50);
-      }
-    } else {
-      history.replaceState({ healthsyncNavigation: true, role: 'patient', page: 'dashboard' }, '', '#patient/dashboard');
-    }
+    if (appEl) appEl.classList.add('hidden'); // Keep hidden during verify
+    const globalLoader = document.getElementById('global-loader');
+    if (globalLoader) globalLoader.classList.remove('hidden');
   }
   
-  renderPatientHealthProfile();
-  startHealthTipRotation();
-  restoreSession();
-  // Set current date strings across panels
-  const dates = document.querySelectorAll('.current-date-str');
-  const now = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  dates.forEach(el => el.innerText = now);
-
-  // Initial loads
-  fetchDoctors();
-  syncAllData();
-
-  // Set today's date input min limit
-  const bookingDateInput = document.getElementById('booking-date-input');
-  if (bookingDateInput) {
-    if(bookingDateInput) bookingDateInput.value = new Date().toISOString().split('T')[0];
-    if(bookingDateInput) bookingDateInput.min = new Date().toISOString().split('T')[0];
-  }
-
-  // Setup periodic refresh
-  setInterval(syncAllData, 8000);
+  // Ensure we wait for session verification before loading data
+  restoreSession().then(success => {
+    if (success) {
+      renderPatientHealthProfile();
+      startHealthTipRotation();
+      const dates = document.querySelectorAll('.current-date-str');
+      const now = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      dates.forEach(el => el.innerText = now);
+      fetchDoctors();
+      syncAllData();
+      
+      const bookingDateInput = document.getElementById('booking-date-input');
+      if (bookingDateInput) {
+        bookingDateInput.value = new Date().toISOString().split('T')[0];
+        bookingDateInput.min = new Date().toISOString().split('T')[0];
+      }
+      setInterval(syncAllData, 8000);
+    }
+  });
 });
 
 function renderHealthTip() {
@@ -103,34 +92,6 @@ function renderHealthTip() {
   source.href = tip.url;
   source.innerHTML = `${escapeHtml(tip.source)} <i class="fa-solid fa-arrow-up-right-from-square"></i>`;
 }
-function startHealthTipRotation() {
-  renderHealthTip();
-  clearInterval(healthTipTimer);
-  healthTipTimer = setInterval(() => { healthTipIndex = (healthTipIndex + 1) % curatedHealthTips.length; renderHealthTip(); }, 20000);
-}
-
-async function restoreSession() {
-  const saved = localStorage.getItem('healthsync-session');
-  if (!saved) return;
-  try {
-    const session = JSON.parse(saved);
-    const response = await fetch(`${API_BASE}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: session.refreshToken }) });
-    const data = await response.json();
-    if (!data.success) throw new Error();
-    currentUser = { ...session.user, token: data.token, refreshToken: session.refreshToken };
-    localStorage.setItem('healthsync-session', JSON.stringify({ user: currentUser, refreshToken: currentUser.refreshToken }));
-    finishLogin();
-  } catch { 
-      localStorage.removeItem('healthsync-session');
-      if (typeof window.logoutCurrentUser === 'function') {
-        window.logoutCurrentUser();
-      } else {
-        location.reload();
-      }
-    }
-}
-
-// Demo sessions use the same role panels as production, but their API calls are
 // intercepted by demo.js and never reach the production database.
 window.startDemoExperience = function (role, mobile) {
   const roleMap = { patient: 'PATIENT', doctor: 'DOCTOR', reception: 'RECEPTIONIST' };
@@ -1049,10 +1010,18 @@ window.logoutCurrentUser = async function () {
     sessionStorage.removeItem('healthsync-language-confirmed');
     sessionStorage.removeItem('healthsync-pending-mobile');
     currentUser = null;
-    disconnectSocket();
+    if (typeof disconnectSocket === 'function') disconnectSocket();
     
-    // Secure logout: Use replace to prevent back button navigation to protected dashboard pages
-    window.location.replace(window.location.pathname);
+    // Seamless logout instead of page reload
+    document.getElementById('app')?.classList.add('hidden');
+    document.getElementById('onboarding-flow')?.classList.remove('hidden');
+    
+    // Reset login forms
+    document.getElementById('otp-login-form')?.classList.add('hidden');
+    document.getElementById('mobile-login-form')?.classList.remove('hidden');
+    
+    // Clear hash
+    history.replaceState(null, '', ' ');
   };
 window.exportAppointmentsCsv = function () { const rows = [['Patient', 'Doctor', 'Date', 'Time', 'Status'], ...todayAppointments.map(a => [a.patient_name, a.doctor_name, a.slot_date, a.slot_time, a.status])]; const csv = rows.map(row => row.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(',')).join('\n'); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = 'healthsync-appointments.csv'; link.click(); URL.revokeObjectURL(link.href); };
 
