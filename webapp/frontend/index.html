@@ -492,14 +492,6 @@
                       <div class="qa-icon-box qa-red" style="background:#fee2e2;"><span style="font-weight: 700; font-size: 15px; color: #ef4444;">SOS</span></div>
                       <div class="qa-text">Emergency<br>SOS</div>
                     </div>
-                    <div class="qa-item" onclick="openPortalTool('patient', 'ambulance')">
-                      <div class="qa-icon-box" style="background:#e0f2fe;"><i class="fa-solid fa-truck-medical" style="color:#0284c7;"></i></div>
-                      <div class="qa-text">Book<br>Ambulance</div>
-                    </div>
-                    <div class="qa-item" onclick="openPortalTool('patient', 'upload')">
-                      <div class="qa-icon-box qa-orange"><i class="fa-solid fa-cloud-arrow-up text-orange"></i></div>
-                      <div class="qa-text">Upload<br>Report</div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -517,18 +509,20 @@
                 <div class="row mt-3">
     <div class="col-6">
       <div class="hs-stat-card" style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-         <div id="patient-dashboard-medicines">
-            <div class="hs-stat-val text-muted"><i class="fa-solid fa-spinner fa-spin"></i></div>
-            <p class="hs-stat-sub">Loading medicines...</p>
+         <div id="patient-dashboard-medicines" style="padding: 8px 0;">
+            <i class="fa-solid fa-pills" style="color: #cbd5e1; font-size: 24px; margin-bottom: 8px;"></i>
+            <div style="font-weight: 600; color: #334155; font-size: 14px;">No Active Medicines</div>
+            <p class="hs-stat-sub" style="font-size: 12px; margin-top: 4px;">You have no prescribed medications.</p>
          </div>
-         <button class="btn btn-outline btn-sm w-100 mt-2" onclick="openPortalTool('patient', 'reminders')">Manage</button>
+         <button class="btn btn-outline btn-sm w-100 mt-2" onclick="openPortalTool('patient', 'reminders')">Add Reminder</button>
       </div>
     </div>
     <div class="col-6">
       <div class="hs-stat-card" style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-         <div id="patient-dashboard-vaccines">
-            <div class="hs-stat-val text-muted"><i class="fa-solid fa-spinner fa-spin"></i></div>
-            <p class="hs-stat-sub">Loading vaccines...</p>
+         <div id="patient-dashboard-vaccines" style="padding: 8px 0;">
+            <i class="fa-solid fa-syringe" style="color: #10b981; font-size: 24px; margin-bottom: 8px;"></i>
+            <div style="font-weight: 600; color: #334155; font-size: 14px;">All Caught Up!</div>
+            <p class="hs-stat-sub" style="font-size: 12px; margin-top: 4px;">Your vaccination record is up to date.</p>
          </div>
          <button class="btn btn-outline btn-sm w-100 mt-2" onclick="openPortalTool('patient', 'vaccinations')">Manage</button>
       </div>
@@ -1837,7 +1831,7 @@
   <script src="js/socket.js"></script>
   <script src="js/patient.js"></script>
   <script src="js/doctor.js"></script>
-  <script src="js/main.js?v=1786641320230"></script>
+  <script src="js/main.js?v=1786716283926"></script>
   <script src="demo.js"></script>
   <!-- 4. Add Vaccination Modal -->
   <div id="modal-add-vaccination" class="modal-backdrop">
