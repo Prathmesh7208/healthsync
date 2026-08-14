@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const obFlow = document.getElementById('onboarding-flow');
     if (obFlow) obFlow.classList.remove('hidden');
     
-    // Clear hash to prevent direct dashboard routing
     if (window.location.hash) {
       history.replaceState(null, '', ' ');
     }
@@ -58,25 +57,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (globalLoader) globalLoader.classList.remove('hidden');
   }
   
-  // Ensure we wait for session verification before loading data
-  restoreSession().then(success => {
-    if (success) {
-      renderPatientHealthProfile();
-      startHealthTipRotation();
-      const dates = document.querySelectorAll('.current-date-str');
-      const now = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      dates.forEach(el => el.innerText = now);
-      fetchDoctors();
-      syncAllData();
-      
-      const bookingDateInput = document.getElementById('booking-date-input');
-      if (bookingDateInput) {
-        bookingDateInput.value = new Date().toISOString().split('T')[0];
-        bookingDateInput.min = new Date().toISOString().split('T')[0];
+  if (typeof restoreSession === 'function') {
+    restoreSession().then(success => {
+      if (success) {
+        if (typeof renderPatientHealthProfile === 'function') renderPatientHealthProfile();
+        if (typeof startHealthTipRotation === 'function') startHealthTipRotation();
+        const dates = document.querySelectorAll('.current-date-str');
+        const now = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        dates.forEach(el => el.innerText = now);
+        if (typeof fetchDoctors === 'function') fetchDoctors();
+        if (typeof syncAllData === 'function') syncAllData();
+        
+        const bookingDateInput = document.getElementById('booking-date-input');
+        if (bookingDateInput) {
+          bookingDateInput.value = new Date().toISOString().split('T')[0];
+          bookingDateInput.min = new Date().toISOString().split('T')[0];
+        }
+        setInterval(syncAllData, 8000);
       }
-      setInterval(syncAllData, 8000);
-    }
-  });
+    });
+  }
 });
 
 function renderHealthTip() {
@@ -2909,6 +2909,7 @@ window.finishOnboarding = async function() {
     
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
+    if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
     if ((role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') && typeof window.fetchPendingEmergencies === 'function') {
       window.fetchPendingEmergencies();
@@ -2918,6 +2919,7 @@ window.finishOnboarding = async function() {
     window.currentUser = { id: 'demo-patient', name: 'Demo Patient', role: 'PATIENT', demo: true };
     window.switchGlobalRole('patient');
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+    if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
   }
 }
 
@@ -3122,6 +3124,7 @@ window.finishOnboarding = async function() {
     
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
+    if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
     if ((role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') && typeof window.fetchPendingEmergencies === 'function') {
       window.fetchPendingEmergencies();
@@ -3131,6 +3134,7 @@ window.finishOnboarding = async function() {
     window.currentUser = { id: 'demo-patient', name: 'Demo Patient', role: 'PATIENT', demo: true };
     window.switchGlobalRole('patient');
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+    if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
   }
 }
 
@@ -3195,3 +3199,56 @@ window.deleteVaccination = async function(id) {
     showToast('Failed to connect to server', 'error');
   }
 };
+
+
+// --- RESTORED FUNCTIONS ---
+let healthTipTimer;
+let healthTipIndex = 0;
+
+function startHealthTipRotation() {
+  if (typeof renderHealthTip === 'function') renderHealthTip();
+  clearInterval(healthTipTimer);
+  healthTipTimer = setInterval(() => { 
+    if (typeof curatedHealthTips !== 'undefined' && curatedHealthTips.length > 0) {
+      healthTipIndex = (healthTipIndex + 1) % curatedHealthTips.length; 
+      if (typeof renderHealthTip === 'function') renderHealthTip(); 
+    }
+  }, 20000);
+}
+
+async function restoreSession() {
+  const saved = localStorage.getItem('healthsync-session');
+  if (!saved) return false;
+  try {
+    const session = JSON.parse(saved);
+    const response = await fetch(`${API_BASE}/auth/refresh`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ refreshToken: session.refreshToken }) 
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error('Session refresh failed');
+    
+    currentUser = { ...session.user, token: data.token, refreshToken: session.refreshToken };
+    localStorage.setItem('healthsync-session', JSON.stringify({ user: currentUser, refreshToken: currentUser.refreshToken }));
+    
+    // Hide loader, show app
+    const globalLoader = document.getElementById('global-loader');
+    if (globalLoader) globalLoader.classList.add('hidden');
+    
+    if (typeof finishOnboarding === 'function') finishOnboarding();
+    
+    return true;
+  } catch (err) { 
+    console.error('restoreSession error:', err);
+    localStorage.removeItem('healthsync-session');
+    
+    // Ensure loader is hidden and onboarding is shown
+    const globalLoader = document.getElementById('global-loader');
+    if (globalLoader) globalLoader.classList.add('hidden');
+    const obFlow = document.getElementById('onboarding-flow');
+    if (obFlow) obFlow.classList.remove('hidden');
+    
+    return false;
+  }
+}
