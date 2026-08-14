@@ -2908,6 +2908,7 @@ window.finishOnboarding = async function() {
     } catch(e) {}
     
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+    if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
     if ((role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') && typeof window.fetchPendingEmergencies === 'function') {
       window.fetchPendingEmergencies();
@@ -3120,6 +3121,7 @@ window.finishOnboarding = async function() {
     } catch(e) {}
     
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+    if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
     if ((role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') && typeof window.fetchPendingEmergencies === 'function') {
       window.fetchPendingEmergencies();
