@@ -252,10 +252,17 @@ window.toggleProfileMenu = function (role) {
     const title = role === 'doctor' ? 'Doctor account' : role === 'reception' ? 'Reception desk' : 'Patient account';
     menu.dataset.role = role;
     menu.innerHTML = `<div class="profile-menu-name">${escapeHtml(name)}</div><div class="profile-menu-role">${title}</div>
-      ${role === 'patient' ? `<button type="button" role="menuitem" onclick="switchPatientPage('dashboard'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-solid fa-user"></i> Profile</button>
-      <button type="button" role="menuitem" onclick="switchPatientPage('appointments'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-solid fa-calendar"></i> My Appointments</button>` : ''}
+      ${role === 'patient' ? `
+      <button type="button" role="menuitem" onclick="showToast('My Profile coming soon', 'info'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-regular fa-user" style="width: 16px;"></i> My Profile</button>
+      <button type="button" role="menuitem" onclick="switchPatientPage('health-profile'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-solid fa-pen-to-square" style="width: 16px;"></i> Edit Profile</button>
+      <button type="button" role="menuitem" onclick="showToast('Family Members coming soon', 'info'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-solid fa-users" style="width: 16px;"></i> Family Members</button>
+      <button type="button" role="menuitem" onclick="openProfileSettings('${role}')"><i class="fa-solid fa-gear" style="width: 16px;"></i> Settings</button>
+      <button type="button" role="menuitem" onclick="showToast('Language settings coming soon', 'info'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-solid fa-globe" style="width: 16px;"></i> Language</button>
+      <button type="button" role="menuitem" onclick="showToast('Help & Support coming soon', 'info'); document.getElementById('profile-menu').classList.add('hidden');"><i class="fa-regular fa-circle-question" style="width: 16px;"></i> Help & Support</button>
+      ` : `
       <button type="button" role="menuitem" onclick="openProfileSettings('${role}')"><i class="fa-solid fa-gear"></i> Account settings</button>
-      <button type="button" class="profile-logout" role="menuitem" onclick="logoutCurrentUser()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>`;
+      `}
+      <button type="button" class="profile-logout" role="menuitem" onclick="logoutCurrentUser()"><i class="fa-solid fa-right-from-bracket" style="width: 16px;"></i> Logout</button>`;
     menu.classList.remove('hidden');
 };
 window.openProfileSettings = function (role) { document.getElementById('profile-menu')?.classList.add('hidden'); if (role === panelForCurrentUser()) openPortalTool(role, 'settings'); else showToast('Switch to this workspace to manage its settings.', 'info'); };
@@ -488,6 +495,17 @@ window.goAppForward = function () { if (appHistoryIndex >= appHistory.length - 1
 window.addEventListener('popstate', event => {
   const state = event.state;
   
+  // Handle sidebar
+  const activeSidebar = document.querySelector('.role-panel.active .sidebar') || document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (!state?.sidebarOpen && activeSidebar?.classList.contains('open')) {
+      activeSidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('open');
+  } else if (state?.sidebarOpen && !activeSidebar?.classList.contains('open')) {
+      activeSidebar.classList.add('open');
+      if (overlay) overlay.classList.add('open');
+  }
+
   // Close any open modals that don't match the new state
   document.querySelectorAll('.modal-backdrop.open').forEach(m => {
     if (!state?.modalOpen || state.modalId !== m.id) {
@@ -496,6 +514,7 @@ window.addEventListener('popstate', event => {
   });
 
   if (state?.modalOpen) return; // If we navigated INTO a modal state, do nothing else
+  if (state?.sidebarOpen) return; // If we navigated INTO a sidebar state, do nothing else
   
   if (!state?.healthsyncNavigation) return;
   const index = appHistory.findIndex(item => item.role === state.role && item.page === state.page);
@@ -535,11 +554,21 @@ window.toggleSidebar = function (forceClose = false) {
   const overlay = document.getElementById('sidebar-overlay');
   if (activeSidebar) {
     if (forceClose) {
-      activeSidebar.classList.remove('open');
-      if (overlay) overlay.classList.remove('open');
+      if (activeSidebar.classList.contains('open')) {
+        activeSidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+        if (history.state?.sidebarOpen) history.back();
+      }
     } else {
+      const isOpening = !activeSidebar.classList.contains('open');
       activeSidebar.classList.toggle('open');
       if (overlay) overlay.classList.toggle('open');
+      
+      if (isOpening) {
+        history.pushState({ sidebarOpen: true, ...history.state }, '', location.href);
+      } else {
+        if (history.state?.sidebarOpen) history.back();
+      }
     }
   }
 };
@@ -1491,25 +1520,51 @@ function renderAppointmentsList() {
     const doctorName = appt.doctor_name || appt.doctorName || appt.doctor || 'HealthSync care team';
     const specialty = appt.specialization || appt.specialty || appt.reason || 'Consultation';
     const clinic = appt.clinic_name || appt.clinic || appt.hospital_name || 'HealthSync Partner Clinic';
+    const location = appt.location || 'Pune, MH';
+    const consultationType = appt.consultation_type || appt.type || 'IN_PERSON';
+    const displayConsultationType = consultationType === 'VIDEO' ? 'Video Consultation' : 'In-Person Visit';
     const token = appt.token_number || appt.token;
     const normalizedStatus = status(appt);
     const displayStatus = normalizedStatus === 'CHECKED IN' ? 'Checked in' : normalizedStatus === 'IN PROGRESS' ? 'In consultation' : normalizedStatus.replace(/\b\w/g, char => char.toUpperCase());
+    
     const action = category === 'upcoming'
-      ? `<button class="btn btn-danger btn-xs mt-2" onclick="cancelAppointment('${appt.id}')">Cancel</button>`
+      ? `<div style="display:flex; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
+           <button class="btn btn-outline btn-xs" style="width:100%; justify-content:center;" onclick="rescheduleAppointment('${appt.id}', '${appt.doctor_id || ''}')">Reschedule</button>
+           <button class="btn btn-danger btn-xs" style="width:100%; justify-content:center;" onclick="cancelAppointment('${appt.id}')">Cancel</button>
+         </div>`
       : category === 'completed'
         ? `<button class="btn btn-secondary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}')">Book follow-up</button>`
         : `<button class="btn btn-primary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}')">Book again</button>`;
-    return `<div class="appt-card">
-      <div class="appt-date-box"><div class="appt-day">${validDate.getDate()}</div><div class="appt-mon">${validDate.toLocaleDateString('en-IN', { month: 'short' })}</div></div>
-      <div class="appt-info">
-        <div class="appt-doc">${escapeHtml(doctorName)}</div>
-        <div class="appt-spec">${escapeHtml(specialty)}</div>
-        <div class="appt-clinic"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(clinic)}</div>
-        <div class="appt-time"><i class="fa-solid fa-clock"></i> ${escapeHtml(appt.slot_time || appt.time || 'Time to be confirmed')}</div>
+        
+    return `<div class="appt-card" style="border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: white; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+         <div class="appt-date-box" style="background: #f8fafc; padding: 8px 12px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; min-width: 60px;">
+            <div class="appt-day" style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1;">${validDate.getDate()}</div>
+            <div class="appt-mon" style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 4px;">${validDate.toLocaleDateString('en-IN', { month: 'short' })}</div>
+         </div>
+         <span class="badge ${getBadgeClass(normalizedStatus)}">${escapeHtml(displayStatus)}</span>
       </div>
-      <div class="appt-actions">
-        <span class="badge ${getBadgeClass(normalizedStatus)}">${escapeHtml(displayStatus)}</span>
-        ${token ? `<span class="token-chip mt-2">Token ${escapeHtml(token)}</span>` : ''}
+      
+      <div class="appt-info" style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="appt-doc" style="font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(doctorName)}</div>
+        <div class="appt-spec" style="font-size: 13px; color: #64748b; font-weight: 500;">${escapeHtml(specialty)}</div>
+        
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+          <div style="font-size: 13px; color: #475569; display: flex; align-items: center; gap: 8px;">
+             <i class="fa-regular fa-clock" style="color: #94a3b8; width: 14px; text-align: center;"></i> <strong>${escapeHtml(appt.slot_time || appt.time || 'Time to be confirmed')}</strong>
+          </div>
+          <div style="font-size: 13px; color: #475569; display: flex; align-items: flex-start; gap: 8px;">
+             <i class="fa-solid fa-hospital" style="color: #94a3b8; width: 14px; text-align: center; margin-top: 3px;"></i> 
+             <span>${escapeHtml(clinic)}<br><span style="color: #64748b; font-size: 12px;">${escapeHtml(location)}</span></span>
+          </div>
+          <div style="font-size: 13px; color: #0284c7; display: flex; align-items: center; gap: 8px; font-weight: 500; margin-top: 2px;">
+             <i class="fa-solid ${consultationType === 'VIDEO' ? 'fa-video' : 'fa-user-doctor'}" style="width: 14px; text-align: center;"></i> ${escapeHtml(displayConsultationType)}
+          </div>
+        </div>
+      </div>
+      
+      <div class="appt-actions" style="margin-top: 12px; width: 100%; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+        ${token ? `<div class="token-chip" style="margin-bottom: 8px; display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-ticket" style="margin-right: 4px;"></i> Queue Token: ${escapeHtml(token)}</div>` : ''}
         ${action}
       </div>
     </div>`;
@@ -2334,13 +2389,35 @@ window.markNoShow = async function (token) {
   }
 };
 
+window.rescheduleAppointment = async function (apptId, doctorId) {
+  if (!confirm('Are you sure you want to reschedule? This will cancel your current appointment and open the booking screen.')) return;
+  try {
+    const res = await fetch(`${API_BASE}/appointments/${apptId}/cancel`, { method: 'PUT' });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Current appointment cancelled. Please select a new slot.', 'success');
+      syncAllData();
+      if (doctorId) {
+          openBookAppointmentModalWithDoctor(doctorId);
+      }
+    } else {
+      showToast(data.message || 'Failed to cancel current appointment.', 'error');
+    }
+  } catch (err) {
+    showToast('An error occurred while rescheduling.', 'error');
+  }
+};
+
 window.cancelAppointment = async function (apptId) {
+  if (!confirm('Are you sure you want to cancel this appointment?')) return;
   try {
     const res = await fetch(`${API_BASE}/appointments/${apptId}/cancel`, { method: 'PUT' });
     const data = await res.json();
     if (data.success) {
       showToast('Appointment cancelled successfully.', 'success');
       syncAllData();
+    } else {
+      showToast(data.message || 'Failed to cancel appointment.', 'error');
     }
   } catch (err) {
     showToast('Failed to cancel appointment.', 'error');

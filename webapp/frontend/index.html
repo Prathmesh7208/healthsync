@@ -374,7 +374,8 @@
             <div class="sidebar-logo new-sidebar-logo"><i class="fa-solid fa-heart-pulse"></i></div>
             <span class="sidebar-brand-name" style="color: #fff; font-size: 20px; font-weight: 700; margin-left: 8px;">HealthSync</span><button class="mobile-close-btn" type="button" aria-label="Close sidebar" onclick="toggleSidebar(true)"><i class="fa-solid fa-xmark"></i></button>
           </div>
-          <nav class="sidebar-nav new-sidebar-nav">
+          <nav class="sidebar-nav new-sidebar-nav" style="padding-bottom: 24px; overflow-y: auto;">
+            <div class="nav-section-label" style="margin-top: 10px;">Main</div>
             <div class="nav-item active" onclick="switchPatientPage('dashboard')">
               <span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard
             </div>
@@ -387,11 +388,13 @@
             <div class="nav-item" onclick="switchPatientPage('health-records')">
               <span class="nav-icon"><i class="fa-regular fa-file-lines"></i></span> Health Records
             </div>
-            <div class="nav-item" onclick="openPortalTool('patient', 'prescriptions')">
-              <span class="nav-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Prescriptions
-            </div>
+
+            <div class="nav-section-label" style="margin-top: 16px;">Health</div>
             <div class="nav-item" onclick="openPortalTool('patient', 'medicines')">
               <span class="nav-icon"><i class="fa-solid fa-pills"></i></span> Medicines
+            </div>
+            <div class="nav-item" onclick="openPortalTool('patient', 'prescriptions')">
+              <span class="nav-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Prescriptions
             </div>
             <div class="nav-item" onclick="openPortalTool('patient', 'reminders')">
               <span class="nav-icon"><i class="fa-regular fa-bell"></i></span> Reminders
@@ -399,39 +402,32 @@
             <div class="nav-item" onclick="switchPatientPage('vaccinations')">
               <span class="nav-icon"><i class="fa-solid fa-syringe"></i></span> Vaccinations
             </div>
+
+            <div class="nav-section-label" style="margin-top: 16px;">Services</div>
+            <div class="nav-item" onclick="openPortalTool('patient', 'ambulance')">
+              <span class="nav-icon"><i class="fa-solid fa-truck-medical" style="color: #ef4444;"></i></span> Emergency SOS
+            </div>
             <div class="nav-item" onclick="openPortalTool('patient', 'ambulance')">
               <span class="nav-icon"><i class="fa-solid fa-truck-medical"></i></span> Ambulance
             </div>
             <div class="nav-item" onclick="openPortalTool('patient', 'payments')">
               <span class="nav-icon"><i class="fa-solid fa-money-bill"></i></span> Payments
             </div>
-            <div class="nav-item" style="margin-top: auto;" onclick="openPortalTool('patient', 'settings')">
+
+            <div class="nav-section-label" style="margin-top: 16px;">Account</div>
+            <div class="nav-item" onclick="switchPatientPage('health-profile')">
+              <span class="nav-icon"><i class="fa-regular fa-user"></i></span> Profile
+            </div>
+            <div class="nav-item" onclick="openProfileSettings('patient')">
               <span class="nav-icon"><i class="fa-solid fa-gear"></i></span> Settings
             </div>
             <div class="nav-item" onclick="openPortalTool('patient', 'help')">
-              <span class="nav-icon"><i class="fa-regular fa-circle-question"></i></span> Help & Support
+              <span class="nav-icon"><i class="fa-regular fa-circle-question"></i></span> Support
+            </div>
+            <div class="nav-item" onclick="logoutCurrentUser()" style="color: #ef4444;">
+              <span class="nav-icon"><i class="fa-solid fa-right-from-bracket" style="color: #ef4444;"></i></span> Logout
             </div>
           </nav>
-          <div class="sidebar-footer new-sidebar-footer">
-            <div class="sidebar-user-pill" onclick="toggleProfileMenu('patient')">
-              <div id="patient-sidebar-avatar" class="avatar-sm">NP</div>
-              <div class="sidebar-user-info">
-                <div class="sidebar-user-name" id="patient-sidebar-name">New Patient</div>
-                <div class="sidebar-user-role">View Profile</div>
-              </div>
-              <i class="fa-solid fa-chevron-right chevron-icon" style="color: #94a3b8; font-size: 12px;"></i>
-            </div>
-            <div class="sidebar-support-pill">
-              <div class="support-header">
-                <i class="fa-solid fa-headset support-icon"></i>
-                <div class="support-text">
-                  <span class="fw-bold d-block" style="font-size: 13px; color: #fff;">Need Help?</span>
-                  <span style="font-size: 11px; color: #94a3b8; line-height:1.2; display:block; margin-top:2px;">Our support team is<br>here for you</span>
-                </div>
-              </div>
-              <button class="btn btn-primary w-full btn-sm mt-3" style="border-radius: 8px; font-weight: 600; min-height: 36px; padding: 0;">Contact Support</button>
-            </div>
-          </div>
         </aside>
 
       <!-- Main Area -->
@@ -1831,7 +1827,7 @@
   <script src="js/socket.js"></script>
   <script src="js/patient.js"></script>
   <script src="js/doctor.js"></script>
-  <script src="js/main.js?v=1786717003238"></script>
+  <script src="js/main.js?v=1786719596891"></script>
   <script src="demo.js"></script>
   <!-- 4. Add Vaccination Modal -->
   <div id="modal-add-vaccination" class="modal-backdrop">
