@@ -1876,7 +1876,6 @@ let bookingDoctor = null;
 let bookingDate = null;
 let bookingTime = null;
 let bookingStep = 1;
-
 window.openBookAppointmentModalWithDoctor = async function (doctorId) {
     bookingDoctor = allDoctors.find(d => String(d.id) === String(doctorId));
     if (!bookingDoctor) return;
@@ -1887,14 +1886,23 @@ window.openBookAppointmentModalWithDoctor = async function (doctorId) {
   
     // Render doc info
     document.getElementById('booking-doc-info').innerHTML = `
-      <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #64748b;">
-        ${(bookingDoctor.name || bookingDoctor.full_name || 'Dr. Doctor').substring(4, 6)}
-      </div>
-      <div>
-        <h4 style="margin: 0; font-size: 15px; color: #1e293b;">${escapeHtml(bookingDoctor.name || bookingDoctor.full_name || 'Doctor')}</h4>
-        <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${escapeHtml(bookingDoctor.specialization)} • ₹${bookingDoctor.fee || bookingDoctor.consultation_fee || 500}</p>
-      </div>
-    `;
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #64748b; flex-shrink: 0;">
+          ${(bookingDoctor.name || bookingDoctor.full_name || 'Dr. Doctor').substring(4, 6)}
+        </div>
+        <div>
+          <h4 style="margin: 0; font-size: 15px; color: #1e293b;">${escapeHtml(bookingDoctor.name || bookingDoctor.full_name || 'Doctor')}</h4>
+          <p style="margin: 4px 0 2px; font-size: 12px; color: #64748b; font-weight: 500;">
+            ${escapeHtml(bookingDoctor.specialization)}
+          </p>
+          <p style="margin: 0 0 4px; font-size: 12px; color: #475569;">
+            <i class="fa-solid fa-hospital" style="margin-right: 4px; color: #94a3b8;"></i>${escapeHtml(bookingDoctor.clinic_name || 'City Heart Clinic')} &bull; 
+            <i class="fa-solid fa-location-dot" style="margin-right: 4px; margin-left: 2px; color: #94a3b8;"></i>${escapeHtml(bookingDoctor.location || 'Pune, MH')}
+          </p>
+          <div style="font-size: 12px; font-weight: 600; color: #10b981; background: #d1fae5; display: inline-block; padding: 2px 8px; border-radius: 12px;">
+            Consultation Fee: ₹${bookingDoctor.fee || bookingDoctor.consultation_fee || 500}
+          </div>
+        </div>
+      `;
   
     // Pre-calculate 7 days
     const days = [];
@@ -2002,19 +2010,18 @@ window.selectBookingDate = async function (dateStr) {
         if (!slots.length) return '';
         let groupHtml = `<h5 style="margin: 16px 0 12px; font-size: 14px; color: #1e293b; font-weight:600;">${title}</h5><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">`;
         slots.forEach(s => {
-          const id = `time-slot-${s.time.replace(/[: ]/g, '-')}`;
-          if (s.available) {
-            groupHtml += `<div id="${id}" class="time-slot-box available" onclick="selectBookingTime('${s.time}', '${id}')" style="padding: 10px; border: 1px solid var(--blue-primary); border-radius: 8px; cursor: pointer; display:flex; flex-direction:column; align-items:center; transition:0.2s;">
-              <span style="font-weight:600; font-size:14px; color:#1e293b; margin-bottom:4px;">${s.time}</span>
-              <span style="font-size:11px; color:#10b981; display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Available</span>
-            </div>`;
-          } else {
-            groupHtml += `<div class="time-slot-box booked" style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: not-allowed; background:#f8fafc; opacity:0.7; display:flex; flex-direction:column; align-items:center;">
-              <span style="font-weight:600; font-size:14px; color:#94a3b8; margin-bottom:4px; text-decoration:line-through;">${s.time}</span>
-              <span style="font-size:11px; color:#ef4444; display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Booked</span>
-            </div>`;
-          }
-        });
+            if (s.available) {
+              groupHtml += `<div id="slot-${s.id}" class="time-slot-box available" onclick="selectBookingTime('${s.time}', 'slot-${s.id}')" style="padding: 12px; border: 1px solid var(--border); border-radius: 8px; text-align: center; cursor: pointer; color: #1e293b; background: #ffffff; transition: all 0.2s ease;">
+                <span style="font-weight: 600;">${s.time}</span><br>
+                <span style="font-size: 11px; color: #10b981;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Available</span>
+              </div>`;
+            } else {
+              groupHtml += `<div class="time-slot-box booked" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #f1f5f9; color: #94a3b8; cursor: not-allowed;">
+                <span style="font-weight: 600; text-decoration: line-through;">${s.time}</span><br>
+                <span style="font-size: 11px; color: #94a3b8;"><i class="fa-solid fa-lock" style="font-size:8px;"></i> Booked</span>
+              </div>`;
+            }
+          });
         groupHtml += `</div>`;
         return groupHtml;
       };
@@ -2042,29 +2049,36 @@ window.selectBookingDate = async function (dateStr) {
   }
   
   window.selectBookingTime = function (timeStr, elId) {
-    bookingTime = timeStr;
-    document.querySelectorAll('.time-slot-box.available').forEach(el => {
-      el.style.background = 'transparent';
-      el.style.borderColor = 'var(--blue-primary)';
-      const statusSpan = el.querySelector('span:nth-child(2)');
-      statusSpan.innerHTML = '<i class="fa-solid fa-circle" style="font-size:8px;"></i> Available';
-      statusSpan.style.color = '#10b981';
-      el.querySelector('span:nth-child(1)').style.color = '#1e293b';
-    });
-    
-    const selectedEl = document.getElementById(elId);
-    if (selectedEl) {
-      selectedEl.style.background = '#eff6ff';
-      selectedEl.style.borderColor = '#2563eb';
-      const statusSpan = selectedEl.querySelector('span:nth-child(2)');
-      statusSpan.innerHTML = '<i class="fa-solid fa-check" style="font-size:10px;"></i> Selected';
-      statusSpan.style.color = '#2563eb';
-      selectedEl.querySelector('span:nth-child(1)').style.color = '#1d4ed8';
-    }
-    document.getElementById('btn-booking-next').disabled = false;
-  };
-
-  ;
+      bookingTime = timeStr;
+      // Reset all available slots
+      document.querySelectorAll('.time-slot-box.available').forEach(el => {
+        el.style.background = '#ffffff';
+        el.style.borderColor = 'var(--border)';
+        el.style.color = '#1e293b';
+        const statusSpan = el.querySelector('span:nth-child(3)'); // account for <br>
+        if (statusSpan) {
+            statusSpan.innerHTML = '<i class="fa-solid fa-circle" style="font-size:8px;"></i> Available';
+            statusSpan.style.color = '#10b981';
+        }
+        el.querySelector('span:nth-child(1)').style.color = '#1e293b';
+      });
+      
+      // Highlight selected slot prominently
+      const selectedEl = document.getElementById(elId);
+      if (selectedEl) {
+        selectedEl.style.background = 'var(--blue-primary)';
+        selectedEl.style.borderColor = 'var(--blue-primary)';
+        selectedEl.style.color = '#ffffff';
+        
+        const statusSpan = selectedEl.querySelector('span:nth-child(3)');
+        if (statusSpan) {
+            statusSpan.innerHTML = '<i class="fa-solid fa-circle-check" style="font-size:10px;"></i> Selected';
+            statusSpan.style.color = '#ffffff';
+        }
+        selectedEl.querySelector('span:nth-child(1)').style.color = '#ffffff';
+      }
+      document.getElementById('btn-booking-next').disabled = false;
+    };
 
 window.bookingNextStep = function () {
   if (bookingStep === 1) {
@@ -2134,18 +2148,21 @@ window.submitAppointmentBooking = async function () {
 
     if (data.success) {
       // Show success screen
-      document.getElementById('success-doc-name').textContent = bookingDoctor.name || 'Doctor';
+      document.getElementById('success-doc-name').textContent = bookingDoctor.name || bookingDoctor.full_name || 'Doctor';
       document.getElementById('success-date').textContent = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('success-time').textContent = bookingTime;
       document.getElementById('success-appt-id').textContent = data.appointment.id;
 
       showBookingStep(3);
-      syncAllData(); // Refresh dashboards
+      syncAllData(); // Refresh dashboards & appointments immediately
     } else {
       throw new Error(data.message);
     }
   } catch (err) {
     showToast('Failed to book appointment.', 'error');
+    showBookingStep(1); // Return to safe state on fatal error
+  } finally {
+    // Ensure button is reset to avoid getting stuck in "Confirming..."
     document.getElementById('btn-booking-next').disabled = false;
     document.getElementById('btn-booking-next').textContent = 'Confirm Appointment';
   }
