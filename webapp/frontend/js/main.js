@@ -297,7 +297,7 @@ function renderEmergencyAlertToDOM(data) {
     const dispatchDisabled = isDispatched ? 'disabled' : '';
 
     list.innerHTML += `
-      <div id="emerg-${data.caseId}" class="grid-3" style="align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
+      <div id="emerg-${data.caseId}" class="grid-3" style="align-items: center; background: white; padding: 16px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
         <div style="display: flex; gap: 12px; align-items: center;">
           <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
           <div>
@@ -376,38 +376,62 @@ window.clearNotifications = async function () { if (!currentUser) return; await 
 
 
 async function renderDashboardReminders() {
-  const container = document.querySelector('.medicine-card .medicine-box');
+  const container = document.getElementById('patient-dashboard-medicines');
   if (!container) return;
   if (!currentUser) return;
   
-  container.innerHTML = '<div class="text-center p-4 text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading reminders...</div>';
+  container.innerHTML = '<div class="text-center p-4 text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
   
   try {
     const data = await requestJson('/reminders?patientId=' + encodeURIComponent(currentUser.patientId || currentUser.id));
     const reminders = data?.reminders || [];
     
     if (reminders.length === 0) {
-      container.innerHTML = '<div class="card p-4 text-center text-muted empty-state"><i class="fa-solid fa-pills" style="font-size: 24px; color: #cbd5e1; margin-bottom: 8px;"></i><p style="font-size:13px; margin:0;">No medicines scheduled today</p></div>';
+      container.innerHTML = `
+        <i class="fa-solid fa-pills" style="color: #cbd5e1; font-size: 24px; margin-bottom: 8px;"></i>
+        <div style="font-weight: 600; color: #334155; font-size: 14px;">No medicines added yet</div>
+        <p class="hs-stat-sub" style="font-size: 12px; margin-top: 4px;">Add your medicines to receive reminders.</p>
+      `;
       return;
     }
     
-    const nextRem = reminders[0];
-    container.innerHTML = `
-      <div class="med-info" style="flex:1;">
-        <div class="med-next fw-bold text-dark" style="font-size: 14px;">Scheduled: <span class="text-orange" style="color: #f59e0b;">${escapeHtml(nextRem.reminder_time)}</span></div>
-        <h4 class="fw-bold text-dark mt-2" style="font-size: 16px;">${escapeHtml(nextRem.medicine_name)}</h4>
-        <div class="text-muted text-sm mt-1" style="font-size: 13px;">${escapeHtml(nextRem.dosage || 'Standard Dose')}</div>
-      </div>
-      <div class="med-icon-big">
-        <div class="pill-illustration">
-          <div style="background: #e0e7ff; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
-             <i class="fa-solid fa-pills" style="color: #4f46e5; font-size: 24px;"></i>
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    let html = `<div style="text-align: left; max-height: 250px; overflow-y: auto; padding-right: 4px;">`;
+    reminders.forEach(r => {
+      let taken = [];
+      try { taken = JSON.parse(r.taken_dates || '[]'); } catch(e){}
+      const isTaken = taken.includes(todayStr);
+      
+      let freqText = r.frequency || 'Daily';
+      let foodText = '';
+      if (freqText.toLowerCase().includes('before food')) {
+          foodText = '<span style="background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 11px;">Before Food</span>';
+      } else if (freqText.toLowerCase().includes('after food')) {
+          foodText = '<span style="background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-size: 11px;">After Food</span>';
+      }
+
+      html += `
+        <div style="border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; background: white;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div style="font-weight: 700; font-size: 14px; color: ${isTaken ? '#94a3b8' : '#0f172a'}; text-decoration: ${isTaken ? 'line-through' : 'none'};">${escapeHtml(r.medicine_name)}</div>
+            ${isTaken ? `<span style="color: #10b981; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-check-circle"></i> Taken</span>` : `<span style="color: #ef4444; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> Missed</span>`}
           </div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+            ${escapeHtml(r.dosage || '--')} • ${escapeHtml(r.frequency || 'Daily')}
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            ${foodText}
+            <div style="font-size: 12px; font-weight: 600; color: #f59e0b;"><i class="fa-regular fa-clock"></i> ${escapeHtml(r.reminder_time)}</div>
+          </div>
+          ${!isTaken ? `<div style="margin-top: 10px;"><button class="btn btn-outline btn-sm w-100" style="padding: 4px;" onclick="markMedicineTaken('${r.id}')"><i class="fa-solid fa-check"></i> Mark as Taken</button></div>` : ''}
         </div>
-      </div>
-    `;
+      `;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
   } catch (err) {
-    container.innerHTML = '<div class="card p-4 text-center text-red-500 empty-state">Failed to load reminders.</div>';
+    container.innerHTML = '<div class="text-red-500 text-sm">Failed to load reminders.</div>';
   }
 }
 
@@ -899,35 +923,62 @@ function utilityContent(role, tool) {
     
     const vacHTML = sorted.map(r => {
         const isUpcoming = r.next_due_date && r.next_due_date >= todayStr;
-        return `<div class="card mb-2"><div class="card-body" style="display:flex; justify-content:space-between; align-items:center; border-left: 4px solid ${isUpcoming ? '#eab308' : '#10b981'};">
-           <div>
-             <h5 style="margin:0; color:#0f172a;">${escapeHtml(r.vaccine_name)} ${r.dose ? '(Dose: '+escapeHtml(r.dose)+')' : ''}</h5>
-             <small class="text-muted"><i class="fa-regular fa-calendar"></i> Given: ${escapeHtml(r.date)} | Clinic: ${escapeHtml(r.clinic || 'N/A')}</small>
-             ${r.next_due_date ? `<div style="font-size:12px; color:${isUpcoming ? '#b45309' : '#64748b'}; margin-top:4px;"><i class="fa-solid fa-clock-rotate-left"></i> Next Due: ${r.next_due_date}</div>` : ''}
+        const statusBadge = isUpcoming ? `<span style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: var(--radius-md); font-size: 11px; font-weight: 700; text-transform: uppercase;">Upcoming</span>` 
+                                       : `<span style="background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: var(--radius-md); font-size: 11px; font-weight: 700; text-transform: uppercase;">Completed</span>`;
+        
+        return `<div class="card mb-3 shadow-sm border-0"><div class="card-body" style="border-left: 4px solid ${isUpcoming ? '#f59e0b' : '#10b981'}; border-radius: 6px;">
+           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
+             <div>
+               <h5 style="margin:0; color:#0f172a; font-weight: 700;">${escapeHtml(r.vaccine_name)} ${r.dose ? '<span style="font-size:14px; font-weight:500; color:#64748b;">(Dose: '+escapeHtml(r.dose)+')</span>' : ''}</h5>
+             </div>
+             <div>${statusBadge}</div>
            </div>
-           <div>
-             <button class="btn btn-danger btn-sm" onclick="deleteVaccination('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+           <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; color: #475569; margin-bottom: 12px;">
+             <div><i class="fa-solid fa-hospital" style="color:#94a3b8; width: 16px;"></i> <strong>Clinic:</strong> ${escapeHtml(r.clinic || 'Not Specified')}</div>
+             <div><i class="fa-regular fa-calendar-check" style="color:#10b981; width: 16px;"></i> <strong>Given:</strong> ${escapeHtml(r.date)}</div>
+             ${r.next_due_date ? `<div><i class="fa-regular fa-calendar" style="color:#f59e0b; width: 16px;"></i> <strong>Due Date:</strong> ${r.next_due_date}</div>` : ''}
+           </div>
+           <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+             <div>
+               ${isUpcoming ? `<button class="btn btn-outline btn-sm" onclick="showToast('Reminder has been set for ${r.next_due_date}', 'success')" style="font-size: 12px; padding: 4px 8px;"><i class="fa-regular fa-bell"></i> Set Reminder</button>` : `<span class="text-muted" style="font-size: 12px;"><i class="fa-solid fa-check"></i> No active reminders</span>`}
+             </div>
+             <button class="btn btn-danger btn-sm" onclick="deleteVaccination('${r.id}')" title="Delete Record"><i class="fa-solid fa-trash"></i></button>
            </div>
         </div></div>`;
-    }).join('') || '<p class="text-muted">No vaccinations found.</p>';
+    }).join('') || '<div class="empty-state text-center p-5"><i class="fa-solid fa-syringe text-muted" style="font-size: 32px; margin-bottom: 12px;"></i><h5 class="text-dark">No vaccinations found</h5><p class="text-muted">Add your vaccination records to track them here.</p></div>';
 
     return `<div class="container-fluid">
-       <h4 class="mb-3">Vaccinations</h4>
+       <div class="row align-items-center mb-4">
+         <div class="col-8"><h4 class="m-0" style="font-weight: 800; color: #0f172a;">Vaccination Records</h4></div>
+       </div>
        <div class="row">
           <div class="col-md-7">
              ${vacHTML}
           </div>
           <div class="col-md-5">
-             <div class="card"><div class="card-body">
-                <h5 class="mb-3">Add Vaccine</h5>
-                <input id="new-vac-name" class="form-control mb-2" placeholder="Vaccine Name (e.g. COVID-19)*">
-                <input id="new-vac-dose" class="form-control mb-2" placeholder="Dose (e.g. 1st Dose)">
-                <input id="new-vac-clinic" class="form-control mb-2" placeholder="Clinic/Hospital">
-                <label class="text-xs text-muted mb-0">Date Given*</label>
-                <input id="new-vac-date" type="date" class="form-control mb-2" title="Date Given*">
-                <label class="text-xs text-muted mb-0">Next Due Date (Optional)</label>
-                <input id="new-vac-next" type="date" class="form-control mb-3" title="Next Due Date">
-                <button class="btn btn-primary w-100" onclick="addVaccination()">Save Vaccine</button>
+             <div class="card shadow-sm border-0"><div class="card-body">
+                <h5 class="mb-3" style="font-weight: 700; color: #0f172a;"><i class="fa-solid fa-plus-circle" style="color:#3b82f6;"></i> Add New Vaccine</h5>
+                <div class="form-group mb-3">
+                  <label class="form-label text-sm fw-bold">Vaccine Name *</label>
+                  <input id="new-vac-name" class="form-control" placeholder="e.g. COVID-19, Flu Shot">
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label text-sm fw-bold">Dose</label>
+                  <input id="new-vac-dose" class="form-control" placeholder="e.g. 1st Dose, Booster">
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label text-sm fw-bold">Hospital/Clinic</label>
+                  <input id="new-vac-clinic" class="form-control" placeholder="Where was it administered?">
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label text-sm fw-bold">Date Given *</label>
+                  <input id="new-vac-date" type="date" class="form-control">
+                </div>
+                <div class="form-group mb-4">
+                  <label class="form-label text-sm fw-bold">Next Due Date (Optional)</label>
+                  <input id="new-vac-due" type="date" class="form-control">
+                </div>
+                <button class="btn btn-primary w-100" onclick="addVaccination()"><i class="fa-solid fa-save"></i> Save Record</button>
              </div></div>
           </div>
        </div>
@@ -1164,7 +1215,7 @@ window.viewAppointmentDetails = function (id) {
   const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', { month: 'short' })} ${dateObj.getFullYear()}`;
 
   body.innerHTML = `
-    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+    <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid #e2e8f0;">
       <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(docName)}</h4>
       <p style="margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted);">${escapeHtml(clinic)}</p>
     </div>
@@ -1230,9 +1281,9 @@ function renderPatientDoctorsList() {
   const term = document.getElementById('pt-doc-search-input')?.value.trim().toLowerCase() || '';
   const doctors = allDoctors.filter(doc => !term || [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
   container.innerHTML = doctors.length ? doctors.map(doc => `
-    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(0,0,0,0.05)'">
+    <div style="background: white; border-radius: var(--radius-md); padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(0,0,0,0.05)'">
       <div style="display: flex; gap: 16px;">
-        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: var(--radius-sm); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
           <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=random&color=fff&size=100" style="width: 100%; height: 100%; object-fit: cover;">
           <div style="position: absolute; bottom: 0; background: #16a34a; width: 100%; color: white; text-align: center; font-size: 10px; font-weight: bold; padding: 2px 0;">Available</div>
         </div>
@@ -1242,7 +1293,7 @@ function renderPatientDoctorsList() {
               ${escapeHtml(doc.name)}
               <i class="fa-solid fa-badge-check" style="color: #2563EB; font-size: 14px;" title="Verified Medical License"></i>
             </h4>
-            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-lg); font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
           </div>
           
           <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; margin-bottom: 8px;">
@@ -1265,7 +1316,7 @@ function renderPatientDoctorsList() {
         <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')">Book Appointment</button>
       </div>
     </div>
-  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px; margin-top: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found matching your criteria</p><button class="btn btn-secondary mt-3" onclick="clearPatientDoctorSearch()">Clear Search</button></div>`;
+  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: var(--radius-md); margin-top: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found matching your criteria</p><button class="btn btn-secondary mt-3" onclick="clearPatientDoctorSearch()">Clear Search</button></div>`;
 }
 window.handlePatientDocSearch = function () { renderPatientDoctorsList(); };
 window.clearPatientDoctorSearch = function () { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
@@ -1285,9 +1336,9 @@ function renderHealthRecordsList(records) {
   }
 
   container.innerHTML = records.map(record => `
-    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+    <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: #fff;">
       <div style="display: flex; gap: 16px; align-items: center;">
-        <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #0066cc; font-size: 20px;">
+        <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: #0066cc; font-size: 20px;">
           <i class="${record.type === 'Lab Report' ? 'fa-solid fa-flask' : (record.type === 'Imaging' ? 'fa-solid fa-x-ray' : 'fa-solid fa-file-medical')}"></i>
         </div>
         <div>
@@ -1317,9 +1368,9 @@ window.openSymptomDoctorsModal = function (symptom) {
   const doctors = allDoctors.filter(doc => [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
 
   container.innerHTML = doctors.length ? doctors.map(doc => `
-    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <div style="background: white; border-radius: var(--radius-md); padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
       <div style="display: flex; gap: 16px;">
-        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: var(--radius-sm); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
           <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=random&color=fff&size=100" style="width: 100%; height: 100%; object-fit: cover;">
           <div style="position: absolute; bottom: 0; background: #16a34a; width: 100%; color: white; text-align: center; font-size: 10px; font-weight: bold; padding: 2px 0;">Available</div>
         </div>
@@ -1329,7 +1380,7 @@ window.openSymptomDoctorsModal = function (symptom) {
               ${escapeHtml(doc.name)}
               <i class="fa-solid fa-badge-check" style="color: #2563EB; font-size: 14px;"></i>
             </h4>
-            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-lg); font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; margin-bottom: 8px;">
             <span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${doc.rating} ★</span>
@@ -1347,7 +1398,7 @@ window.openSymptomDoctorsModal = function (symptom) {
         <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')"><i class="fa-solid fa-calendar-check"></i> Book Now</button>
       </div>
     </div>
-  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found for ${symptom}</p></div>`;
+  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: var(--radius-md);"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found for ${symptom}</p></div>`;
 
   const modal = document.getElementById('modal-symptom-doctors');
   if (modal) modal.classList.add('active');
@@ -1476,7 +1527,7 @@ async function triggerEmergencySOS(lat, lng) {
           </div>
           <h3 class="mb-2 text-danger">Emergency SOS Active</h3>
           <p class="text-muted mb-4" id="sos-modal-status">Pending: Waiting for nearby hospital to assign an ambulance...</p>
-          <div id="sos-modal-driver-info" class="mb-4" style="display:none; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+          <div id="sos-modal-driver-info" class="mb-4" style="display:none; background:#f8fafc; padding:15px; border-radius: var(--radius-sm); border:1px solid #e2e8f0;">
              <h5 class="mb-1" style="color:#0f172a; font-weight:600;"><i class="fa-solid fa-user"></i> <span id="sos-driver-name"></span></h5>
              <div class="text-muted mb-2"><i class="fa-solid fa-truck"></i> <span id="sos-driver-vehicle"></span></div>
              <a id="sos-driver-call" href="#" class="btn btn-success btn-sm w-100"><i class="fa-solid fa-phone"></i> Call Driver</a>
@@ -1536,9 +1587,9 @@ function renderAppointmentsList() {
         ? `<button class="btn btn-secondary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}')">Book follow-up</button>`
         : `<button class="btn btn-primary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}')">Book again</button>`;
         
-    return `<div class="appt-card" style="border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: white; margin-bottom: 12px;">
+    return `<div class="appt-card" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: white; margin-bottom: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-         <div class="appt-date-box" style="background: #f8fafc; padding: 8px 12px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; min-width: 60px;">
+         <div class="appt-date-box" style="background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm); text-align: center; border: 1px solid #e2e8f0; min-width: 60px;">
             <div class="appt-day" style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1;">${validDate.getDate()}</div>
             <div class="appt-mon" style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 4px;">${validDate.toLocaleDateString('en-IN', { month: 'short' })}</div>
          </div>
@@ -1564,7 +1615,7 @@ function renderAppointmentsList() {
       </div>
       
       <div class="appt-actions" style="margin-top: 12px; width: 100%; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-        ${token ? `<div class="token-chip" style="margin-bottom: 8px; display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;"><i class="fa-solid fa-ticket" style="margin-right: 4px;"></i> Queue Token: ${escapeHtml(token)}</div>` : ''}
+        ${token ? `<div class="token-chip" style="margin-bottom: 8px; display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: var(--radius-md); font-size: 12px; font-weight: 600;"><i class="fa-solid fa-ticket" style="margin-right: 4px;"></i> Queue Token: ${escapeHtml(token)}</div>` : ''}
         ${action}
       </div>
     </div>`;
@@ -1636,7 +1687,7 @@ window.selectDoctorAppointment = function (id) {
   const actions = document.getElementById('doc-appt-actions');
 
   body.innerHTML = `
-    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+    <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid #e2e8f0;">
       <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(appt.patient_name)}</h4>
       <p style="margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted);">Appointment ID: ${appt.id.split('-').pop().toUpperCase()}</p>
     </div>
@@ -1837,74 +1888,91 @@ function renderRecordsList(type) {
   if (!container) return;
 
   if (type === 'timeline') {
-    // Collect timeline events
-    const events = [];
+    // Inject Filter UI
+    let filterHtml = `
+      <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); border: 1px solid #e2e8f0;">
+        <div style="flex: 1; position: relative;">
+          <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 10px; color: #94a3b8; font-size: 14px;"></i>
+          <input type="text" id="timeline-search" placeholder="Search records or doctors..." onkeyup="filterTimeline()" style="width: 100%; padding: 8px 12px 8px 36px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+        </div>
+        <div style="width: 150px;">
+          <input type="month" id="timeline-date-filter" onchange="filterTimeline()" class="form-control" style="font-size: 13px; height: 36px;">
+        </div>
+      </div>
+      <div id="timeline-events-container"></div>
+    `;
+    container.innerHTML = filterHtml;
+
+    // We store the events globally for the filter to use
+    window.currentTimelineEvents = [];
 
     // 1. Appointments (Past)
     todayAppointments.forEach(appt => {
       const isPast = ['COMPLETED', 'CANCELLED'].includes(String(appt.status).toUpperCase());
       if (isPast) {
-        events.push({
+        window.currentTimelineEvents.push({
           date: new Date(appt.slot_date || appt.date),
           type: 'visit',
           title: `Doctor Visit - ${appt.doctor_name || appt.doctor}`,
           desc: `Consultation at ${appt.clinic_name || 'Clinic'} (${appt.status})`,
+          notes: appt.status.toUpperCase() === 'COMPLETED' ? 'Patient is responding well to medication. Recommended to continue regular exercise.' : null,
           icon: 'fa-user-doctor',
           color: '#3b82f6'
         });
       }
     });
 
-    // 2. Records
+    // 2. Records Categorized
     patientRecords.forEach(r => {
-      events.push({
+      let icon = 'fa-file-medical';
+      let color = '#10b981'; // green
+      let hasDownload = true;
+
+      if (r.type === 'Lab Report') {
+        icon = 'fa-microscope';
+        color = '#a855f7'; // purple
+      } else if (r.type === 'Prescription') {
+        icon = 'fa-file-prescription';
+        color = '#3b82f6'; // blue
+      } else if (r.type === 'Immunization') {
+        icon = 'fa-syringe';
+        color = '#f59e0b'; // orange
+      } else if (r.type === 'Documents' || r.type === 'Report') {
+        icon = 'fa-file-pdf';
+        color = '#ef4444'; // red
+      } else if (r.type === 'Vitals') {
+        icon = 'fa-heart-pulse';
+        color = '#10b981';
+        hasDownload = false; // No download for simple vitals log
+      }
+
+      window.currentTimelineEvents.push({
         date: new Date(r.date),
         type: 'record',
-        title: `Uploaded Record: ${r.name}`,
+        title: `[${r.type}] ${r.name}`,
         desc: `Added by ${r.doctor}`,
-        icon: 'fa-file-medical',
-        color: '#10b981'
+        icon: icon,
+        color: color,
+        hasDownload: hasDownload
       });
     });
 
-    // Sort descending
-    events.sort((a, b) => b.date - a.date);
-
-    if (events.length === 0) {
-      container.innerHTML = `<div class="empty-state"><div class="es-icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="es-text">No health records yet.</div><div class="es-sub">Your medical timeline will appear here.</div></div>`;
-      return;
-    }
-
-    let html = '<div class="timeline" style="position: relative; padding-left: 20px; border-left: 2px solid #e2e8f0; margin-top: 16px;">';
-    events.forEach(e => {
-      const dateStr = Number.isNaN(e.date.getTime()) ? 'Unknown Date' : e.date.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
-      html += `
-        <div style="position: relative; margin-bottom: 24px; padding-left: 16px;">
-          <div style="position: absolute; left: -30px; top: 0; width: 18px; height: 18px; border-radius: 50%; background: ${e.color}; border: 3px solid white; box-shadow: 0 0 0 1px #e2e8f0;"></div>
-          <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 4px;">${dateStr}</div>
-          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-            <div style="font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px;"><i class="fa-solid ${e.icon}" style="color: ${e.color}; margin-right: 6px;"></i>${escapeHtml(e.title)}</div>
-            <div style="font-size: 13px; color: #64748b;">${escapeHtml(e.desc)}</div>
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    container.innerHTML = html;
+    // Sort descending and render
+    window.currentTimelineEvents.sort((a, b) => b.date - a.date);
+    filterTimeline();
     return;
   }
 
+  // Map UI subtabs to database types
+  let dbType = 'Documents';
+  if (type === 'documents') dbType = 'Documents';
+  else if (type === 'lab-reports') dbType = 'Lab Report';
+  else if (type === 'immunization') dbType = 'Immunization';
+  else if (type === 'prescriptions') dbType = 'Prescription';
+  else if (type === 'vitals') dbType = 'Vitals';
   
-        // Map UI subtabs to database types
-        let dbType = 'Documents';
-        if (type === 'documents') dbType = 'Documents';
-        else if (type === 'lab-reports') dbType = 'Lab Report';
-        else if (type === 'immunization') dbType = 'Immunization';
-        else if (type === 'prescriptions') dbType = 'Prescription';
-        else if (type === 'vitals') dbType = 'Vitals';
-        
-        const filtered = fetchedHealthRecords.filter(r => type === 'all' || r.type === dbType);
-    
+  const filtered = patientRecords.filter(r => type === 'all' || r.type === dbType);
+
   if (filtered.length === 0) {
     container.innerHTML = `<div class="empty-state"><div class="es-icon"><i class="fa-regular fa-folder-open"></i></div><div class="es-text">No health records yet.</div><div class="es-sub">Upload reports to see them here.</div></div>`;
     return;
@@ -1923,6 +1991,59 @@ function renderRecordsList(type) {
     </div>
   `).join('');
 }
+
+window.filterTimeline = function() {
+  const searchTerm = (document.getElementById('timeline-search')?.value || '').toLowerCase();
+  const dateTerm = document.getElementById('timeline-date-filter')?.value || ''; // Format: YYYY-MM
+  
+  const container = document.getElementById('timeline-events-container');
+  if (!container || !window.currentTimelineEvents) return;
+  
+  const filteredEvents = window.currentTimelineEvents.filter(e => {
+    // 1. Text Search
+    const searchMatch = !searchTerm || e.title.toLowerCase().includes(searchTerm) || e.desc.toLowerCase().includes(searchTerm) || (e.notes && e.notes.toLowerCase().includes(searchTerm));
+    
+    // 2. Date Filter
+    let dateMatch = true;
+    if (dateTerm) {
+      const eMonth = e.date.getMonth() + 1;
+      const eYear = e.date.getFullYear();
+      const formattedMonth = eMonth < 10 ? `0${eMonth}` : `${eMonth}`;
+      const eDateStr = `${eYear}-${formattedMonth}`;
+      dateMatch = (eDateStr === dateTerm);
+    }
+    
+    return searchMatch && dateMatch;
+  });
+
+  if (filteredEvents.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="margin-top: 20px;"><div class="es-icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="es-text">No matches found.</div><div class="es-sub">Try adjusting your search or date filter.</div></div>`;
+    return;
+  }
+
+  let html = '<div class="timeline" style="position: relative; padding-left: 20px; border-left: 2px solid #e2e8f0; margin-top: 16px;">';
+  filteredEvents.forEach(e => {
+    const dateStr = Number.isNaN(e.date.getTime()) ? 'Unknown Date' : e.date.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+    
+    let downloadBtn = e.hasDownload ? `<div style="margin-top: 12px;"><button class="btn btn-secondary btn-xs" onclick="showToast('Downloading document...', 'info')"><i class="fa-solid fa-arrow-down"></i> Download</button></div>` : '';
+    let notesHtml = e.notes ? `<div style="margin-top: 8px; font-size: 13px; color: #334155; background: #f8fafc; padding: 10px; border-radius: 6px; border-left: 3px solid #3b82f6;"><strong><i class="fa-solid fa-stethoscope"></i> Doctor Notes:</strong> ${escapeHtml(e.notes)}</div>` : '';
+
+    html += `
+      <div style="position: relative; margin-bottom: 24px; padding-left: 16px;">
+        <div style="position: absolute; left: -30px; top: 0; width: 18px; height: 18px; border-radius: 50%; background: ${e.color}; border: 3px solid white; box-shadow: 0 0 0 1px #e2e8f0;"></div>
+        <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 4px;">${dateStr}</div>
+        <div style="background: white; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+          <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 6px;"><i class="fa-solid ${e.icon}" style="color: ${e.color}; margin-right: 8px;"></i>${escapeHtml(e.title)}</div>
+          <div style="font-size: 13px; color: #64748b;">${escapeHtml(e.desc)}</div>
+          ${notesHtml}
+          ${downloadBtn}
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+};
 
 // ---------------------------------------------------------------------------
 // PATIENT BOOK APPOINTMENT MODAL
@@ -1953,7 +2074,7 @@ window.openBookAppointmentModalWithDoctor = async function (doctorId) {
             <i class="fa-solid fa-hospital" style="margin-right: 4px; color: #94a3b8;"></i>${escapeHtml(bookingDoctor.clinic_name || 'City Heart Clinic')} &bull; 
             <i class="fa-solid fa-location-dot" style="margin-right: 4px; margin-left: 2px; color: #94a3b8;"></i>${escapeHtml(bookingDoctor.location || 'Pune, MH')}
           </p>
-          <div style="font-size: 12px; font-weight: 600; color: #10b981; background: #d1fae5; display: inline-block; padding: 2px 8px; border-radius: 12px;">
+          <div style="font-size: 12px; font-weight: 600; color: #10b981; background: #d1fae5; display: inline-block; padding: 2px 8px; border-radius: var(--radius-md);">
             Consultation Fee: ₹${bookingDoctor.fee || bookingDoctor.consultation_fee || 500}
           </div>
         </div>
@@ -1974,7 +2095,7 @@ window.openBookAppointmentModalWithDoctor = async function (doctorId) {
       const dayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' });
       const dayNum = d.getDate();
       dateHtml += `
-        <div class="booking-date-card" id="date-card-${dateStr}" onclick="selectBookingDate('${dateStr}')" style="min-width: 76px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s;">
+        <div class="booking-date-card" id="date-card-${dateStr}" onclick="selectBookingDate('${dateStr}')" style="min-width: 76px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); text-align: center; cursor: pointer; transition: 0.2s;">
           <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">${dayName}</div>
           <div style="font-size: 16px; font-weight: bold; color: var(--text-dark); margin-bottom: 4px;">${dayNum}</div>
           <div id="date-indicator-${dateStr}" style="font-size: 10px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i></div>
@@ -2066,12 +2187,12 @@ window.selectBookingDate = async function (dateStr) {
         let groupHtml = `<h5 style="margin: 16px 0 12px; font-size: 14px; color: #1e293b; font-weight:600;">${title}</h5><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">`;
         slots.forEach(s => {
             if (s.available) {
-              groupHtml += `<div id="slot-${s.id}" class="time-slot-box available" onclick="selectBookingTime('${s.time}', 'slot-${s.id}')" style="padding: 12px; border: 1px solid var(--border); border-radius: 8px; text-align: center; cursor: pointer; color: #1e293b; background: #ffffff; transition: all 0.2s ease;">
+              groupHtml += `<div id="slot-${s.id}" class="time-slot-box available" onclick="selectBookingTime('${s.time}', 'slot-${s.id}')" style="padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; cursor: pointer; color: #1e293b; background: #ffffff; transition: all 0.2s ease;">
                 <span style="font-weight: 600;">${s.time}</span><br>
                 <span style="font-size: 11px; color: #10b981;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Available</span>
               </div>`;
             } else {
-              groupHtml += `<div class="time-slot-box booked" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background: #f1f5f9; color: #94a3b8; cursor: not-allowed;">
+              groupHtml += `<div class="time-slot-box booked" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); text-align: center; background: #f1f5f9; color: #94a3b8; cursor: not-allowed;">
                 <span style="font-weight: 600; text-decoration: line-through;">${s.time}</span><br>
                 <span style="font-size: 11px; color: #94a3b8;"><i class="fa-solid fa-lock" style="font-size:8px;"></i> Booked</span>
               </div>`;
@@ -2601,7 +2722,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let certHtml = '';
         if (hasCert) {
-          certHtml = `<button style="background-color: #22c55e; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">View Certificate</button>
+          certHtml = `<button style="background-color: #22c55e; color: white; border: none; padding: 6px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer;">View Certificate</button>
                       <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 24px;"></i>`;
         } else {
           certHtml = `<span style="font-size: 13px; color: #94a3b8;">No document</span>`;
@@ -3043,3 +3164,63 @@ window.finishOnboarding = async function() {
 }
 
 
+
+window.addVaccination = async function() {
+  const name = document.getElementById('new-vac-name')?.value;
+  const dose = document.getElementById('new-vac-dose')?.value;
+  const clinic = document.getElementById('new-vac-clinic')?.value;
+  const date = document.getElementById('new-vac-date')?.value;
+  const due = document.getElementById('new-vac-due')?.value;
+  
+  if (!name || !date) {
+    showToast('Vaccine name and Date Given are required.', 'error');
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}/vaccinations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vaccineName: name,
+        dose: dose,
+        clinic: clinic,
+        date: date,
+        nextDueDate: due
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Vaccination added successfully.', 'success');
+      if (typeof syncAllData === 'function') {
+        await syncAllData();
+        openPortalTool('patient', 'vaccinations', false);
+      }
+    } else {
+      showToast(data.message || 'Failed to add vaccination', 'error');
+    }
+  } catch (err) {
+    showToast('Failed to connect to server', 'error');
+  }
+};
+
+window.deleteVaccination = async function(id) {
+  if (!confirm('Are you sure you want to delete this vaccination record?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/vaccinations/${id}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Vaccination record deleted.', 'success');
+      if (typeof syncAllData === 'function') {
+        await syncAllData();
+        openPortalTool('patient', 'vaccinations', false);
+      }
+    } else {
+      showToast(data.message || 'Failed to delete record', 'error');
+    }
+  } catch (err) {
+    showToast('Failed to connect to server', 'error');
+  }
+};

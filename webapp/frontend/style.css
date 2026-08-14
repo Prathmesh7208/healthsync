@@ -26,16 +26,27 @@
   --red-light:      #ffe4e6;
   --purple:         #7c3aed;
   --purple-light:   #ede9fe;
+  
   --sidebar-w:      260px;
   --header-h:       72px;
+  
+  /* Shadows */
   --shadow-sm:      0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   --shadow-md:      0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
   --shadow-lg:      0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-  --radius-sm:      12px;
-  --radius-md:      20px;
-  --radius-lg:      28px;
+  
+  /* Radii */
+  --radius-sm:      8px;
+  --radius-md:      12px;
+  --radius-lg:      16px;
+  --radius-xl:      24px;
+  
+  /* Glassmorphism */
   --glass-bg:       rgba(255, 255, 255, 0.75);
   --glass-border:   rgba(255, 255, 255, 0.5);
+  
+  /* Transition standard */
+  --transition:     all 0.2s ease-in-out;
 }
 
 /* ─── Role Themes ─── */
@@ -439,16 +450,17 @@ img { max-width: 100%; display: block; }
    BUTTONS
    ===================================================== */
 .btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 600; transition: all .15s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 600; transition: var(--transition);
   cursor: pointer; border: none;
 }
+.btn i, .btn svg { width: 18px; text-align: center; }
+
 .btn-primary {
   background: linear-gradient(135deg, var(--blue-primary), var(--blue-hover));
   color: #fff;
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .btn-primary:hover {
   transform: translateY(-2px);
@@ -462,9 +474,13 @@ img { max-width: 100%; display: block; }
 .btn-danger:hover { background: #DC2626; }
 .btn-outline { background: transparent; color: var(--blue-primary); border: 1.5px solid var(--blue-primary); }
 .btn-outline:hover { background: var(--blue-light); }
-.btn-sm { padding: 5px 12px; font-size: 12px; }
-.btn-xs { padding: 3px 8px; font-size: 11px; border-radius: 5px; }
-.btn-icon { padding: 7px; border-radius: var(--radius-sm); }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); }
+.btn-sm i, .btn-sm svg { width: 16px; }
+.btn-xs { padding: 4px 8px; font-size: 11px; border-radius: var(--radius-sm); }
+.btn-xs i, .btn-xs svg { width: 14px; }
+.btn-lg { padding: 12px 24px; font-size: 16px; }
+.btn-block { display: flex; width: 100%; min-height: 48px; }
+.btn-icon { padding: 8px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; }
 
 /* =====================================================
    STATUS BADGES
@@ -737,15 +753,15 @@ textarea.form-control { resize: vertical; min-height: 100px; padding: 12px 16px;
   max-height: 90vh; overflow-y: hidden; display: flex; flex-direction: column;
   animation: modalIn .2s ease;
 }
-.modal-sm { max-width: 420px; }
+.modal-sm { max-width: 400px; }
 .modal-md { max-width: 600px; }
-.modal-lg { max-width: 820px; }
-.modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.modal-header h3 { font-size: 15px; font-weight: 700; }
+.modal-lg { max-width: 800px; }
+.modal-header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.modal-header h3 { font-size: 16px; font-weight: 700; margin: 0; }
 .modal-close { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; line-height: 1; padding: 0; }
 .modal-close:hover { color: var(--red); }
-.modal-body { padding: 22px; overflow-y: auto; }
-.modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; }
+.modal-body { padding: 24px; overflow-y: auto; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end; flex-shrink: 0; }
 @keyframes modalIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* =====================================================
@@ -2937,4 +2953,21 @@ select.form-control { padding-right: 34px; }
 /* Added by fixing script for responsive grid */
 @media (max-width: 768px) {
   .row.g-3 > div { width: 100%; }
+  
+  /* Standard Mobile Spacing */
+  .card-body, .modal-body { padding: 16px !important; }
+  .card-header, .modal-header { padding: 16px !important; }
+  .card-footer, .modal-footer { padding: 12px 16px !important; }
+  
+  /* Collapsing Grids */
+  .grid-2, .grid-3, .grid-4, .grid-col-1-2, .grid-col-2-1 { 
+    grid-template-columns: 1fr !important; 
+    gap: 12px !important; 
+  }
+  
+  /* Modal Width Adjustment */
+  .modal-content, .modal-sm, .modal-md, .modal-lg, .modal-box { 
+    width: 95% !important; 
+    margin: 0 auto !important; 
+  }
 }

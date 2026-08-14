@@ -305,7 +305,7 @@ function renderEmergencyAlertToDOM(data) {
     const dispatchDisabled = isDispatched ? 'disabled' : '';
 
     list.innerHTML += `
-      <div id="emerg-${data.caseId}" class="grid-3" style="align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
+      <div id="emerg-${data.caseId}" class="grid-3" style="align-items: center; background: white; padding: 16px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
         <div style="display: flex; gap: 12px; align-items: center;">
           <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px;">👨</div>
           <div>
@@ -415,7 +415,7 @@ async function renderDashboardReminders() {
       </div>
       <div class="med-icon-big">
         <div class="pill-illustration">
-          <div style="background: #e0e7ff; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <div style="background: #e0e7ff; width: 60px; height: 60px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
              <i class="fa-solid fa-pills" style="color: #4f46e5; font-size: 24px;"></i>
           </div>
         </div>
@@ -1069,7 +1069,7 @@ function renderNextAppointment(appt) {
   if (!container) return;
   if (!appt) {
     container.innerHTML = `
-      <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; text-align: center;">
+      <div class="card" style="padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; text-align: center;">
         <i class="fa-regular fa-calendar-xmark" style="font-size: 24px; color: var(--text-muted); margin-bottom: 8px;"></i>
         <p style="font-size: 14px; color: var(--text-muted); margin: 0 0 12px 0;">No upcoming appointment</p>
         <button class="btn btn-primary btn-sm" onclick="switchPatientPage('doctors')">Book Appointment</button>
@@ -1098,7 +1098,7 @@ function renderNextAppointment(appt) {
       }
     }
     queueInfoHtml = `
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 12px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
       <div>
         <p style="font-size: 11px; color: #166534; font-weight: 700; margin: 0; text-transform: uppercase;">Live Status</p>
         <p style="font-size: 14px; color: #15803d; font-weight: 600; margin: 2px 0 0 0;">Token ${appt.token_number || 'Waitlist'}</p>
@@ -1111,7 +1111,7 @@ function renderNextAppointment(appt) {
   }
 
   container.innerHTML = `
-    <div class="card" style="padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
+    <div class="card" style="padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
       <div style="display: flex; gap: 16px;">
         <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px;">🏥</div>
         <div style="flex: 1;">
@@ -1148,7 +1148,7 @@ window.viewAppointmentDetails = function(id) {
   const displayDate = Number.isNaN(dateObj.getTime()) ? appt.slot_date : `${dateObj.getDate()} ${dateObj.toLocaleDateString('en-IN', {month:'short'})} ${dateObj.getFullYear()}`;
   
   body.innerHTML = `
-    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+    <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid #e2e8f0;">
       <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(docName)}</h4>
       <p style="margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted);">${escapeHtml(clinic)}</p>
     </div>
@@ -1214,9 +1214,9 @@ function renderPatientDoctorsList() {
   const term = document.getElementById('pt-doc-search-input')?.value.trim().toLowerCase() || '';
   const doctors = allDoctors.filter(doc => !term || [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
   container.innerHTML = doctors.length ? doctors.map(doc => `
-    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(0,0,0,0.05)'">
+    <div style="background: white; border-radius: var(--radius-md); padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(0,0,0,0.05)'">
       <div style="display: flex; gap: 16px;">
-        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: var(--radius-sm); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
           <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=random&color=fff&size=100" style="width: 100%; height: 100%; object-fit: cover;">
           <div style="position: absolute; bottom: 0; background: #16a34a; width: 100%; color: white; text-align: center; font-size: 10px; font-weight: bold; padding: 2px 0;">Available</div>
         </div>
@@ -1226,7 +1226,7 @@ function renderPatientDoctorsList() {
               ${escapeHtml(doc.name)}
               <i class="fa-solid fa-badge-check" style="color: #2563EB; font-size: 14px;" title="Verified Medical License"></i>
             </h4>
-            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-lg); font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
           </div>
           
           <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; margin-bottom: 8px;">
@@ -1249,7 +1249,7 @@ function renderPatientDoctorsList() {
         <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')">Book Appointment</button>
       </div>
     </div>
-  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px; margin-top: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found matching your criteria</p><button class="btn btn-secondary mt-3" onclick="clearPatientDoctorSearch()">Clear Search</button></div>`;
+  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: var(--radius-md); margin-top: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found matching your criteria</p><button class="btn btn-secondary mt-3" onclick="clearPatientDoctorSearch()">Clear Search</button></div>`;
 }
 window.handlePatientDocSearch = function() { renderPatientDoctorsList(); };
 window.clearPatientDoctorSearch = function() { const input = document.getElementById('pt-doc-search-input'); if (input) input.value = ''; renderPatientDoctorsList(); };
@@ -1269,9 +1269,9 @@ function renderHealthRecordsList(records) {
   }
 
   container.innerHTML = records.map(record => `
-    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+    <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: #fff;">
       <div style="display: flex; gap: 16px; align-items: center;">
-        <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #0066cc; font-size: 20px;">
+        <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: #0066cc; font-size: 20px;">
           <i class="${record.type === 'Lab Report' ? 'fa-solid fa-flask' : (record.type === 'Imaging' ? 'fa-solid fa-x-ray' : 'fa-solid fa-file-medical')}"></i>
         </div>
         <div>
@@ -1301,9 +1301,9 @@ window.openSymptomDoctorsModal = function(symptom) {
   const doctors = allDoctors.filter(doc => [doc.name, doc.specialization, doc.clinic, doc.languages].some(value => String(value || '').toLowerCase().includes(term)));
   
   container.innerHTML = doctors.length ? doctors.map(doc => `
-    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <div style="background: white; border-radius: var(--radius-md); padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
       <div style="display: flex; gap: 16px;">
-        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+        <div style="width: 80px; height: 100px; background: #e5e7eb; border-radius: var(--radius-sm); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
           <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=random&color=fff&size=100" style="width: 100%; height: 100%; object-fit: cover;">
           <div style="position: absolute; bottom: 0; background: #16a34a; width: 100%; color: white; text-align: center; font-size: 10px; font-weight: bold; padding: 2px 0;">Available</div>
         </div>
@@ -1313,7 +1313,7 @@ window.openSymptomDoctorsModal = function(symptom) {
               ${escapeHtml(doc.name)}
               <i class="fa-solid fa-badge-check" style="color: #2563EB; font-size: 14px;"></i>
             </h4>
-            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-lg); font-weight: bold;"><i class="fa-solid fa-star"></i> Top Rated</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; margin-bottom: 8px;">
             <span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${doc.rating} ★</span>
@@ -1331,7 +1331,7 @@ window.openSymptomDoctorsModal = function(symptom) {
         <button style="flex: 1; background: #0066cc; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openBookAppointmentModalWithDoctor('${doc.id}')"><i class="fa-solid fa-calendar-check"></i> Book Now</button>
       </div>
     </div>
-  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: 12px;"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found for ${symptom}</p></div>`;
+  `).join('') : `<div style="padding: 40px 20px; text-align: center; color: #6b7280; background: #f9fafb; border-radius: var(--radius-md);"><i class="fa-solid fa-user-doctor" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="margin: 0;">No doctors found for ${symptom}</p></div>`;
   
   const modal = document.getElementById('modal-symptom-doctors');
   if (modal) modal.classList.add('active');
@@ -1463,7 +1463,7 @@ async function triggerEmergencySOS(lat, lng) {
           </div>
           <h3 class="mb-2 text-danger">Emergency SOS Active</h3>
           <p class="text-muted mb-4" id="sos-modal-status">Pending: Waiting for nearby hospital to assign an ambulance...</p>
-          <div id="sos-modal-driver-info" class="mb-4" style="display:none; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+          <div id="sos-modal-driver-info" class="mb-4" style="display:none; background:#f8fafc; padding:15px; border-radius: var(--radius-sm); border:1px solid #e2e8f0;">
              <h5 class="mb-1" style="color:#0f172a; font-weight:600;"><i class="fa-solid fa-user"></i> <span id="sos-driver-name"></span></h5>
              <div class="text-muted mb-2"><i class="fa-solid fa-truck"></i> <span id="sos-driver-vehicle"></span></div>
              <a id="sos-driver-call" href="#" class="btn btn-success btn-sm w-100"><i class="fa-solid fa-phone"></i> Call Driver</a>
@@ -1596,7 +1596,7 @@ window.selectDoctorAppointment = function(id) {
   const actions = document.getElementById('doc-appt-actions');
   
   body.innerHTML = `
-    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+    <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid #e2e8f0;">
       <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">${escapeHtml(appt.patient_name)}</h4>
       <p style="margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted);">Appointment ID: ${appt.id.split('-').pop().toUpperCase()}</p>
     </div>
@@ -1842,7 +1842,7 @@ function renderRecordsList(type) {
         <div style="position: relative; margin-bottom: 24px; padding-left: 16px;">
           <div style="position: absolute; left: -30px; top: 0; width: 18px; height: 18px; border-radius: 50%; background: ${e.color}; border: 3px solid white; box-shadow: 0 0 0 1px #e2e8f0;"></div>
           <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 4px;">${dateStr}</div>
-          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+          <div style="background: white; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
             <div style="font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 4px;"><i class="fa-solid ${e.icon}" style="color: ${e.color}; margin-right: 6px;"></i>${escapeHtml(e.title)}</div>
             <div style="font-size: 13px; color: #64748b;">${escapeHtml(e.desc)}</div>
           </div>
@@ -1926,7 +1926,7 @@ window.openBookAppointmentModalWithDoctor = async function (doctorId) {
       const dayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' });
       const dayNum = d.getDate();
       dateHtml += `
-        <div class="booking-date-card" id="date-card-${dateStr}" onclick="selectBookingDate('${dateStr}')" style="min-width: 76px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s;">
+        <div class="booking-date-card" id="date-card-${dateStr}" onclick="selectBookingDate('${dateStr}')" style="min-width: 76px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); text-align: center; cursor: pointer; transition: 0.2s;">
           <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">${dayName}</div>
           <div style="font-size: 16px; font-weight: bold; color: var(--text-dark); margin-bottom: 4px;">${dayNum}</div>
           <div id="date-indicator-${dateStr}" style="font-size: 10px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i></div>
@@ -2019,12 +2019,12 @@ window.selectBookingDate = async function (dateStr) {
         slots.forEach(s => {
           const id = `time-slot-${s.time.replace(/[: ]/g, '-')}`;
           if (s.available) {
-            groupHtml += `<div id="${id}" class="time-slot-box available" onclick="selectBookingTime('${s.time}', '${id}')" style="padding: 10px; border: 1px solid var(--blue-primary); border-radius: 8px; cursor: pointer; display:flex; flex-direction:column; align-items:center; transition:0.2s;">
+            groupHtml += `<div id="${id}" class="time-slot-box available" onclick="selectBookingTime('${s.time}', '${id}')" style="padding: 10px; border: 1px solid var(--blue-primary); border-radius: var(--radius-sm); cursor: pointer; display:flex; flex-direction:column; align-items:center; transition:0.2s;">
               <span style="font-weight:600; font-size:14px; color:#1e293b; margin-bottom:4px;">${s.time}</span>
               <span style="font-size:11px; color:#10b981; display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Available</span>
             </div>`;
           } else {
-            groupHtml += `<div class="time-slot-box booked" style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: not-allowed; background:#f8fafc; opacity:0.7; display:flex; flex-direction:column; align-items:center;">
+            groupHtml += `<div class="time-slot-box booked" style="padding: 10px; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); cursor: not-allowed; background:#f8fafc; opacity:0.7; display:flex; flex-direction:column; align-items:center;">
               <span style="font-weight:600; font-size:14px; color:#94a3b8; margin-bottom:4px; text-decoration:line-through;">${s.time}</span>
               <span style="font-size:11px; color:#ef4444; display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Booked</span>
             </div>`;
@@ -3042,7 +3042,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (recPanel && recList) {
         recPanel.classList.remove('hidden');
         const alertHtml = `
-          <div id="alert-${data.caseId}" class="grid-3" style="gap: 24px; align-items: center; background: white; padding: 16px; border-radius: 8px; box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
+          <div id="alert-${data.caseId}" class="grid-3" style="gap: 24px; align-items: center; background: white; padding: 16px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); border: 1px solid #fecaca; margin-bottom: 12px;">
             <div>
               <div style="font-size: 16px; font-weight: 700; color: #1e293b;">${data.patientName || 'Patient'}</div>
               <div style="font-size: 13px; color: var(--text-muted);"><i class="fa-solid fa-phone"></i> ${data.phone || 'N/A'}</div>
@@ -3065,7 +3065,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ambPanel && ambList) {
         ambPanel.classList.remove('hidden');
         const ambAlertHtml = `
-          <div id="amb-alert-${data.caseId}" style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #fecaca;">
+          <div id="amb-alert-${data.caseId}" style="background: white; padding: 16px; border-radius: var(--radius-sm); border: 1px solid #fecaca;">
             <div style="font-size: 16px; font-weight: 700;">${data.patientName || 'Patient'}</div>
             <div style="font-size: 13px; color: #64748b; margin-bottom: 8px;"><i class="fa-solid fa-phone"></i> ${data.phone || 'N/A'}</div>
             <a href="https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}" target="_blank" class="btn btn-outline btn-block mb-2"><i class="fa-solid fa-map-location-dot"></i> View on Maps</a>

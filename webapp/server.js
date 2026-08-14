@@ -1495,6 +1495,12 @@ function apiRouter(req, res, pathname, url, body) {
       () => json(res, 201, { success: true, vaccination: { id } })
     );
   }
+  if (pathname.startsWith('/v1/vaccinations/') && method === 'DELETE') {
+    const id = pathname.split('/')[3];
+    return db.run('DELETE FROM vaccinations WHERE id=? AND patient_id=?', [id, req.user.userId], () => {
+      json(res, 200, { success: true });
+    });
+  }
 
   // --- AMBULANCE REQUESTS ---
   if (pathname === '/v1/ambulance-requests' && method === 'GET') {
