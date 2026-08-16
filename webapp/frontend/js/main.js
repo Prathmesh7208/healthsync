@@ -78,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  }
 });
 
 function renderHealthTip() {
@@ -3266,54 +3265,3 @@ async function restoreSession() {
 }
 
 
-// --- RESTORED FUNCTIONS ---
-let healthTipTimer;
-let healthTipIndex = 0;
-
-function startHealthTipRotation() {
-  if (typeof renderHealthTip === 'function') renderHealthTip();
-  clearInterval(healthTipTimer);
-  healthTipTimer = setInterval(() => { 
-    if (typeof curatedHealthTips !== 'undefined' && curatedHealthTips.length > 0) {
-      healthTipIndex = (healthTipIndex + 1) % curatedHealthTips.length; 
-      if (typeof renderHealthTip === 'function') renderHealthTip(); 
-    }
-  }, 20000);
-}
-
-async function restoreSession() {
-  const saved = localStorage.getItem('healthsync-session');
-  if (!saved) return false;
-  try {
-    const session = JSON.parse(saved);
-    const response = await fetch(`${API_BASE}/auth/refresh`, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ refreshToken: session.refreshToken }) 
-    });
-    const data = await response.json();
-    if (!data.success) throw new Error('Session refresh failed');
-    
-    currentUser = { ...session.user, token: data.token, refreshToken: session.refreshToken };
-    localStorage.setItem('healthsync-session', JSON.stringify({ user: currentUser, refreshToken: currentUser.refreshToken }));
-    
-    // Hide loader, show app
-    const globalLoader = document.getElementById('global-loader');
-    if (globalLoader) globalLoader.classList.add('hidden');
-    
-    if (typeof finishLogin === 'function') finishLogin();
-    
-    return true;
-  } catch (err) { 
-    console.error('restoreSession error:', err);
-    localStorage.removeItem('healthsync-session');
-    
-    // Ensure loader is hidden and onboarding is shown
-    const globalLoader = document.getElementById('global-loader');
-    if (globalLoader) globalLoader.classList.add('hidden');
-    const obFlow = document.getElementById('onboarding-flow');
-    if (obFlow) obFlow.classList.remove('hidden');
-    
-    return false;
-  }
-}
