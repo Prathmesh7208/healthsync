@@ -2763,6 +2763,8 @@ select.form-control { padding-right: 34px; }
 .lang-titles p { font-size: 14px; color: #64748b; font-weight: 500; }
 .lang-illustration { display: flex; justify-content: center; margin-top: 20px; }
 .lang-card-overlay {
+  position: relative;
+  z-index: 10;
   background: #fff;
   border-radius: 24px;
   margin: -30px 16px 16px;

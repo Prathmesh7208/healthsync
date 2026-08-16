@@ -2736,17 +2736,12 @@ window.selectOnboardingLanguage = function(btn, lang) {
   document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   btn.dataset.selectedLang = lang;
-  
-  const continueBtn = document.getElementById('lang-continue-btn');
-  if (continueBtn) {
-    continueBtn.disabled = false;
-  }
 }
 
 window.submitLanguageSelection = function() {
   const activeBtn = document.querySelector('.lang-opt.active');
-  if (!activeBtn) return;
-  const lang = activeBtn.dataset.selectedLang || 'English';
+  // Default to English if nothing is selected (though English is selected by default in HTML)
+  const lang = activeBtn ? (activeBtn.dataset.selectedLang || 'English') : 'English';
   
   if (typeof window.applyLanguage === 'function') {
     window.applyLanguage(lang);
