@@ -2679,6 +2679,7 @@ select.form-control { padding-right: 34px; }
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
+  overflow-y: auto;
   background: #fff;
   font-family: 'Inter', sans-serif; /* assuming standard font */
 }
