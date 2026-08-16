@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     restoreSession().then(success => {
       if (success) {
         if (typeof renderPatientHealthProfile === 'function') renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
         if (typeof startHealthTipRotation === 'function') startHealthTipRotation();
         const dates = document.querySelectorAll('.current-date-str');
         const now = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(syncAllData, 8000);
       }
     });
+  }
   }
 });
 
@@ -102,6 +104,7 @@ window.startDemoExperience = function (role, mobile) {
   document.getElementById('in-app-demo-banner')?.classList.remove('hidden');
   switchGlobalRole(role === 'reception' ? 'reception' : role);
   renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
   fetchDoctors();
   syncAllData();
   return true;
@@ -196,6 +199,7 @@ function finishLogin() {
   const role = String(currentUser?.role || 'PATIENT').toUpperCase();
   switchGlobalRole(role === 'DOCTOR' ? 'doctor' : role === 'RECEPTIONIST' ? 'reception' : role === 'AMBULANCE' ? 'ambulance' : 'patient');
   renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
   fetchNotifications();
   if (role === 'RECEPTIONIST' || role === 'AMBULANCE' || role === 'DOCTOR') {
     fetchPendingEmergencies();
@@ -576,6 +580,7 @@ window.switchPatientPage = function (pageId, remember = true) {
   const targetPage = document.getElementById(`patient-page-${pageId}`);
   if (targetPage) targetPage.classList.add('active');
   if (pageId === 'health-profile') renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
   if (pageId === 'health-records') {
     const firstTab = document.querySelector('.records-menu-item');
     if (firstTab) switchRecordsSubtab(firstTab, 'timeline');
@@ -732,6 +737,7 @@ window.saveHealthProfile = function (event) {
   if (!profile.name || !profile.job || (profile.job === 'Other' && !profile.customJob) || profile.age < 18 || profile.age > 120 || profile.height < 80 || profile.height > 250 || profile.weight < 20 || profile.weight > 400 || profile.workHours < 0 || profile.workHours > 24 || (profile.emergencyPhone && emergencyDigits.length < 7)) return showToast('Please enter valid adult health profile details.', 'warning');
   saveHealthProfileData(profile);
   renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
   showToast('Your wellness guide has been updated.', 'success');
 };
 window.chooseProfilePhoto = function (source) {
@@ -756,6 +762,7 @@ window.saveProfilePhoto = function (file) {
       current.photoDataUrl = canvas.toDataURL('image/jpeg', .84);
       saveHealthProfileData(current);
       renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
       showToast('Profile photo updated.', 'success');
     };
     image.onerror = () => showToast('That image could not be opened. Please try another one.', 'error');
@@ -769,6 +776,7 @@ window.removeProfilePhoto = function () {
   delete profile.photoDataUrl;
   saveHealthProfileData(profile);
   renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
   showToast('Profile photo removed.', 'success');
 };
 window.toggleCustomWorkField = function () {
@@ -2908,6 +2916,7 @@ window.finishOnboarding = async function() {
     } catch(e) {}
     
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
@@ -2919,6 +2928,7 @@ window.finishOnboarding = async function() {
     window.currentUser = { id: 'demo-patient', name: 'Demo Patient', role: 'PATIENT', demo: true };
     window.switchGlobalRole('patient');
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
   }
 }
@@ -3123,6 +3133,7 @@ window.finishOnboarding = async function() {
     } catch(e) {}
     
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
     if (typeof window.fetchNotifications === 'function') window.fetchNotifications();
@@ -3134,6 +3145,7 @@ window.finishOnboarding = async function() {
     window.currentUser = { id: 'demo-patient', name: 'Demo Patient', role: 'PATIENT', demo: true };
     window.switchGlobalRole('patient');
     if (typeof window.renderPatientHealthProfile === 'function') window.renderPatientHealthProfile();
+  if (typeof fetchDoctors === 'function') fetchDoctors();
     if (typeof window.fetchDoctors === 'function') window.fetchDoctors();
   }
 }
@@ -3237,6 +3249,59 @@ async function restoreSession() {
     if (globalLoader) globalLoader.classList.add('hidden');
     
     if (typeof finishOnboarding === 'function') finishOnboarding();
+    
+    return true;
+  } catch (err) { 
+    console.error('restoreSession error:', err);
+    localStorage.removeItem('healthsync-session');
+    
+    // Ensure loader is hidden and onboarding is shown
+    const globalLoader = document.getElementById('global-loader');
+    if (globalLoader) globalLoader.classList.add('hidden');
+    const obFlow = document.getElementById('onboarding-flow');
+    if (obFlow) obFlow.classList.remove('hidden');
+    
+    return false;
+  }
+}
+
+
+// --- RESTORED FUNCTIONS ---
+let healthTipTimer;
+let healthTipIndex = 0;
+
+function startHealthTipRotation() {
+  if (typeof renderHealthTip === 'function') renderHealthTip();
+  clearInterval(healthTipTimer);
+  healthTipTimer = setInterval(() => { 
+    if (typeof curatedHealthTips !== 'undefined' && curatedHealthTips.length > 0) {
+      healthTipIndex = (healthTipIndex + 1) % curatedHealthTips.length; 
+      if (typeof renderHealthTip === 'function') renderHealthTip(); 
+    }
+  }, 20000);
+}
+
+async function restoreSession() {
+  const saved = localStorage.getItem('healthsync-session');
+  if (!saved) return false;
+  try {
+    const session = JSON.parse(saved);
+    const response = await fetch(`${API_BASE}/auth/refresh`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ refreshToken: session.refreshToken }) 
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error('Session refresh failed');
+    
+    currentUser = { ...session.user, token: data.token, refreshToken: session.refreshToken };
+    localStorage.setItem('healthsync-session', JSON.stringify({ user: currentUser, refreshToken: currentUser.refreshToken }));
+    
+    // Hide loader, show app
+    const globalLoader = document.getElementById('global-loader');
+    if (globalLoader) globalLoader.classList.add('hidden');
+    
+    if (typeof finishLogin === 'function') finishLogin();
     
     return true;
   } catch (err) { 
