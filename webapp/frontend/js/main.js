@@ -2735,9 +2735,24 @@ let obTimer = null;
 window.selectOnboardingLanguage = function(btn, lang) {
   document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  setTimeout(() => {
-    goToStep('step-auth');
-  }, 400);
+  btn.dataset.selectedLang = lang;
+  
+  const continueBtn = document.getElementById('lang-continue-btn');
+  if (continueBtn) {
+    continueBtn.disabled = false;
+  }
+}
+
+window.submitLanguageSelection = function() {
+  const activeBtn = document.querySelector('.lang-opt.active');
+  if (!activeBtn) return;
+  const lang = activeBtn.dataset.selectedLang || 'English';
+  
+  if (typeof window.applyLanguage === 'function') {
+    window.applyLanguage(lang);
+  }
+  
+  goToStep('step-auth');
 }
 
 window.goToStep = function(stepId) {
