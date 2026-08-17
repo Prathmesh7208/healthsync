@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  role         String
+  phoneNumber  String    @unique
+  email        String?   @unique
+  passwordHash String?
+  isVerified   Boolean   @default(false)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+
+  patient      Patient?
+  doctor       Doctor?
+  receptionist Receptionist?
+  ambulanceOp  Ambulance?
+  auditLogs    AuditLog[]
+}
+
+model Patient {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id])
+  fullName              String
+  dateOfBirth           DateTime?
+  gender                String?
+  bloodGroup            String?
+  profilePhoto          String?
+  address               String?
+  city                  String?
+  state                 String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+  prescriptions  Prescription[]
+  emergencies    EmergencyCase[]
+}
+
+model Doctor {
+  id                 String  @id @default(uuid())
+  userId             String  @unique
+  user               User    @relation(fields: [userId], references: [id])
+  fullName           String
+  specialization     String
+  qualification      String?
+  registrationNumber String? @unique
+  experienceYears    Int?
+  consultationFee    Float?
+  languages          String?
+  profilePhoto       String?
+  verificationStatus Boolean @default(false)
+
+  clinics        DoctorClinic[]
+  availability   DoctorAvailability[]
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+  prescriptions  Prescription[]
+}
+
+model Hospital {
+  id                 String   @id @default(uuid())
+  name               String
+  registrationNumber String?  @unique
+  address            String?
+  city               String?
+  state              String?
+  pincode            String?
+  latitude           Float?
+  longitude          Float?
+  phone              String?
+  email              String?
+  emergencyAvailable Boolean  @default(false)
+  ambulanceAvailable Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  clinics    Clinic[]
+  ambulances Ambulance[]
+}
+
+model Clinic {
+  id         String   @id @default(uuid())
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+  name       String
+  address    String?
+  city       String?
+  state      String?
+  latitude   Float?
+  longitude  Float?
+  phone      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  doctors      DoctorClinic[]
+  appointments Appointment[]
+}
+
+// Intersect table for Doctor <-> Clinic many-to-many relationship
+model DoctorClinic {
+  id              String   @id @default(uuid())
+  doctorId        String
+  clinicId        String
+  doctor          Doctor   @relation(fields: [doctorId], references: [id])
+  clinic          Clinic   @relation(fields: [clinicId], references: [id])
+  consultationFee Float?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model DoctorAvailability {
+  id           String  @id @default(uuid())
+  doctorId     String
+  doctor       Doctor  @relation(fields: [doctorId], references: [id])
+  clinicId     String
+  dayOfWeek    Int // 0-6 (Sun-Sat)
+  startTime    String // "09:00"
+  endTime      String // "17:00"
+  breakStart   String?
+  breakEnd     String?
+  slotDuration Int // in minutes
+  isAvailable  Boolean @default(true)
+}
+
+model Appointment {
+  id              String   @id @default(uuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  doctorId        String
+  doctor          Doctor   @relation(fields: [doctorId], references: [id])
+  clinicId        String
+  clinic          Clinic   @relation(fields: [clinicId], references: [id])
+  appointmentDate DateTime
+  appointmentTime String
+  status          String   @default("BOOKED")
+  consultationFee Float?
+  appointmentType String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  queueEntry     QueueEntry?
+  prescriptions  Prescription[]
+  medicalRecords MedicalRecord[]
+}
+
+model QueueEntry {
+  id            String      @id @default(uuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  tokenNumber   String
+  status        String // Waiting, In Consultation, Completed, No Show
+  checkinTime   String
+  createdAt     DateTime    @default(now())
+}
+
+model OtpRecord {
+  id        String   @id @default(uuid())
+  phone     String
+  otpHash   String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+}
+
+model Receptionist {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+  hospitalId String?
+  clinicId   String?
+  fullName   String
+  employeeId String?
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Ambulance {
+  id                 String    @id @default(uuid())
+  hospitalId         String
+  hospital           Hospital  @relation(fields: [hospitalId], references: [id])
+  vehicleNumber      String
+  operatorUserId     String    @unique
+  operator           User      @relation(fields: [operatorUserId], references: [id])
+  status             String    @default("AVAILABLE") // AVAILABLE, ASSIGNED, EN_ROUTE, ARRIVED, OFFLINE
+  currentLatitude    Float?
+  currentLongitude   Float?
+  lastLocationUpdate DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model EmergencyCase {
+  id                     String    @id @default(uuid())
+  patientId              String
+  patient                Patient   @relation(fields: [patientId], references: [id])
+  hospitalId             String?
+  ambulanceId            String?
+  assignedReceptionistId String?
+  status                 String    @default("ACTIVE") // ACTIVE, ACKNOWLEDGED, AMBULANCE_ASSIGNED, EN_ROUTE, ARRIVED, RESOLVED, CANCELLED
+  emergencyType          String?
+  createdAt              DateTime  @default(now())
+  acceptedAt             DateTime?
+  resolvedAt             DateTime?
+}
+
+model EmergencyLocation {
+  id              String   @id @default(uuid())
+  emergencyCaseId String
+  latitude        Float
+  longitude       Float
+  accuracy        Float?
+  timestamp       DateTime @default(now())
+}
+
+model MedicalRecord {
+  id            String       @id @default(uuid())
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  doctorId      String?
+  doctor        Doctor?      @relation(fields: [doctorId], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  recordType    String
+  title         String
+  description   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Prescription {
+  id            String       @id @default(uuid())
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        Doctor       @relation(fields: [doctorId], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  medication    String
+  dosage        String
+  frequency     String
+  duration      String
+  instructions  String?
+  createdAt     DateTime     @default(now())
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String
+  title       String
+  message     String
+  referenceId String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  action       String
+  resourceType String?
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+}

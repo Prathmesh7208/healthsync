@@ -1,3 +1,26 @@
+
+/**
+ * Global wrapper for fetch that automatically injects the JWT Authorization header.
+ */
+async function authFetch(url, options = {}) {
+  const headers = new Headers(options.headers || {});
+  
+  if (typeof currentUser !== 'undefined' && currentUser && currentUser.token) {
+    headers.set('Authorization', `Bearer ${currentUser.token}`);
+  }
+
+  if (options.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const enhancedOptions = {
+    ...options,
+    headers: Object.fromEntries(headers.entries())
+  };
+
+  return fetch(url, enhancedOptions);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Inject mobile role selector into all sidebars for easy prototyping
   document.querySelectorAll('.sidebar-nav').forEach((nav) => {
@@ -232,11 +255,11 @@ window.toggleProfileMenu = function (role) {
 window.openProfileSettings = function (role) { document.getElementById('profile-menu')?.classList.add('hidden'); if (role === panelForCurrentUser()) openPortalTool(role, 'settings'); else showToast('Switch to this workspace to manage its settings.', 'info'); };
 document.addEventListener('click', event => { if (!event.target.closest('.profile-trigger') && !event.target.closest('#profile-menu')) document.getElementById('profile-menu')?.classList.add('hidden'); });
 
-async function fetchNotifications() { if (!currentUser) return; try { const res = await fetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data = await res.json(); renderNotifications(data.notifications || []); } catch { } }
+async function fetchNotifications() { if (!currentUser) return; try { const res = await authFetch(`${API_BASE}/notifications?userId=${encodeURIComponent(currentUser.id)}`); const data = await res.json(); renderNotifications(data.notifications || []); } catch { } }
 
 async function fetchPendingEmergencies() {
   try {
-    const res = await fetch(`${API_BASE}/emergency/pending`);
+    const res = await authFetch(`${API_BASE}/emergency/pending`);
     const data = await res.json();
     if (data.success && data.cases) {
       data.cases.forEach(c => renderEmergencyAlertToDOM(c));
@@ -303,7 +326,7 @@ function renderEmergencyAlertToDOM(data) {
 window.resolveEmergency = async function (caseId) {
   if (!confirm('Are you sure you want to mark this emergency as resolved?')) return;
   try {
-    const res = await fetch(`${API_BASE}/emergency/${caseId}/resolve`, { method: 'PUT' });
+    const res = await authFetch(`${API_BASE}/emergency/${caseId}/resolve`, { method: 'PUT' });
     if (res.ok) {
       showToast('Emergency marked as resolved', 'success');
       ['rec', 'doc', 'amb'].forEach(prefix => {
@@ -335,8 +358,8 @@ function renderNotifications(items) {
   }
 }
 window.openNotifications = async function () { await fetchNotifications(); openModal('modal-notifications'); };
-window.markNotificationRead = async function (id) { await fetch(`${API_BASE}/notifications/${id}/read`, { method: 'POST' }); fetchNotifications(); };
-window.clearNotifications = async function () { if (!currentUser) return; await fetch(`${API_BASE}/notifications/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }); fetchNotifications(); };
+window.markNotificationRead = async function (id) { await authFetch(`${API_BASE}/notifications/${id}/read`, { method: 'POST' }); fetchNotifications(); };
+window.clearNotifications = async function () { if (!currentUser) return; await authFetch(`${API_BASE}/notifications/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }); fetchNotifications(); };
 
 
 async function renderDashboardReminders() {
@@ -971,7 +994,7 @@ function settingsContent() {
 async function fetchReminders() {
   try {
     const patientId = currentUser?.patientId || 'pat1';
-    const response = await fetch(API_BASE + '/reminders?patientId=' + encodeURIComponent(patientId));
+    const response = await authFetch(API_BASE + '/reminders?patientId=' + encodeURIComponent(patientId));
     const data = await response.json();
     const rows = (data.reminders || []).map(item => ({ id: item.id, name: item.medicine_name, time: item.reminder_time }));
     saveLocalItems('healthsync-reminders', rows);
@@ -981,14 +1004,14 @@ async function fetchReminders() {
 window.addReminder = async function () {
   const name = document.getElementById('reminder-name').value.trim(), time = document.getElementById('reminder-time').value;
   if (!name || !time) return showToast('Enter a medicine and time.', 'warning');
-  const response = await fetch(API_BASE + '/reminders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patientId: currentUser?.patientId || 'pat1', medicineName: name, reminderTime: time }) });
+  const response = await authFetch(API_BASE + '/reminders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patientId: currentUser?.patientId || 'pat1', medicineName: name, reminderTime: time }) });
   const data = await response.json();
   if (!data.success) return showToast(data.message || 'Could not save reminder.', 'error');
   remindersLoaded = false; openPortalTool('patient', 'reminders'); showToast('Reminder saved.', 'success');
 };
 window.removeReminder = async function (index) {
   const rows = localItems('healthsync-reminders'), item = rows[index];
-  if (item?.id) await fetch(API_BASE + '/reminders/' + encodeURIComponent(item.id), { method: 'DELETE' });
+  if (item?.id) await authFetch(API_BASE + '/reminders/' + encodeURIComponent(item.id), { method: 'DELETE' });
   else { rows.splice(index, 1); saveLocalItems('healthsync-reminders', rows); }
   remindersLoaded = false; openPortalTool('patient', 'reminders'); showToast('Reminder removed.', 'success');
 };
@@ -1001,7 +1024,7 @@ window.saveSettings = async function () {
   applyLanguage(language);
   if (!currentUser?.id) return showToast('Settings saved on this device. Sign in to sync them.', 'info');
   try {
-    const response = await fetch(API_BASE + '/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, language, notificationsEnabled, smsEnabled, reminderEnabled }) });
+    const response = await authFetch(API_BASE + '/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, language, notificationsEnabled, smsEnabled, reminderEnabled }) });
     const data = await response.json();
     showToast(data.success ? 'Settings saved and synced.' : 'Could not sync settings.', data.success ? 'success' : 'error');
   } catch { showToast('Could not sync settings.', 'error'); }
@@ -1010,7 +1033,7 @@ window.submitSupport = function () { const text = document.getElementById('suppo
 window.logoutCurrentUser = async function () {
     if (currentUser?.refreshToken) {
       try {
-        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: currentUser.refreshToken }) });
+        await authFetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: currentUser.refreshToken }) });
       } catch (e) { console.error('Logout error', e); }
     }
     localStorage.removeItem('healthsync-session');
@@ -1037,7 +1060,7 @@ window.exportAppointmentsCsv = function () { const rows = [['Patient', 'Doctor',
 // ---------------------------------------------------------------------------
 async function fetchDoctors() {
   try {
-    const res = await fetch(`${API_BASE}/doctors/search`);
+    const res = await authFetch(`${API_BASE}/doctors/search`);
     const data = await res.json();
     if (data.success) {
       allDoctors = data.doctors || [];
@@ -1051,7 +1074,7 @@ async function fetchDoctors() {
 
 async function fetchQueueLive() {
   try {
-    const res = await fetch(`${API_BASE}/queue/live`);
+    const res = await authFetch(`${API_BASE}/queue/live`);
     const data = await res.json();
     if (data.success) {
       liveQueueList = data.queue || [];
@@ -1703,11 +1726,11 @@ window.selectDoctorAppointment = function (id) {
 
 window.updateAppointmentStatus = async function (id, newStatus) {
   try {
-    const res = await fetch(`${API_BASE}/appointments/${id}/status`, {
+    const res = await authFetch(`${API_BASE}/appointments/${id}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': currentUser?.token ? `Bearer ${currentUser.token}` : ''
+        }` : ''
       },
       body: JSON.stringify({ status: newStatus })
     });
@@ -2097,7 +2120,7 @@ window.openBookAppointmentModalWithDoctor = async function (doctorId) {
     
     // Fetch Summary asynchronously
     try {
-      const res = await fetch(`${API_BASE}/doctors/${bookingDoctor.id}/slots/summary?dates=${days.join(',')}`);
+      const res = await authFetch(`${API_BASE}/doctors/${bookingDoctor.id}/slots/summary?dates=${days.join(',')}`);
       const data = await res.json();
       if (data.success && data.summary) {
         days.forEach(dateStr => {
@@ -2137,7 +2160,7 @@ window.selectBookingDate = async function (dateStr) {
     container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px; margin-bottom:12px; color:var(--blue-primary);"></i><br>Loading available slots...</div>';
   
     try {
-      const res = await fetch(`${API_BASE}/doctors/${bookingDoctor.id}/slots?date=${dateStr}`);
+      const res = await authFetch(`${API_BASE}/doctors/${bookingDoctor.id}/slots?date=${dateStr}`);
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       
@@ -2279,7 +2302,7 @@ window.submitAppointmentBooking = async function () {
   document.getElementById('btn-booking-next').textContent = 'Confirming...';
 
   try {
-    const res = await fetch(`${API_BASE}/appointments`, {
+    const res = await authFetch(`${API_BASE}/appointments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2380,7 +2403,7 @@ window.submitReceptionWalkinForm = async function () {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/reception/walkin`, {
+    const res = await authFetch(`${API_BASE}/reception/walkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ patientName: name, mobile: mobileNumber, doctorId: docId })
@@ -2430,7 +2453,7 @@ window.submitReceptionQuickToken = async function () {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/reception/walkin`, {
+    const res = await authFetch(`${API_BASE}/reception/walkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ patientName: name, doctorId: docId })
@@ -2451,7 +2474,7 @@ window.submitReceptionQuickToken = async function () {
 // ---------------------------------------------------------------------------
 window.callQueueNext = async function (token) {
   try {
-    const res = await fetch(`${API_BASE}/queue/call-next`, { method: 'POST' });
+    const res = await authFetch(`${API_BASE}/queue/call-next`, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
       showToast(`Called Token ${token} to consulting room.`, 'success');
@@ -2465,7 +2488,7 @@ window.callQueueNext = async function (token) {
 window.completeQueueItem = async function (token) {
   // Simply call next to pop the current consultation item
   try {
-    const res = await fetch(`${API_BASE}/queue/call-next`, { method: 'POST' });
+    const res = await authFetch(`${API_BASE}/queue/call-next`, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
       showToast(`Token ${token} consultation marked completed.`, 'success');
@@ -2478,7 +2501,7 @@ window.completeQueueItem = async function (token) {
 
 window.markNoShow = async function (token) {
   try {
-    const res = await fetch(`${API_BASE}/queue/no-show`, {
+    const res = await authFetch(`${API_BASE}/queue/no-show`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: token })
@@ -2496,7 +2519,7 @@ window.markNoShow = async function (token) {
 window.rescheduleAppointment = async function (apptId, doctorId) {
   if (!confirm('Are you sure you want to reschedule? This will cancel your current appointment and open the booking screen.')) return;
   try {
-    const res = await fetch(`${API_BASE}/appointments/${apptId}/cancel`, { method: 'PUT' });
+    const res = await authFetch(`${API_BASE}/appointments/${apptId}/cancel`, { method: 'PUT' });
     const data = await res.json();
     if (data.success) {
       showToast('Current appointment cancelled. Please select a new slot.', 'success');
@@ -2515,7 +2538,7 @@ window.rescheduleAppointment = async function (apptId, doctorId) {
 window.cancelAppointment = async function (apptId) {
   if (!confirm('Are you sure you want to cancel this appointment?')) return;
   try {
-    const res = await fetch(`${API_BASE}/appointments/${apptId}/cancel`, { method: 'PUT' });
+    const res = await authFetch(`${API_BASE}/appointments/${apptId}/cancel`, { method: 'PUT' });
     const data = await res.json();
     if (data.success) {
       showToast('Appointment cancelled successfully.', 'success');
@@ -2530,7 +2553,7 @@ window.cancelAppointment = async function (apptId) {
 
 window.checkinAppointment = async function (apptId) {
   try {
-    const res = await fetch(`${API_BASE}/reception/checkin/${apptId}`, { method: 'POST' });
+    const res = await authFetch(`${API_BASE}/reception/checkin/${apptId}`, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
       showToast('Patient checked in and token generated!', 'success');
@@ -2611,7 +2634,7 @@ window.submitPrescription = async function () {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/prescriptions`, {
+    const res = await authFetch(`${API_BASE}/prescriptions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3181,7 +3204,7 @@ window.addVaccination = async function() {
   }
   
   try {
-    const res = await fetch(`${API_BASE}/vaccinations`, {
+    const res = await authFetch(`${API_BASE}/vaccinations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3210,7 +3233,7 @@ window.addVaccination = async function() {
 window.deleteVaccination = async function(id) {
   if (!confirm('Are you sure you want to delete this vaccination record?')) return;
   try {
-    const res = await fetch(`${API_BASE}/vaccinations/${id}`, {
+    const res = await authFetch(`${API_BASE}/vaccinations/${id}`, {
       method: 'DELETE'
     });
     const data = await res.json();
@@ -3248,7 +3271,7 @@ async function restoreSession() {
   if (!saved) return false;
   try {
     const session = JSON.parse(saved);
-    const response = await fetch(`${API_BASE}/auth/refresh`, { 
+    const response = await authFetch(`${API_BASE}/auth/refresh`, { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' }, 
       body: JSON.stringify({ refreshToken: session.refreshToken }) 
