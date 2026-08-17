@@ -1730,7 +1730,7 @@ window.updateAppointmentStatus = async function (id, newStatus) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        }` : ''
+        
       },
       body: JSON.stringify({ status: newStatus })
     });
