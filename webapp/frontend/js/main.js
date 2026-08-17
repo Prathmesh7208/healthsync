@@ -3304,3 +3304,84 @@ async function restoreSession() {
 }
 
 
+
+
+let sosHoldTimer = null;
+let isHoldingSOS = false;
+
+window.startSOSCountdown = function (event) {
+  if (event) event.preventDefault(); // Prevent text selection/scrolling on mobile
+  if (isHoldingSOS) return;
+  isHoldingSOS = true;
+  
+  const container = event.currentTarget;
+  container.classList.add('holding'); // Starts the 3s CSS transition
+
+  sosHoldTimer = setTimeout(() => {
+    isHoldingSOS = false;
+    triggerSOS();
+    container.classList.remove('holding');
+  }, 3000);
+};
+
+window.cancelSOSCountdown = function (event) {
+  if (event) event.preventDefault();
+  if (!isHoldingSOS) return;
+  
+  isHoldingSOS = false;
+  clearTimeout(sosHoldTimer);
+  
+  const container = event.currentTarget;
+  if (container) {
+    container.classList.remove('holding');
+  }
+};
+
+window.triggerSOS = function () {
+  if (!currentUser) {
+    showToast('Please login to use Emergency SOS', 'error');
+    return;
+  }
+  
+  showToast('SOS Triggered! Grabbing live location...', 'warning');
+  
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const payload = {
+          userId: currentUser.id,
+          patientId: currentUser.patientId,
+          patientName: currentUser.name || 'Emergency Patient',
+          phone: currentUser.mobile,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        socket.emit('sos_trigger', payload);
+        showToast('Emergency SOS Broadcasted! Ambulance dispatched.', 'success');
+        
+        // Start watching for live movement
+        navigator.geolocation.watchPosition((pos) => {
+          socket.emit('ambulance_location_update', {
+            caseId: 'current', // Backend resolves this if needed or we track it
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          });
+        });
+      },
+      (error) => {
+        console.error(error);
+        showToast('Could not get precise location. Broadcasting rough SOS.', 'error');
+        socket.emit('sos_trigger', {
+          userId: currentUser.id,
+          patientName: currentUser.name,
+          phone: currentUser.mobile,
+          lat: 18.5204, // default Pune
+          lng: 73.8567
+        });
+      }
+    );
+  } else {
+    showToast('Geolocation not supported.', 'error');
+  }
+};

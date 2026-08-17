@@ -2996,3 +2996,85 @@ select.form-control { padding-right: 34px; }
     margin: 0 auto !important; 
   }
 }
+
+
+/* =====================================================
+   HealthSync Modern UI Overhaul (Glassmorphism & Animations)
+   ===================================================== */
+   
+/* Apply Inter/Outfit system font if available, fallback to Plus Jakarta */
+body {
+  font-family: 'Inter', 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism for modals */
+.modal {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Micro-animations for Cards */
+.card, .stat-card, .qa-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover, .stat-card:hover, .qa-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Primary Button Enhancements */
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue-primary), var(--blue-hover));
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* Emergency SOS Hold Overlay */
+.sos-hold-container {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
+.sos-hold-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: rgba(239, 68, 68, 0.25); /* ef4444 with opacity */
+  transition: height 3s linear;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sos-hold-container.holding .sos-hold-overlay {
+  height: 100%;
+}
+
+.qa-item {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ensure text stays above the SOS overlay */
+.qa-item .qa-icon-box, .qa-item .qa-text {
+  position: relative;
+  z-index: 2;
+}
+

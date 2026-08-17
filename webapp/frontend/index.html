@@ -490,10 +490,17 @@
                       <div class="qa-icon-box" style="background:#fae8ff;"><i class="fa-solid fa-file-lines" style="color:#d946ef;"></i></div>
                       <div class="qa-text">Health<br>Records</div>
                     </div>
-                    <div class="qa-item" onmousedown="startSOSCountdown()" onmouseup="cancelSOSCountdown()">
-                      <div class="qa-icon-box qa-red" style="background:#fee2e2;"><span style="font-weight: 700; font-size: 15px; color: #ef4444;">SOS</span></div>
-                      <div class="qa-text">Emergency<br>SOS</div>
-                    </div>
+                    <div class="qa-item sos-hold-container" 
+  onmousedown="startSOSCountdown(event)" 
+  onmouseup="cancelSOSCountdown(event)" 
+  onmouseleave="cancelSOSCountdown(event)"
+  ontouchstart="startSOSCountdown(event)" 
+  ontouchend="cancelSOSCountdown(event)"
+  ontouchcancel="cancelSOSCountdown(event)">
+  <div class="sos-hold-overlay"></div>
+  <div class="qa-icon-box qa-red" style="background:#fee2e2;"><span style="font-weight: 700; font-size: 15px; color: #ef4444;">SOS</span></div>
+  <div class="qa-text">Emergency<br>SOS</div>
+</div>
                   </div>
                 </div>
               </div>
