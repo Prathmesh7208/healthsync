@@ -644,7 +644,11 @@ const server = http.createServer((req, res) => {
         const patientId = urlParams.searchParams.get('patientId');
         let query = 'SELECT * FROM appointments ORDER BY slot_date, slot_time LIMIT 1';
         let params = [];
-        if (patientId) { query = 'SELECT * FROM appointments WHERE patient_id = ? ORDER BY slot_date, slot_time LIMIT 1'; params = [patientId]; }
+        if (patientId) { 
+  const today = new Date().toISOString().split('T')[0];
+  query = "SELECT * FROM appointments WHERE patient_id = ? AND status NOT IN ('CANCELLED', 'COMPLETED', 'REJECTED') AND slot_date >= ? ORDER BY slot_date, slot_time LIMIT 1"; 
+  params = [patientId, today]; 
+}
         db.get(query, params, (err, row) => {
           res.writeHead(200);
           res.end(JSON.stringify({ success: true, appointment: row || null }));
