@@ -1478,23 +1478,26 @@ async function triggerEmergencySOS(lat, lng) {
 // ---------------------------------------------------------------------------
 function renderAppointmentsList() {
   // Render Patient Portal Appointments
+  const ptBooked = document.getElementById('pt-booked-appt-container');
   const ptUpcoming = document.getElementById('pt-upcoming-appt-container');
   const ptCompleted = document.getElementById('pt-completed-appt-container');
   const ptCancelled = document.getElementById('pt-cancelled-appt-container');
 
   const status = appt => String(appt.status || '').trim().toUpperCase();
-  const upcomingList = todayAppointments.filter(a => ['CONFIRMED', 'CHECKED IN', 'IN PROGRESS', 'WAITING', 'IN CONSULTATION'].includes(status(a)));
+  const bookedList = todayAppointments.filter(a => status(a) === 'CONFIRMED');
+  const upcomingList = todayAppointments.filter(a => ['CHECKED IN', 'IN PROGRESS', 'WAITING', 'IN CONSULTATION'].includes(status(a)));
   const completedList = todayAppointments.filter(a => status(a) === 'COMPLETED');
   const cancelledList = todayAppointments.filter(a => ['CANCELLED', 'NO SHOW'].includes(status(a)));
 
   const emptyAppointments = (type) => {
     const content = {
-      upcoming: ['No upcoming appointments', 'Book an appointment to see your confirmed visits and queue details here.', 'Book an appointment'],
+      booked: ['No booked appointments', 'Your scheduled future visits will appear here.', 'Book an appointment'],
+      upcoming: ['No upcoming appointments', 'Your active queue and live updates will appear here.', 'Book an appointment'],
       completed: ['No completed appointments yet', 'After a consultation is completed, its visit summary will appear here.', 'Book an appointment'],
-      cancelled: ['No cancelled appointments', 'Cancelled visits are kept here so your upcoming appointments stay uncluttered.', 'View upcoming appointments']
+      cancelled: ['No cancelled appointments', 'Cancelled visits are kept here so your active appointments stay uncluttered.', 'View booked appointments']
     }[type];
     const action = type === 'cancelled'
-        ? "showPatientAppointmentTab('pt-appt-upcoming')"
+        ? "showPatientAppointmentTab('pt-appt-booked')"
         : "switchPatientPage('doctors')";
     return `<div class="empty-state appointment-empty-state"><div class="es-icon"><i class="fa-regular fa-calendar"></i></div><div class="es-text">${content[0]}</div><div class="es-sub">${content[1]}</div><button class="btn btn-primary btn-sm mt-3" onclick="${action}"><i class="fa-solid fa-calendar-plus"></i> ${content[2]}</button></div>`;
   };
@@ -1509,7 +1512,7 @@ function renderAppointmentsList() {
     const token = appt.token_number || appt.token;
     const normalizedStatus = status(appt);
     const displayStatus = normalizedStatus === 'CHECKED IN' ? 'Checked in' : normalizedStatus === 'IN PROGRESS' ? 'In consultation' : normalizedStatus.replace(/\b\w/g, char => char.toUpperCase());
-    const action = category === 'upcoming'
+    const action = (category === 'upcoming' || category === 'booked')
       ? `<button class="btn btn-danger btn-xs mt-2" onclick="cancelAppointment('${appt.id}')">Cancel</button>`
       : category === 'completed'
         ? `<button class="btn btn-secondary btn-xs mt-2" onclick="openBookAppointmentModalWithDoctor('${appt.doctor_id || ''}')">Book follow-up</button>`
@@ -1530,6 +1533,7 @@ function renderAppointmentsList() {
     </div>`;
   };
 
+  if (ptBooked) ptBooked.innerHTML = bookedList.length ? bookedList.map(appt => patientCard(appt, 'booked')).join('') : emptyAppointments('booked');
   if (ptUpcoming) ptUpcoming.innerHTML = upcomingList.length ? upcomingList.map(appt => patientCard(appt, 'upcoming')).join('') : emptyAppointments('upcoming');
   if (ptCompleted) ptCompleted.innerHTML = completedList.length ? completedList.map(appt => patientCard(appt, 'completed')).join('') : emptyAppointments('completed');
   if (ptCancelled) ptCancelled.innerHTML = cancelledList.length ? cancelledList.map(appt => patientCard(appt, 'cancelled')).join('') : emptyAppointments('cancelled');
