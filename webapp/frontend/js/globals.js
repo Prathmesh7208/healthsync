@@ -14,18 +14,8 @@ var allDoctors = [];
 var todayAppointments = [];
 var liveQueueList = [];
 var patientPrescriptions = [];
-var patientRecords = [
-  { id: 'rec-1', name: 'Complete Blood Count', doctor: 'Dr. Priya Sharma', date: '16 Apr 2026', type: 'lab-reports' },
-  { id: 'rec-2', name: 'Lipid Profile', doctor: 'Dr. Priya Sharma', date: '15 Apr 2026', type: 'lab-reports' },
-  { id: 'rec-3', name: 'Blood Sugar (Fasting)', doctor: 'Dr. Amit Patil', date: '10 Apr 2026', type: 'lab-reports' },
-  { id: 'rec-4', name: 'Thyroid Profile', doctor: 'Dr. Amit Patil', date: '02 Apr 2026', type: 'lab-reports' }
-];
-var doctorPatientReports = [
-  { id:'dr-1', name:'Complete Blood Count', date:'16 Apr 2026', facility:'HealthSync Diagnostics', status:'Reviewed', summary:'Haemoglobin and white-cell counts are within the expected range.' },
-  { id:'dr-2', name:'Lipid Profile', date:'15 Apr 2026', facility:'Apollo Diagnostics', status:'Action needed', summary:'LDL is mildly elevated; review diet, activity and follow-up treatment.' },
-  { id:'dr-3', name:'ECG Report', date:'10 Apr 2026', facility:'Cardiology Unit', status:'Reviewed', summary:'Normal sinus rhythm recorded. No acute abnormality noted.' },
-  { id:'dr-4', name:'HbA1c Report', date:'02 Apr 2026', facility:'HealthSync Diagnostics', status:'Reviewed', summary:'Glycaemic control is stable compared with the previous result.' }
-];
+var patientRecords = [];
+var doctorPatientReports = [];
 var currentSelectedPatientId = 'pat1'; // Default demo patient
 var currentSelectedDoctorId = 'doc1';  // Default demo doctor
 var currentUser = null;

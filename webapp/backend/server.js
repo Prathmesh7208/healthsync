@@ -106,6 +106,42 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  // Records Table (Lab Reports, Vaccinations, etc.)
+  db.run(`CREATE TABLE IF NOT EXISTS records (
+    id TEXT PRIMARY KEY,
+    patient_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    doctor_name TEXT,
+    facility TEXT,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    status TEXT,
+    summary TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Reminders Table
+  db.run(`CREATE TABLE IF NOT EXISTS reminders (
+    id TEXT PRIMARY KEY,
+    patient_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    time TEXT NOT NULL,
+    type TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Notifications Table
+  db.run(`CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    type TEXT NOT NULL,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   // Seed Default Doctors if empty
   db.get("SELECT COUNT(*) AS count FROM doctors", (err, row) => {
     if (row && row.count === 0) {
@@ -144,6 +180,27 @@ db.serialize(() => {
         { name: "Tab. Pantoprazole 40mg", dosage: "1 tablet", frequency: "1-0-0 Before Food", duration: "7 Days" }
       ]);
       db.run(`INSERT INTO prescriptions (id, patient_id, patient_name, doctor_id, doctor_name, diagnosis, medications_json, instructions) VALUES ('rx101', 'pat1', 'Neha Kulkarni', 'doc1', 'Dr. Amit Patil', 'Acute Viral Fever & Migraine', ?, 'Take rest, drink 3 liters of warm water daily.')`, [medsJSON]);
+
+      // Seed Initial Records
+      db.run(`INSERT INTO records (id, patient_id, title, doctor_name, facility, date, type, status, summary) VALUES 
+        ('rec-1', 'pat1', 'Complete Blood Count', 'Dr. Priya Sharma', 'HealthSync Diagnostics', '16 Apr 2026', 'lab-reports', 'Reviewed', 'Haemoglobin and white-cell counts are within the expected range.'),
+        ('rec-2', 'pat1', 'Lipid Profile', 'Dr. Priya Sharma', 'Apollo Diagnostics', '15 Apr 2026', 'lab-reports', 'Action needed', 'LDL is mildly elevated; review diet, activity and follow-up treatment.'),
+        ('rec-3', 'pat1', 'ECG Report', 'Dr. Amit Patil', 'Cardiology Unit', '10 Apr 2026', 'lab-reports', 'Reviewed', 'Normal sinus rhythm recorded. No acute abnormality noted.'),
+        ('rec-4', 'pat1', 'Thyroid Profile', 'Dr. Amit Patil', 'HealthSync Diagnostics', '02 Apr 2026', 'lab-reports', 'Reviewed', 'Glycaemic control is stable compared with the previous result.')
+      `);
+
+      // Seed Initial Notifications
+      db.run(`INSERT INTO notifications (id, user_id, title, message, type) VALUES 
+        ('notif-1', 'u-pat1', 'Appointment Confirmed', 'Your appointment with Dr. Amit Patil is confirmed for tomorrow.', 'success'),
+        ('notif-2', 'u-pat1', 'Lab Results Ready', 'Your Lipid Profile results are available.', 'info')
+      `);
+
+      // Seed Initial Reminders
+      db.run(`INSERT INTO reminders (id, patient_id, title, time, type) VALUES 
+        ('rem-1', 'pat1', 'Take Paracetamol 650mg', '09:00 AM', 'medication'),
+        ('rem-2', 'pat1', 'Drink Water (2L goal)', '12:00 PM', 'general'),
+        ('rem-3', 'pat1', 'Take Pantoprazole 40mg', '08:00 PM', 'medication')
+      `);
     }
   });
 });
@@ -545,6 +602,107 @@ const server = http.createServer((req, res) => {
       else if (pathname === '/v1/emergency/pending' && req.method === 'GET') {
         res.writeHead(200);
         res.end(JSON.stringify({ success: true, cases: activeEmergencies }));
+      }
+
+      
+      else if (pathname === '/v1/records' && req.method === 'GET') {
+        const urlParams = new URL(req.url, `http://${req.headers.host}`);
+        const patientId = urlParams.searchParams.get('patientId');
+        let query = 'SELECT * FROM records ORDER BY date DESC';
+        let params = [];
+        if (patientId) {
+          query = 'SELECT * FROM records WHERE patient_id = ? ORDER BY date DESC';
+          params = [patientId];
+        }
+        db.all(query, params, (err, rows) => {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, records: rows || [] }));
+        });
+      }
+      else if (pathname === '/v1/appointments' && req.method === 'GET') {
+        const urlParams = new URL(req.url, `http://${req.headers.host}`);
+        const patientId = urlParams.searchParams.get('patientId');
+        const doctorId = urlParams.searchParams.get('doctorId');
+        let query = 'SELECT * FROM appointments ORDER BY slot_date, slot_time';
+        let params = [];
+        if (patientId) { query = 'SELECT * FROM appointments WHERE patient_id = ? ORDER BY slot_date, slot_time'; params = [patientId]; }
+        if (doctorId) { query = 'SELECT * FROM appointments WHERE doctor_id = ? ORDER BY slot_date, slot_time'; params = [doctorId]; }
+        db.all(query, params, (err, rows) => {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, appointments: rows || [] }));
+        });
+      }
+      else if (pathname === '/v1/appointments/next' && req.method === 'GET') {
+        const urlParams = new URL(req.url, `http://${req.headers.host}`);
+        const patientId = urlParams.searchParams.get('patientId');
+        let query = 'SELECT * FROM appointments ORDER BY slot_date, slot_time LIMIT 1';
+        let params = [];
+        if (patientId) { query = 'SELECT * FROM appointments WHERE patient_id = ? ORDER BY slot_date, slot_time LIMIT 1'; params = [patientId]; }
+        db.get(query, params, (err, row) => {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, appointment: row || null }));
+        });
+      }
+      else if (pathname.match(/^\/v1\/patients\/[^\/]+\/profile$/) && req.method === 'GET') {
+        const id = pathname.split('/')[3];
+        db.get('SELECT * FROM patients WHERE id = ? OR user_id = ?', [id, id], (err, row) => {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, profile: row || {} }));
+        });
+      }
+      else if (pathname.match(/^\/v1\/patients\/[^\/]+\/profile$/) && (req.method === 'PUT' || req.method === 'POST')) {
+        const id = pathname.split('/')[3];
+        try {
+          const bodyData = JSON.parse(body);
+          db.run('UPDATE patients SET full_name = ?, gender = ?, date_of_birth = ?, blood_group = ?, email = ? WHERE id = ? OR user_id = ?',
+            [bodyData.full_name || '', bodyData.gender || '', bodyData.date_of_birth || '', bodyData.blood_group || '', bodyData.email || '', id, id],
+            (err) => {
+              res.writeHead(200);
+              res.end(JSON.stringify({ success: true }));
+            }
+          );
+        } catch (e) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ success: false, error: 'Invalid data' }));
+        }
+      }
+      else if (pathname === '/v1/reminders' && req.method === 'GET') {
+        const urlParams = new URL(req.url, `http://${req.headers.host}`);
+        const patientId = urlParams.searchParams.get('patientId');
+        let query = 'SELECT * FROM reminders';
+        let params = [];
+        if (patientId) { query = 'SELECT * FROM reminders WHERE patient_id = ?'; params = [patientId]; }
+        db.all(query, params, (err, rows) => {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, reminders: rows || [] }));
+        });
+      }
+      else if (pathname === '/v1/notifications' && req.method === 'GET') {
+        const urlParams = new URL(req.url, `http://${req.headers.host}`);
+        const userId = urlParams.searchParams.get('userId');
+        db.all('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC', [userId], (err, rows) => {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true, notifications: rows || [] }));
+        });
+      }
+      else if (pathname === '/v1/notifications/clear' && req.method === 'POST') {
+        try {
+          const bodyData = JSON.parse(body);
+          db.run('DELETE FROM notifications WHERE user_id = ?', [bodyData.userId], () => {
+            res.writeHead(200);
+            res.end(JSON.stringify({ success: true }));
+          });
+        } catch (e) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ success: false, error: 'Invalid data' }));
+        }
+      }
+      else if (pathname.match(/^\/v1\/notifications\/[^\/]+\/read$/) && req.method === 'POST') {
+        const notifId = pathname.split('/')[3];
+        db.run('UPDATE notifications SET is_read = 1 WHERE id = ?', [notifId], () => {
+          res.writeHead(200);
+          res.end(JSON.stringify({ success: true }));
+        });
       }
 
       else {
