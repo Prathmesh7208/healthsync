@@ -1017,7 +1017,10 @@ async function fetchQueueLive() {
 
 async function fetchAppointmentsToday() {
   try {
-    const data = await requestJson('/appointments');
+    let url = '/appointments';
+      if (currentUser?.role === 'PATIENT') url += '?patientId=' + encodeURIComponent(currentUser.id);
+      else if (currentUser?.role === 'DOCTOR') url += '?doctorId=' + encodeURIComponent(currentUser.id);
+      const data = await requestJson(url);
     if (data && data.success) {
       todayAppointments = data.appointments || [];
       renderAppointmentsList();
@@ -1045,7 +1048,7 @@ async function fetchPrescriptions() {
 async function fetchNextAppointment() {
   if (currentUser?.role !== 'PATIENT') return;
   try {
-    const data = await requestJson('/appointments/next');
+    const data = await requestJson('/appointments/next?patientId=' + encodeURIComponent(currentUser.id));
     renderNextAppointment(data?.success ? data.appointment : null);
   } catch (err) {
     console.error('Error fetching next appointment:', err);

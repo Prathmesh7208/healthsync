@@ -439,11 +439,12 @@ const server = http.createServer((req, res) => {
           const docId = parsedBody.doctorId || "doc1";
           const dateStr = parsedBody.date || "Today";
           const timeStr = parsedBody.time || "11:30 AM";
+          const patId = parsedBody.patientId || "pat1";
           const patName = parsedBody.patientName || "Neha Kulkarni";
           const docName = parsedBody.doctorName || "Dr. Amit Patil";
           
           // Strict double booking check
-          db.get("SELECT id FROM appointments WHERE doctor_id = ? AND slot_date = ? AND slot_time = ? AND status = 'CONFIRMED'", [docId, dateStr, timeStr], (checkErr, existing) => {
+          db.get("SELECT id FROM appointments WHERE doctor_id = ? AND slot_date = ? AND slot_time = ? AND status IN ('CONFIRMED', 'BOOKED')", [docId, dateStr, timeStr], (checkErr, existing) => {
             if (checkErr) {
               res.writeHead(500);
               return res.end(JSON.stringify({ success: false, message: 'Database error' }));
@@ -458,18 +459,24 @@ const server = http.createServer((req, res) => {
               const nextNum = (row ? row.count : 0) + 17;
               const token = "A" + nextNum;
               const apptId = "apt-" + Date.now();
-              const qId = "q-" + Date.now();
     
-              db.run(`INSERT INTO appointments (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, status, token_number) VALUES (?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)`,
-                [apptId, "pat1", patName, docId, docName, dateStr, timeStr, token], () => {
-                  db.run(`INSERT INTO queue_entries (id, appointment_id, token_number, patient_id, patient_name, doctor_id, status, checkin_time) VALUES (?, ?, ?, ?, ?, ?, 'Waiting', ?)`,
-                    [qId, apptId, token, "pat1", patName, docId, 'Waiting', timeStr], () => {
-                      res.writeHead(201);
-                      res.end(JSON.stringify({ 
-                        success: true, 
-                        appointment: { id: apptId, token: token, doctorName: docName, time: timeStr, status: "CONFIRMED" } 
-                      }));
-                    });
+              db.run(`INSERT INTO appointments (id, patient_id, patient_name, doctor_id, doctor_name, slot_date, slot_time, status, token_number) VALUES (?, ?, ?, ?, ?, ?, ?, 'BOOKED', ?)`,
+                [apptId, patId, patName, docId, docName, dateStr, timeStr, token], () => {
+                  res.writeHead(201);
+                  res.end(JSON.stringify({ 
+                    success: true, 
+                    appointment: { 
+                      id: apptId, 
+                      patient_id: patId,
+                      patient_name: patName,
+                      doctor_id: docId,
+                      doctor_name: docName,
+                      slot_date: dateStr,
+                      slot_time: timeStr,
+                      token: token,
+                      status: "BOOKED" 
+                    } 
+                  }));
                 });
             });
           });
