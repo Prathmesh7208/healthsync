@@ -3223,8 +3223,7 @@ window.deleteVaccination = async function(id) {
 
 
 // --- RESTORED FUNCTIONS ---
-let healthTipTimer;
-let healthTipIndex = 0;
+
 
 function startHealthTipRotation() {
   if (typeof renderHealthTip === 'function') renderHealthTip();
