@@ -3078,3 +3078,365 @@ body {
   z-index: 2;
 }
 
+/* PATIENT DASHBOARD REDESIGN CSS */
+
+.px-dashboard-hero {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 24px 20px 48px 20px;
+  color: white;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  margin: -16px -16px 20px -16px; /* Offset parent padding if necessary */
+  position: relative;
+}
+@media (min-width: 768px) {
+  .px-dashboard-hero {
+    margin: -16px -24px 24px -24px;
+  }
+}
+
+.px-hero-text {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.px-hero-name {
+  font-size: 24px;
+  font-weight: 800;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.px-hero-date {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 24px;
+}
+
+/* Next Appointment Card */
+.px-hero-appt-card {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.px-appt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.px-appt-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.px-appt-time-label {
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.px-appt-details {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.px-appt-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+}
+
+.px-appt-info {
+  flex: 1;
+}
+
+.px-appt-doc {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.px-appt-spec {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 6px;
+}
+
+.px-appt-meta {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  opacity: 0.9;
+}
+
+.px-appt-btn {
+  width: 100%;
+  background: white;
+  color: #6366f1;
+  border: none;
+  padding: 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Dashboard Content */
+.px-dashboard-content {
+  padding: 0 16px;
+}
+
+.px-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 16px;
+}
+
+/* Quick Actions */
+.px-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .px-quick-actions {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.px-qa-card {
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 1px solid #f1f5f9;
+}
+
+.px-qa-card:active {
+  transform: scale(0.98);
+}
+
+.px-qa-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.px-qa-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+/* Medicine Reminder */
+.px-medicine-card {
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+
+.px-med-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 16px;
+}
+
+.px-med-icon {
+  width: 48px;
+  height: 48px;
+  background: #f8fafc;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.px-med-info {
+  flex: 1;
+}
+
+.px-med-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.px-med-time {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.px-med-check {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.px-med-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.px-med-more {
+  color: #94a3b8;
+}
+
+.px-med-view-all {
+  color: #6366f1;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Recent Activity */
+.px-activity-list {
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+
+.px-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.px-activity-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.px-activity-item:first-child {
+  padding-top: 0;
+}
+
+.px-act-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.px-act-info {
+  flex: 1;
+}
+
+.px-act-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.px-act-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.px-act-time {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* SOS Button */
+.px-btn-sos {
+  width: 100%;
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Bottom Navigation */
+.px-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 24px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid #f1f5f9;
+  z-index: 1000;
+}
+@media (min-width: 768px) {
+  .px-bottom-nav {
+    display: none; /* Hide on desktop, rely on sidebar */
+  }
+}
+
+.px-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.px-nav-item.active {
+  color: #6366f1;
+}
+
+.px-nav-item i {
+  font-size: 20px;
+}
+

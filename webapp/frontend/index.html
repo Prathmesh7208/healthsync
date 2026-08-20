@@ -461,82 +461,138 @@
           <!-- 1. Patient Dashboard Page -->
           <!-- 1. Patient Dashboard Page -->
             <!-- 1. Patient Dashboard Page -->
-            <div id="patient-page-dashboard" class="page active" style="padding-top: 16px;">
-              <div class="new-dashboard-header" style="margin-bottom: 24px;">
-                <h2 class="page-heading" style="font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Hello, <span id="patient-dashboard-name">New</span> 👋</h2>
-                <p class="page-subheading" style="color: #64748b; font-size: 15px;">How can we help you today?</p>
-              </div>
-
-              <!-- Top Row: Upcoming & Quick Actions -->
-              <div class="new-dash-row-1">
-                <!-- Upcoming Appointment Card -->
-                <div id="patient-dashboard-upcoming-appt"></div>
+            <div id="patient-page-dashboard" class="page active" style="padding: 0; padding-bottom: 80px; background-color: #f8fafc;">
+              <!-- Hero Banner -->
+              <div class="px-dashboard-hero">
+                <div class="px-hero-text">Good morning 👋</div>
+                <div class="px-hero-name" id="patient-dashboard-name">James Carter</div>
+                <div class="px-hero-date" id="patient-dashboard-date">Tuesday, August 19, 2026</div>
                 
-                <!-- Quick Actions Card -->
-                <div class="new-card quick-actions-card" style="background: transparent; box-shadow: none; padding: 0;">
-                  <div class="new-card-header mb-3" style="padding: 0 4px;">
-                    <span class="text-dark" style="font-size: 16px; font-weight: 500;">Quick Actions</span>
+                <!-- Next Appointment Card inside Hero -->
+                <div class="px-hero-appt-card" id="patient-dashboard-upcoming-appt">
+                  <div class="px-appt-header">
+                    <span class="px-appt-label">NEXT APPOINTMENT</span>
+                    <span class="px-appt-time-label">Today</span>
                   </div>
-                  <div class="quick-actions-grid">
-                    <div class="qa-item" onclick="switchPatientPage('doctors')">
-                      <div class="qa-icon-box qa-purple"><i class="fa-solid fa-calendar-plus text-purple"></i></div>
-                      <div class="qa-text">Book<br>Appointment</div>
+                  <div class="px-appt-details">
+                    <img src="https://i.pravatar.cc/150?img=47" class="px-appt-avatar" alt="Dr. Sarah Mitchell">
+                    <div class="px-appt-info">
+                      <div class="px-appt-doc">Dr. Sarah Mitchell</div>
+                      <div class="px-appt-spec">Cardiologist · City Medical Center</div>
+                      <div class="px-appt-meta">
+                        <span><i class="fa-regular fa-clock"></i> 10:30 AM</span>
+                        <span style="margin-left: 12px;"><i class="fa-solid fa-location-dot"></i> Room 204</span>
+                      </div>
                     </div>
-                    <div class="qa-item" onclick="switchPatientPage('appointments')">
-                      <div class="qa-icon-box qa-green"><i class="fa-solid fa-calendar-check text-green"></i></div>
-                      <div class="qa-text">My<br>Appointments</div>
-                    </div>
-                    <div class="qa-item" onclick="switchPatientPage('health-records')">
-                      <div class="qa-icon-box" style="background:#fae8ff;"><i class="fa-solid fa-file-lines" style="color:#d946ef;"></i></div>
-                      <div class="qa-text">Health<br>Records</div>
-                    </div>
-                    <div class="qa-item sos-hold-container" 
-  onmousedown="startSOSCountdown(event)" 
-  onmouseup="cancelSOSCountdown(event)" 
-  onmouseleave="cancelSOSCountdown(event)"
-  ontouchstart="startSOSCountdown(event)" 
-  ontouchend="cancelSOSCountdown(event)"
-  ontouchcancel="cancelSOSCountdown(event)">
-  <div class="sos-hold-overlay"></div>
-  <div class="qa-icon-box qa-red" style="background:#fee2e2;"><span style="font-weight: 700; font-size: 15px; color: #ef4444;">SOS</span></div>
-  <div class="qa-text">Emergency<br>SOS</div>
-</div>
                   </div>
+                  <button class="px-appt-btn" onclick="switchPatientPage('appointments')">View Details</button>
                 </div>
               </div>
 
-              <!-- Row 2: Medicine Reminder -->
-              <div class="new-card medicine-card mt-4">
-                <div class="new-card-header">
-                  <div class="header-title">
-                    <div class="icon-box-purple" style="background: #f3e8ff;"><i class="fa-solid fa-capsules" style="color: #9333ea;"></i></div>
-                    <span class="text-dark" style="font-size: 16px; font-weight: 500;">Medicine Reminder</span>
+              <div class="px-dashboard-content">
+                <!-- Quick Actions -->
+                <h3 class="px-section-title">Quick Actions</h3>
+                <div class="px-quick-actions">
+                  <div class="px-qa-card" onclick="switchPatientPage('appointments')">
+                    <div class="px-qa-icon" style="color: #6366f1; background: #eef2ff;"><i class="fa-regular fa-calendar"></i></div>
+                    <div class="px-qa-text">Book<br>Appointment</div>
                   </div>
-                  <a href="javascript:void(0)" onclick="switchPatientPage('appointments')" class="text-blue text-sm fw-bold" style="text-decoration: none;">View All</a>
+                  <div class="px-qa-card" onclick="switchPatientPage('doctors')">
+                    <div class="px-qa-icon" style="color: #8b5cf6; background: #f3e8ff;"><i class="fa-regular fa-user"></i></div>
+                    <div class="px-qa-text">Find Doctors</div>
+                  </div>
+                  <div class="px-qa-card" onclick="switchPatientPage('health-records')">
+                    <div class="px-qa-icon" style="color: #0ea5e9; background: #e0f2fe;"><i class="fa-regular fa-clipboard"></i></div>
+                    <div class="px-qa-text">Health<br>Records</div>
+                  </div>
+                  <div class="px-qa-card" onclick="openPortalTool('patient', 'ambulance')">
+                    <div class="px-qa-icon" style="color: #ef4444; background: #fee2e2;"><i class="fa-solid fa-truck-medical"></i></div>
+                    <div class="px-qa-text">Ambulance</div>
+                  </div>
                 </div>
+
+                <!-- Medicine Reminder -->
+                <h3 class="px-section-title mt-4">Medicine Reminder</h3>
+                <div class="px-medicine-card" id="patient-dashboard-medicines-new">
+                  <div class="px-med-item">
+                    <div class="px-med-icon"><i class="fa-solid fa-pills" style="font-size: 18px; color: #1e293b;"></i></div>
+                    <div class="px-med-info">
+                      <div class="px-med-name">Metformin 500mg</div>
+                      <div class="px-med-time">After breakfast · 8:00 AM</div>
+                    </div>
+                    <button class="px-med-check"><i class="fa-solid fa-check"></i></button>
+                  </div>
+                  <div class="px-med-footer">
+                    <span class="px-med-more">2 more medicines due today</span>
+                    <a href="javascript:void(0)" onclick="openPortalTool('patient', 'reminders')" class="px-med-view-all">View all</a>
+                  </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <h3 class="px-section-title mt-4">Recent Activity</h3>
+                <div class="px-activity-list">
+                  <div class="px-activity-item">
+                    <div class="px-act-icon" style="color: #a855f7; background: #f3e8ff;"><i class="fa-solid fa-flask"></i></div>
+                    <div class="px-act-info">
+                      <div class="px-act-title">CBC Blood Test Report</div>
+                      <div class="px-act-desc">Lab report uploaded</div>
+                    </div>
+                    <div class="px-act-time">2h ago</div>
+                  </div>
+                  <div class="px-activity-item">
+                    <div class="px-act-icon" style="color: #6366f1; background: #eef2ff;"><i class="fa-regular fa-calendar"></i></div>
+                    <div class="px-act-info">
+                      <div class="px-act-title">Dr. Sarah Mitchell</div>
+                      <div class="px-act-desc">Appointment confirmed</div>
+                    </div>
+                    <div class="px-act-time">Yesterday</div>
+                  </div>
+                  <div class="px-activity-item">
+                    <div class="px-act-icon" style="color: #0ea5e9; background: #e0f2fe;"><i class="fa-solid fa-pills" style="transform: rotate(45deg);"></i></div>
+                    <div class="px-act-info">
+                      <div class="px-act-title">Metformin 500mg</div>
+                      <div class="px-act-desc">Prescription renewed</div>
+                    </div>
+                    <div class="px-act-time">2 days ago</div>
+                  </div>
+                  <div class="px-activity-item">
+                    <div class="px-act-icon" style="color: #10b981; background: #dcfce7;"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="px-act-info">
+                      <div class="px-act-title">Flu Vaccine</div>
+                      <div class="px-act-desc">Vaccination recorded</div>
+                    </div>
+                    <div class="px-act-time">5 days ago</div>
+                  </div>
+                </div>
+
+                <!-- Emergency SOS -->
+                <button class="px-btn-sos mt-4 mb-4" onmousedown="startSOSCountdown(event)" onmouseup="cancelSOSCountdown(event)" onmouseleave="cancelSOSCountdown(event)" ontouchstart="startSOSCountdown(event)" ontouchend="cancelSOSCountdown(event)" ontouchcancel="cancelSOSCountdown(event)">
+                  <i class="fa-solid fa-triangle-exclamation"></i> Emergency SOS
+                </button>
                 
-                <div class="row mt-3">
-    <div class="col-6">
-      <div class="hs-stat-card" style="padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); text-align: center;">
-         <div id="patient-dashboard-medicines" style="padding: 8px 0;">
-            <i class="fa-solid fa-pills" style="color: #cbd5e1; font-size: 24px; margin-bottom: 8px;"></i>
-            <div style="font-weight: 600; color: #334155; font-size: 14px;">No Active Medicines</div>
-            <p class="hs-stat-sub" style="font-size: 12px; margin-top: 4px;">You have no prescribed medications.</p>
-         </div>
-         <button class="btn btn-outline btn-sm w-100 mt-2" onclick="openPortalTool('patient', 'reminders')">Add Reminder</button>
-      </div>
-    </div>
-    <div class="col-6">
-      <div class="hs-stat-card" style="padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); text-align: center;">
-         <div id="patient-dashboard-vaccines" style="padding: 8px 0;">
-            <i class="fa-solid fa-syringe" style="color: #10b981; font-size: 24px; margin-bottom: 8px;"></i>
-            <div style="font-weight: 600; color: #334155; font-size: 14px;">All Caught Up!</div>
-            <p class="hs-stat-sub" style="font-size: 12px; margin-top: 4px;">Your vaccination record is up to date.</p>
-         </div>
-         <button class="btn btn-outline btn-sm w-100 mt-2" onclick="openPortalTool('patient', 'vaccinations')">Manage</button>
-      </div>
-    </div>
-  </div>
+                <!-- Bottom Navigation Bar (Mobile Only) -->
+                <div class="px-bottom-nav">
+                  <div class="px-nav-item active" onclick="switchPatientPage('dashboard')">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                  </div>
+                  <div class="px-nav-item" onclick="switchPatientPage('appointments')">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span>Appts</span>
+                  </div>
+                  <div class="px-nav-item" onclick="switchPatientPage('doctors')">
+                    <i class="fa-regular fa-user"></i>
+                    <span>Doctors</span>
+                  </div>
+                  <div class="px-nav-item" onclick="switchPatientPage('health-records')">
+                    <i class="fa-regular fa-clipboard"></i>
+                    <span>Records</span>
+                  </div>
+                  <div class="px-nav-item" onclick="openPortalTool('patient', 'medicines')">
+                    <i class="fa-solid fa-pills"></i>
+                    <span>Medicines</span>
+                  </div>
+                </div>
               </div>
             </div>
 
