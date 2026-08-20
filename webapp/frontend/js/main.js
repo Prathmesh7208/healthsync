@@ -822,7 +822,7 @@ window.openPortalTool = function (role, tool, remember = true) {
 };
 function utilityContent(role, tool) {
   if (tool === 'settings') return settingsContent();
-  if (tool === 'prescriptions') return table(patientPrescriptions.map(rx => `<tr><td>${escapeHtml(rx.diagnosis)}</td><td>${escapeHtml(rx.doctor_name || rx.doctorName || '')}</td><td>${new Date(rx.created_at).toLocaleDateString('en-IN')}</td><td><button class="btn btn-secondary btn-xs" onclick="showToast('Prescription details are available in Health Records.', 'info')">View</button></td></tr>`).join(''), ['Diagnosis', 'Doctor', 'Date', 'Action']);
+  if (tool === 'prescriptions') return renderPatientPrescriptionsUI();
   if (tool === 'medicines') { const meds = patientPrescriptions.flatMap(rx => { try { return JSON.parse(rx.medications_json || '[]') } catch { return [] } }); return table(meds.map(m => `<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.dosage || '')}</td><td>${escapeHtml(m.frequency || '')}</td><td>${escapeHtml(m.duration || '')}</td></tr>`).join(''), ['Medicine', 'Dosage', 'Frequency', 'Duration']); }
   if (tool === 'reminders') {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -3384,4 +3384,138 @@ window.triggerSOS = function () {
   } else {
     showToast('Geolocation not supported.', 'error');
   }
+};
+
+window.switchPrescriptionTab = function(tabId) {
+  document.querySelectorAll('.px-rx-tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.px-rx-tab-pane').forEach(pane => pane.classList.remove('active'));
+  const activeBtn = document.getElementById(`rx-tab-btn-${tabId}`);
+  const activePane = document.getElementById(`rx-tab-${tabId}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  if (activePane) activePane.classList.add('active');
+};
+
+window.togglePrescriptionAccordion = function(rxId) {
+  const content = document.getElementById(`rx-content-${rxId}`);
+  const icon = document.getElementById(`rx-icon-${rxId}`);
+  if (!content || !icon) return;
+  
+  if (content.classList.contains('expanded')) {
+    content.classList.remove('expanded');
+    content.style.maxHeight = '0px';
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    content.classList.add('expanded');
+    content.style.maxHeight = content.scrollHeight + 'px';
+    icon.style.transform = 'rotate(180deg)';
+  }
+};
+
+window.renderPatientPrescriptionsUI = function() {
+  if (!patientPrescriptions || patientPrescriptions.length === 0) {
+    return `<div class="container-fluid"><p class="text-muted empty-state">No prescriptions found.</p></div>`;
+  }
+
+  const now = new Date();
+  const activeRx = [];
+  const previousRx = [];
+
+  patientPrescriptions.forEach(rx => {
+    let meds = [];
+    try { meds = JSON.parse(rx.medications_json || '[]'); } catch(e) {}
+    
+    // Calculate expiration based on max duration
+    let maxDays = 0;
+    meds.forEach(m => {
+      const match = (m.duration || '').match(/(\d+)/);
+      if (match) {
+        const days = parseInt(match[1]);
+        if (days > maxDays) maxDays = days;
+      }
+    });
+    if (maxDays === 0) maxDays = 90; // Default fallback
+    
+    const issuedDate = new Date(rx.created_at);
+    const validUntil = new Date(issuedDate.getTime() + maxDays * 24 * 60 * 60 * 1000);
+    
+    rx.meds = meds;
+    rx.issuedStr = issuedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    rx.validUntilStr = validUntil.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    rx.isActive = validUntil >= now;
+    
+    if (rx.isActive) activeRx.push(rx);
+    else previousRx.push(rx);
+  });
+
+  const generateRxCards = (rxList) => {
+    if (rxList.length === 0) return `<p class="text-muted text-center mt-4">No prescriptions to display.</p>`;
+    
+    return rxList.map(rx => {
+      const medicinesCount = rx.meds.length;
+      const statusText = rx.isActive ? `Valid until ${rx.validUntilStr}` : 'Expired';
+      const statusClass = rx.isActive ? 'text-green' : 'text-muted';
+      
+      const medsHtml = rx.meds.map(m => `
+        <div class="px-rx-med-item">
+          <div class="px-rx-med-icon">
+            <div class="px-rx-med-icon-inner"><i class="fa-solid fa-capsules" style="color: #6366f1;"></i></div>
+          </div>
+          <div class="px-rx-med-info">
+            <div class="px-rx-med-name">${escapeHtml(m.name)}</div>
+            <div class="px-rx-med-dosage">${escapeHtml(m.dosage || '')} &middot; ${escapeHtml(m.frequency || '')}</div>
+            <div class="px-rx-med-instructions">${escapeHtml(m.duration || '')}</div>
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <div class="px-rx-card">
+          <div class="px-rx-card-header">
+            <div class="px-rx-doc-info">
+              <div class="px-rx-doc-name">${escapeHtml(rx.doctor_name || rx.doctorName || 'Doctor')}</div>
+              <div class="px-rx-issued">Issued: ${rx.issuedStr}</div>
+              <div class="px-rx-status ${statusClass}">${statusText}</div>
+            </div>
+            <button class="px-rx-toggle-btn" onclick="togglePrescriptionAccordion('${rx.id}')">
+              <span class="px-rx-med-count ${rx.isActive ? 'active-count' : ''}">${medicinesCount} medicine${medicinesCount !== 1 ? 's' : ''}</span>
+              <i class="fa-solid fa-chevron-down px-rx-chevron" id="rx-icon-${rx.id}"></i>
+            </button>
+          </div>
+          
+          <div class="px-rx-accordion-content" id="rx-content-${rx.id}">
+            <div class="px-rx-med-list">
+              ${medsHtml}
+            </div>
+          </div>
+          
+          <div class="px-rx-card-footer">
+            <button class="px-rx-action-btn" onclick="showToast('Share functionality coming soon', 'info')">
+              <i class="fa-solid fa-share-nodes text-purple"></i> Share
+            </button>
+            <button class="px-rx-action-btn" onclick="showToast('Downloading prescription...', 'success')">
+              <i class="fa-regular fa-file-pdf"></i> Download
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  return `
+    <div class="px-rx-container">
+      <div class="px-rx-tabs-wrapper">
+        <div class="px-rx-tabs">
+          <button class="px-rx-tab-btn active" id="rx-tab-btn-active" onclick="switchPrescriptionTab('active')">Active</button>
+          <button class="px-rx-tab-btn" id="rx-tab-btn-previous" onclick="switchPrescriptionTab('previous')">Previous</button>
+        </div>
+      </div>
+      
+      <div class="px-rx-tab-pane active" id="rx-tab-active">
+        ${generateRxCards(activeRx)}
+      </div>
+      <div class="px-rx-tab-pane" id="rx-tab-previous">
+        ${generateRxCards(previousRx)}
+      </div>
+    </div>
+  `;
 };
