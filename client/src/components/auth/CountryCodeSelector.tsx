@@ -87,8 +87,7 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
         aria-label="Select Country Code"
       >
         <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{selectedCountry.flag}</span>
-        <span style={{ color: '#475569', fontSize: '0.8125rem', fontWeight: 700 }}>{selectedCountry.code}</span>
-        <span style={{ color: '#0F172A' }}>{selectedCountry.dialCode}</span>
+        <span style={{ color: '#0F172A', fontWeight: 600 }}>{selectedCountry.dialCode}</span>
         <ChevronDown size={14} color="#64748B" />
       </button>
 
