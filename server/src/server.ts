@@ -12,7 +12,7 @@ import { setupSocketIO } from './socket';
 
 export const io = new SocketIOServer(server, {
   cors: {
-    origin: config.corsOrigin,
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST'],
   },

@@ -34,7 +34,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Security & Parsing Middleware
 app.use(
   cors({
-    origin: config.corsOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like curl, mobile apps) or any web origin
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
