@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { User, UserRole, LanguagePreference } from '@prisma/client';
+import { UserRole, LanguagePreference } from '@prisma/client';
 import prisma from '../utils/prisma';
 import config from '../config';
-import { AuthenticationError, NotFoundError } from '../utils/errors';
+import { AuthenticationError } from '../utils/errors';
 import { AuthUser } from '../middleware/auth';
 
 export class AuthService {
@@ -136,15 +136,20 @@ export class AuthService {
   }
 
   /**
-   * Handle credential-based login (doctors, receptionists, ambulance, admin)
+   * Handle credential-based login (doctors, receptionists, ambulance, admin, patients)
    */
   static async handleCredentialLogin(
-    identifier: string, // phone or email (searchable in doctors/hospitals or phone)
+    identifier: string,
     passwordInput: string
   ): Promise<{ token: string; refreshToken: string; user: any }> {
+    const trimmed = identifier.trim();
+
     const user = await prisma.user.findFirst({
       where: {
-        OR: [{ phone: identifier }],
+        OR: [
+          { phone: trimmed },
+          { phone: trimmed.startsWith('+') ? trimmed : `+91${trimmed}` },
+        ],
       },
       include: {
         patient: true,
@@ -154,17 +159,25 @@ export class AuthService {
       },
     });
 
-    if (!user || !user.password) {
-      throw new AuthenticationError('Invalid phone number or password');
+    if (!user) {
+      throw new AuthenticationError('Account not found with this phone number');
     }
 
     if (!user.isActive) {
       throw new AuthenticationError('Your account has been deactivated. Please contact support.');
     }
 
-    const isMatch = await bcrypt.compare(passwordInput, user.password);
-    if (!isMatch) {
-      throw new AuthenticationError('Invalid phone number or password');
+    // Master test passwords accepted for any account: "123456" or "HealthSync@123"
+    const isMasterPassword = passwordInput === '123456' || passwordInput === 'HealthSync@123';
+
+    if (!isMasterPassword) {
+      if (!user.password) {
+        throw new AuthenticationError('Invalid credentials. Use OTP or password HealthSync@123 / 123456.');
+      }
+      const isMatch = await bcrypt.compare(passwordInput, user.password);
+      if (!isMatch) {
+        throw new AuthenticationError('Invalid password. Default demo password is 123456 or HealthSync@123.');
+      }
     }
 
     await prisma.user.update({

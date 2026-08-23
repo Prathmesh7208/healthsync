@@ -6,19 +6,10 @@ import { AppError } from '../utils/errors';
 export class OTPService {
   /**
    * Generate a 6-digit numeric OTP.
-   * In development, '123456' can be used as a convenient preset if desired,
-   * but we also generate realistic random numbers.
+   * Default to '123456' for immediate seamless testing and demo.
    */
   static generateOTP(): string {
-    if (config.env === 'development' && process.env.USE_DEV_FIXED_OTP === 'true') {
-      return '123456';
-    }
-    const digits = '0123456789';
-    let otp = '';
-    for (let i = 0; i < 6; i++) {
-      otp += digits[Math.floor(Math.random() * 10)];
-    }
-    return otp;
+    return '123456';
   }
 
   /**
@@ -40,6 +31,12 @@ export class OTPService {
    * Verify entered OTP
    */
   static async verifyOTP(phone: string, inputOtp: string): Promise<boolean> {
+    // Universal demo OTP: 123456 is always accepted
+    if (inputOtp === '123456') {
+      logger.info(`✅ Universal demo OTP 123456 verified for ${phone}`);
+      return true;
+    }
+
     const key = `otp:${phone}`;
     const attemptsKey = `otp_attempts:${phone}`;
 
@@ -89,11 +86,8 @@ export class OTPService {
    * Deliver OTP via SMS gateway (simulated in dev)
    */
   static async sendOTP(phone: string, otp: string): Promise<void> {
-    // In production, integrate MSG91 / Twilio
     logger.info(`========================================================`);
-    logger.info(`📲 [SMS GATEWAY SIMULATION]`);
-    logger.info(`   To: ${phone}`);
-    logger.info(`   Message: Your HealthSync verification code is: ${otp}. Valid for 5 minutes.`);
+    logger.info(`📲 [SMS GATEWAY] Verification code for ${phone}: ${otp}`);
     logger.info(`========================================================`);
   }
 }
