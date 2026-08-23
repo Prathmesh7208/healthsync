@@ -7,7 +7,7 @@ export const getSocket = (token?: string | null): Socket => {
     const socketUrl =
       import.meta.env.VITE_API_URL ||
       (typeof window !== 'undefined' && window.location.origin.includes('onrender.com')
-        ? window.location.origin.replace('-client', '-api')
+        ? 'https://healthsync-api-1h37.onrender.com'
         : window.location.origin);
 
     socket = io(socketUrl, {

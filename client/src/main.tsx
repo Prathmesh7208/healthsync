@@ -11,7 +11,7 @@ export const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_URL;
   }
   if (typeof window !== 'undefined' && window.location.origin.includes('onrender.com')) {
-    return window.location.origin.replace('-client', '-api');
+    return 'https://healthsync-api-1h37.onrender.com';
   }
   return '';
 };

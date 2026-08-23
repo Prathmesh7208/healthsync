@@ -33,6 +33,9 @@ services:
     rootDir: client
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://healthsync-api-1h37.onrender.com
     routes:
       - type: rewrite
         source: /*
