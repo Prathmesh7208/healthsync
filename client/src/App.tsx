@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './stores/authStore';
 import LoginPage from './pages/auth/LoginPage';
+import DoctorRegisterPage from './pages/auth/DoctorRegisterPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Layouts
@@ -9,6 +10,7 @@ import PatientLayout from './layouts/PatientLayout';
 import DoctorLayout from './layouts/DoctorLayout';
 import ReceptionistLayout from './layouts/ReceptionistLayout';
 import AmbulanceLayout from './layouts/AmbulanceLayout';
+import AdminLayout from './layouts/AdminLayout';
 
 // Patient Pages
 import HomePage from './pages/patient/HomePage';
@@ -43,6 +45,12 @@ import AmbulanceDashboardPage from './pages/ambulance/AmbulanceDashboardPage';
 import ActiveEmergencyPage from './pages/ambulance/ActiveEmergencyPage';
 import AmbulanceHistoryPage from './pages/ambulance/AmbulanceHistoryPage';
 
+// Admin Pages
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import DoctorManagementPage from './pages/admin/DoctorManagementPage';
+import HospitalManagementPage from './pages/admin/HospitalManagementPage';
+import UserManagementPage from './pages/admin/UserManagementPage';
+
 // Real-time Notifications
 import NotificationToastContainer from './components/notifications/NotificationToastContainer';
 
@@ -64,7 +72,9 @@ export const App: React.FC = () => {
             isAuthenticated && user ? (
               <Navigate
                 to={
-                  user.role === 'DOCTOR'
+                  user.role === 'ADMIN'
+                    ? '/admin/dashboard'
+                    : user.role === 'DOCTOR'
                     ? '/doctor/dashboard'
                     : user.role === 'RECEPTIONIST'
                     ? '/receptionist/dashboard'
@@ -80,8 +90,25 @@ export const App: React.FC = () => {
           }
         />
 
-        {/* Public Auth Route */}
+        {/* Public Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/doctor/register" element={<DoctorRegisterPage />} />
+
+        {/* Admin Portal Routes (Protected) */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="doctors" element={<DoctorManagementPage />} />
+          <Route path="hospitals" element={<HospitalManagementPage />} />
+          <Route path="users" element={<UserManagementPage />} />
+        </Route>
 
         {/* Patient Portal Routes (Protected) */}
         <Route
@@ -169,13 +196,15 @@ export const App: React.FC = () => {
                 height: '100vh',
                 textAlign: 'center',
                 padding: '1rem',
+                backgroundColor: '#0F172A',
+                color: '#F8FAFC',
               }}
             >
-              <h1 style={{ fontSize: '2rem', color: 'var(--color-danger-600)' }}>403 - Unauthorized</h1>
-              <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '1rem 0' }}>
+              <h1 style={{ fontSize: '2rem', color: '#EF4444' }}>403 - Unauthorized</h1>
+              <p style={{ color: '#94A3B8', maxWidth: '400px', margin: '1rem 0' }}>
                 You do not have permission to access this portal.
               </p>
-              <a href="/login" style={{ color: 'var(--color-primary-600)', textDecoration: 'none', fontWeight: 600 }}>
+              <a href="/login" style={{ color: '#60A5FA', textDecoration: 'none', fontWeight: 600 }}>
                 Return to Login
               </a>
             </div>
@@ -195,11 +224,13 @@ export const App: React.FC = () => {
                 height: '100vh',
                 textAlign: 'center',
                 padding: '1rem',
+                backgroundColor: '#0F172A',
+                color: '#F8FAFC',
               }}
             >
               <h1 style={{ fontSize: '2rem' }}>404 - Page Not Found</h1>
-              <p style={{ color: 'var(--text-secondary)' }}>The requested page does not exist.</p>
-              <a href="/login" style={{ color: 'var(--color-primary-600)', textDecoration: 'none', marginTop: '1rem', fontWeight: 600 }}>
+              <p style={{ color: '#94A3B8' }}>The requested page does not exist.</p>
+              <a href="/login" style={{ color: '#60A5FA', textDecoration: 'none', marginTop: '1rem', fontWeight: 600 }}>
                 Go to Login
               </a>
             </div>

@@ -74,6 +74,62 @@ router.post('/otp/verify', async (req: Request, res: Response, next: NextFunctio
 });
 
 /**
+ * POST /api/v1/auth/doctor/register (Public Doctor Self-Registration)
+ */
+router.post('/doctor/register', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      phone,
+      password,
+      fullName,
+      registrationNumber,
+      specializations,
+      experienceYears = 1,
+      bio,
+      languages = ['English', 'Hindi'],
+      consultationFee = 500,
+    } = req.body;
+
+    if (!phone || !fullName || !registrationNumber || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone, password, full name, and medical registration number are required.',
+      });
+    }
+
+    const authResult = await AuthService.handleDoctorRegistration({
+      phone,
+      password,
+      fullName,
+      registrationNumber,
+      specializations: Array.isArray(specializations) ? specializations : [specializations || 'General Medicine'],
+      experienceYears: Number(experienceYears),
+      bio: bio || `Dr. ${fullName} is a registered healthcare practitioner.`,
+      languages: Array.isArray(languages) ? languages : ['English', 'Hindi'],
+      consultationFee: Number(consultationFee),
+    });
+
+    logAuditEvent(
+      authResult.user.id,
+      'DOCTOR_REGISTERED',
+      'Doctor',
+      authResult.user.id,
+      { registrationNumber },
+      req.ip,
+      req.get('user-agent')
+    ).catch(() => {});
+
+    return res.status(201).json({
+      success: true,
+      message: 'Doctor account registered successfully!',
+      data: authResult,
+    });
+  } catch (err: any) {
+    next(err);
+  }
+});
+
+/**
  * POST /api/v1/auth/login (Staff / Credential Login)
  */
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {

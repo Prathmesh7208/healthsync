@@ -81,8 +81,8 @@ import prescriptionRoutes from './routes/prescription.routes';
 import receptionistRoutes from './routes/receptionist.routes';
 
 import ambulanceRoutes from './routes/ambulance.routes';
-
 import emergencyRoutes from './routes/emergency.routes';
+import adminRoutes from './routes/admin.routes';
 
 // Mount API Routes
 app.use('/api/v1/auth', authRoutes);
@@ -98,6 +98,7 @@ app.use('/api/v1/prescriptions', prescriptionRoutes);
 app.use('/api/v1/receptionist', receptionistRoutes);
 app.use('/api/v1/ambulance', ambulanceRoutes);
 app.use('/api/v1/emergencies', emergencyRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // 404 Not Found Handler for unmatched routes
 app.use((_req: Request, _res: Response, next: NextFunction) => {

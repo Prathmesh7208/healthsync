@@ -537,6 +537,22 @@ export const LoginPage: React.FC = () => {
             >
               {t.loginBtn}
             </Button>
+
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                Are you a Doctor?{' '}
+                <a
+                  href="/doctor/register"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/doctor/register');
+                  }}
+                  style={{ color: 'var(--color-primary-600)', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  Register here →
+                </a>
+              </span>
+            </div>
           </form>
         )}
       </div>

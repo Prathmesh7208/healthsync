@@ -155,6 +155,60 @@ export class AuthService {
   }
 
   /**
+   * Handle doctor self-registration
+   */
+  static async handleDoctorRegistration(data: {
+    phone: string;
+    password: string;
+    fullName: string;
+    registrationNumber: string;
+    specializations: string[];
+    experienceYears: number;
+    bio: string;
+    languages: string[];
+    consultationFee: number;
+  }): Promise<{ token: string; refreshToken: string; user: any }> {
+    const normalizedPhone = data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '')}`;
+    const passwordHash = await bcrypt.hash(data.password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        phone: normalizedPhone,
+        password: passwordHash,
+        role: UserRole.DOCTOR,
+        isActive: true,
+        doctor: {
+          create: {
+            fullName: data.fullName,
+            registrationNumber: data.registrationNumber,
+            specializations: data.specializations,
+            experienceYears: data.experienceYears,
+            bio: data.bio,
+            languages: data.languages,
+            isAvailable: true,
+          },
+        },
+      },
+      include: { doctor: true },
+    });
+
+    const token = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user);
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        role: user.role,
+        languagePreference: user.languagePreference || 'EN',
+        profile: user.doctor,
+      },
+    };
+  }
+
+  /**
    * Handle credential-based login (doctors, receptionists, ambulance, admin, patients)
    */
   static async handleCredentialLogin(

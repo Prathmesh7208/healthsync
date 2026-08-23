@@ -31,6 +31,7 @@ interface AuthState {
   // Actions
   setLanguage: (lang: Language) => void;
   setCountryCode: (code: string) => void;
+  setAuth: (token: string, user: User, refreshToken?: string) => void;
   sendOTP: (phone: string, countryCode?: string) => Promise<{ success: boolean; message: string }>;
   verifyOTP: (phone: string, otp: string, countryCode?: string) => Promise<{ isNewUser: boolean }>;
   loginWithCredentials: (identifier: string, password: string) => Promise<void>;
@@ -58,6 +59,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setCountryCode: (code: string) => {
     set({ selectedCountryCode: code });
+  },
+
+  setAuth: (token: string, user: User, refreshToken?: string) => {
+    localStorage.setItem('hs_token', token);
+    if (refreshToken) localStorage.setItem('hs_refresh_token', refreshToken);
+    localStorage.setItem('hs_user', JSON.stringify(user));
+    set({
+      token,
+      refreshToken: refreshToken || null,
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+    });
   },
 
   sendOTP: async (phone: string, countryCode?: string) => {
