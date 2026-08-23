@@ -4,10 +4,11 @@
     "search": "डॉक्टर शोधा",
     "appointments": "अपॉइंटमेंट्स",
     "records": "आरोग्य नोंदी",
-    "reminders": "औषध स्मरण",
+    "reminders": "औषध स्मरणपत्र",
+    "settings": "सेटिंग्ज",
     "profile": "प्रोफाइल",
     "sos": "आपत्कालीन SOS",
-    "logout": "बाहेर पडा"
+    "logout": "लॉग आउट"
   },
   "home": {
     "welcome": "नमस्कार",

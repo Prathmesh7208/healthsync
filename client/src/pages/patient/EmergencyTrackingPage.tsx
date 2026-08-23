@@ -15,6 +15,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
+import LiveAmbulanceRadarMap from '../../components/emergency/LiveAmbulanceRadarMap';
 
 const STEPS = [
   { status: 'INITIATED', label: 'SOS Alert Transmitted' },
@@ -183,6 +184,37 @@ export const EmergencyTrackingPage: React.FC = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* Live Interactive GPS Ambulance Radar Map */}
+      {!isCancelled && (
+        <LiveAmbulanceRadarMap
+          emergencyId={emergency.id}
+          patientLocation={{
+            latitude: Number(emergency.latitude || 18.5204),
+            longitude: Number(emergency.longitude || 73.8567),
+          }}
+          initialAmbulanceLocation={
+            emergency.ambulanceOperator?.currentLatitude
+              ? {
+                  latitude: Number(emergency.ambulanceOperator.currentLatitude),
+                  longitude: Number(emergency.ambulanceOperator.currentLongitude),
+                }
+              : undefined
+          }
+          hospitalLocation={
+            emergency.hospital
+              ? {
+                  latitude: Number(emergency.hospital.latitude || 18.5308),
+                  longitude: Number(emergency.hospital.longitude || 73.8742),
+                  name: emergency.hospital.name,
+                }
+              : undefined
+          }
+          vehicleNumber={emergency.ambulanceOperator?.vehicleNumber || 'MH-12-EM-108'}
+          driverPhone={emergency.ambulanceOperator?.user?.phone || '+919844400001'}
+          status={emergency.status}
+        />
+      )}
 
       {/* Emergency Status Stepper */}
       <Card style={{ marginBottom: '1.5rem' }}>

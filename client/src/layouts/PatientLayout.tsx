@@ -28,12 +28,12 @@ export const PatientLayout: React.FC = () => {
   };
 
   const navItems = [
-    { to: '/patient/home', label: t('nav.home'), icon: <Home size={20} /> },
-    { to: '/patient/doctors', label: t('nav.search'), icon: <Search size={20} /> },
-    { to: '/patient/appointments', label: t('nav.appointments'), icon: <Calendar size={20} /> },
-    { to: '/patient/records', label: t('nav.records'), icon: <FileText size={20} /> },
-    { to: '/patient/reminders', label: t('nav.reminders'), icon: <Pill size={20} /> },
-    { to: '/patient/settings', label: t('nav.settings') || 'Settings', icon: <Settings size={20} /> },
+    { to: '/patient/home', label: t('nav.home'), icon: <Home size={22} /> },
+    { to: '/patient/doctors', label: t('nav.search'), icon: <Search size={22} /> },
+    { to: '/patient/appointments', label: t('nav.appointments'), icon: <Calendar size={22} /> },
+    { to: '/patient/records', label: t('nav.records'), icon: <FileText size={22} /> },
+    { to: '/patient/reminders', label: t('nav.reminders'), icon: <Pill size={22} /> },
+    { to: '/patient/settings', label: t('nav.settings') || 'Settings', icon: <Settings size={22} /> },
   ];
 
   return (
@@ -44,9 +44,9 @@ export const PatientLayout: React.FC = () => {
           position: 'sticky',
           top: 0,
           zIndex: 30,
-          backgroundColor: 'var(--bg-surface)',
+          backgroundColor: '#FFFFFF',
           borderBottom: '1px solid var(--border-subtle)',
-          boxShadow: 'var(--shadow-sm)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
         }}
       >
         <div
@@ -58,11 +58,11 @@ export const PatientLayout: React.FC = () => {
             height: '64px',
           }}
         >
-          {/* Logo */}
+          {/* Brand Logo with Image */}
           <Logo size="sm" onClick={() => navigate('/patient/home')} />
 
           {/* Desktop Nav Links */}
-          <nav style={{ display: 'none', gap: '1.5rem', alignItems: 'center' }} className="desktop-nav">
+          <nav className="desktop-nav" style={{ gap: '0.5rem', alignItems: 'center' }}>
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -78,6 +78,7 @@ export const PatientLayout: React.FC = () => {
                   padding: '0.5rem 0.75rem',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: isActive ? 'var(--color-primary-50)' : 'transparent',
+                  transition: 'all 0.15s ease',
                 })}
               >
                 {item.icon}
@@ -140,27 +141,28 @@ export const PatientLayout: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, paddingBottom: '5rem' }}>
+      <main style={{ flex: 1, paddingBottom: '5.5rem' }}>
         <Outlet />
       </main>
 
       {/* Floating SOS Action Button */}
       <SOSButton />
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar - Clean, Icon-Centric HUD */}
       <nav
+        className="mobile-bottom-nav"
         style={{
           position: 'fixed',
           bottom: 0,
           left: 0,
           right: 0,
           zIndex: 30,
-          backgroundColor: 'var(--bg-surface)',
-          borderTop: '1px solid var(--border-subtle)',
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
+          backgroundColor: '#FFFFFF',
+          borderTop: '1px solid #E2E8F0',
+          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.08)',
           justifyContent: 'space-around',
-          padding: '0.5rem 0.25rem',
+          alignItems: 'center',
+          padding: '0.375rem 0.25rem calc(0.375rem + env(safe-area-inset-bottom, 0px)) 0.25rem',
         }}
       >
         {navItems.map((item) => (
@@ -173,14 +175,18 @@ export const PatientLayout: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               textDecoration: 'none',
-              fontSize: '0.6875rem',
-              fontWeight: isActive ? 700 : 500,
-              color: isActive ? 'var(--color-primary-600)' : 'var(--text-muted)',
-              minWidth: '56px',
+              padding: '0.375rem 0.5rem',
+              borderRadius: '10px',
+              backgroundColor: isActive ? 'var(--color-primary-50)' : 'transparent',
+              color: isActive ? 'var(--color-primary-600)' : '#64748B',
+              minWidth: '46px',
+              transition: 'all 0.15s ease',
             })}
           >
             {item.icon}
-            <span style={{ marginTop: '2px' }}>{item.label}</span>
+            <span style={{ fontSize: '0.625rem', fontWeight: 700, marginTop: '2px', whiteSpace: 'nowrap' }}>
+              {item.label}
+            </span>
           </NavLink>
         ))}
       </nav>

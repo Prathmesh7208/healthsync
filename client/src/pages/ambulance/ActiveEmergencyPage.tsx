@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Badge from '../../components/ui/Badge';
+import LiveAmbulanceRadarMap from '../../components/emergency/LiveAmbulanceRadarMap';
 
 const LIFECYCLE_STEPS = [
   { status: 'AMBULANCE_ASSIGNED', label: 'Unit Assigned', nextAction: 'Start Driving to Patient', nextStatus: 'AMBULANCE_EN_ROUTE' },
@@ -165,6 +166,35 @@ export const ActiveEmergencyPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Live Interactive GPS Ambulance Radar Map */}
+      <LiveAmbulanceRadarMap
+        emergencyId={emergency.id}
+        patientLocation={{
+          latitude: Number(emergency.latitude || 18.5204),
+          longitude: Number(emergency.longitude || 73.8567),
+        }}
+        initialAmbulanceLocation={
+          emergency.ambulanceOperator?.currentLatitude
+            ? {
+                latitude: Number(emergency.ambulanceOperator.currentLatitude),
+                longitude: Number(emergency.ambulanceOperator.currentLongitude),
+              }
+            : undefined
+        }
+        hospitalLocation={
+          emergency.hospital
+            ? {
+                latitude: Number(emergency.hospital.latitude || 18.5308),
+                longitude: Number(emergency.hospital.longitude || 73.8742),
+                name: emergency.hospital.name,
+              }
+            : undefined
+        }
+        vehicleNumber={emergency.ambulanceOperator?.vehicleNumber || 'MH-12-EM-108'}
+        driverPhone={emergency.ambulanceOperator?.user?.phone || '+919844400001'}
+        status={emergency.status}
+      />
 
       {/* Patient Triage & Vitals Card */}
       <div
