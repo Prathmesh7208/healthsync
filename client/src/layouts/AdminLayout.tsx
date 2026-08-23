@@ -24,16 +24,16 @@ export const AdminLayout: React.FC = () => {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#0B132B' }}>
-      {/* Top Admin Header */}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#F8FAFC' }}>
+      {/* Top Admin Header - Light Mode */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 30,
-          backgroundColor: '#1C2541',
-          borderBottom: '1px solid #3A506B',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
         }}
       >
         <div
@@ -46,21 +46,21 @@ export const AdminLayout: React.FC = () => {
           }}
         >
           {/* Logo & Superadmin Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Logo size="sm" variant="dark" onClick={() => navigate('/admin/dashboard')} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+            <Logo size="sm" onClick={() => navigate('/admin/dashboard')} />
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.375rem',
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                color: '#60A5FA',
+                backgroundColor: '#EFF6FF',
+                color: '#1D4ED8',
                 padding: '3px 10px',
                 borderRadius: '9999px',
                 fontSize: '0.6875rem',
                 fontWeight: 800,
                 letterSpacing: '0.05em',
-                border: '1px solid rgba(59, 130, 246, 0.4)',
+                border: '1px solid #BFDBFE',
               }}
             >
               <ShieldCheck size={13} />
@@ -80,11 +80,11 @@ export const AdminLayout: React.FC = () => {
                   gap: '0.5rem',
                   fontSize: '0.875rem',
                   fontWeight: isActive ? 700 : 500,
-                  color: isActive ? '#FFFFFF' : '#94A3B8',
+                  color: isActive ? '#1A56DB' : '#475569',
                   textDecoration: 'none',
                   padding: '0.5rem 0.875rem',
                   borderRadius: '8px',
-                  backgroundColor: isActive ? '#3A506B' : 'transparent',
+                  backgroundColor: isActive ? '#EFF6FF' : 'transparent',
                   transition: 'all 0.15s ease',
                 })}
               >
@@ -99,8 +99,8 @@ export const AdminLayout: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
               <Avatar name={user?.phone || 'Admin'} size="sm" />
               <div className="mobile-hide">
-                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#FFFFFF' }}>Platform Admin</div>
-                <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>{user?.phone}</div>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0F172A' }}>Platform Admin</div>
+                <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{user?.phone}</div>
               </div>
             </div>
 
@@ -108,9 +108,9 @@ export const AdminLayout: React.FC = () => {
               type="button"
               onClick={logout}
               style={{
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#F87171',
+                background: '#FEF2F2',
+                border: '1px solid #FEE2E2',
+                color: '#DC2626',
                 cursor: 'pointer',
                 padding: '0.375rem 0.75rem',
                 borderRadius: '8px',
@@ -130,7 +130,7 @@ export const AdminLayout: React.FC = () => {
       </header>
 
       {/* Main Admin Dashboard Content */}
-      <main style={{ flex: 1, padding: '1.5rem 1rem', paddingBottom: '5.5rem', color: '#F8FAFC' }}>
+      <main style={{ flex: 1, padding: '1.5rem 1rem', paddingBottom: '5.5rem', color: '#0F172A' }}>
         <div className="container">
           <Outlet />
         </div>
@@ -145,9 +145,9 @@ export const AdminLayout: React.FC = () => {
           left: 0,
           right: 0,
           zIndex: 30,
-          backgroundColor: '#1C2541',
-          borderTop: '1px solid #3A506B',
-          boxShadow: '0 -4px 15px rgba(0, 0, 0, 0.4)',
+          backgroundColor: '#FFFFFF',
+          borderTop: '1px solid #E2E8F0',
+          boxShadow: '0 -4px 15px rgba(0, 0, 0, 0.05)',
           justifyContent: 'space-around',
           padding: '0.5rem 0.25rem',
         }}
@@ -164,7 +164,7 @@ export const AdminLayout: React.FC = () => {
               textDecoration: 'none',
               fontSize: '0.6875rem',
               fontWeight: isActive ? 700 : 500,
-              color: isActive ? '#60A5FA' : '#94A3B8',
+              color: isActive ? '#1A56DB' : '#64748B',
               minWidth: '56px',
             })}
           >

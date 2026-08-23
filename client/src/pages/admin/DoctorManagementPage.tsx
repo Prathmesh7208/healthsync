@@ -103,50 +103,50 @@ export const DoctorManagementPage: React.FC = () => {
   const handleDownloadSampleTemplate = () => {
     const sampleData = [
       {
-        'Full Name': 'Dr. Rohan Deshmukh',
-        'Phone (10 digits)': '9822100001',
-        'Registration Number': 'MCI-2015-44912',
+        'Full Name': 'Dr. Vikramaditya Joshi',
+        'Phone (10 digits)': '9822011111',
+        'Registration Number': 'MMC-2008-04921',
         'Specializations (comma separated)': 'Cardiology, Interventional Cardiology',
-        'Experience (Years)': 14,
-        'Consultation Fee (INR)': 800,
+        'Experience (Years)': 18,
+        'Consultation Fee (INR)': 1000,
         'Languages (comma separated)': 'English, Hindi, Marathi',
-        'Bio': 'Senior Cardiologist specializing in echocardiography and preventive care.',
+        'Bio': 'Senior Interventional Cardiologist specializing in coronary angioplasty and pacemaker implantation.',
         'Hospital Name (Optional)': hospitals[0]?.name || 'Ruby Hall Clinic',
       },
       {
-        'Full Name': 'Dr. Ananya Sharma',
-        'Phone (10 digits)': '9822100002',
-        'Registration Number': 'MCI-2018-88219',
+        'Full Name': 'Dr. Ananya Deshmukh',
+        'Phone (10 digits)': '9822011112',
+        'Registration Number': 'MMC-2014-08129',
         'Specializations (comma separated)': 'Pediatrics, Neonatology',
-        'Experience (Years)': 9,
+        'Experience (Years)': 11,
         'Consultation Fee (INR)': 600,
-        'Languages (comma separated)': 'English, Hindi',
-        'Bio': 'Pediatrician dedicated to child health, immunizations, and wellness.',
+        'Languages (comma separated)': 'English, Hindi, Marathi',
+        'Bio': 'Dedicated Pediatrician and Neonatal specialist focusing on infant development and immunizations.',
         'Hospital Name (Optional)': hospitals[1]?.name || 'Sahyadri Super Speciality Hospital',
       },
       {
-        'Full Name': 'Dr. Sameer Kulkarni',
-        'Phone (10 digits)': '9822100003',
-        'Registration Number': 'MCI-2012-10934',
-        'Specializations (comma separated)': 'Orthopedics, Sports Medicine',
-        'Experience (Years)': 16,
-        'Consultation Fee (INR)': 900,
-        'Languages (comma separated)': 'English, Marathi',
-        'Bio': 'Orthopedic surgeon focusing on joint replacements and sports trauma.',
+        'Full Name': 'Dr. Rajesh Kulkarni',
+        'Phone (10 digits)': '9822011113',
+        'Registration Number': 'MMC-2010-03214',
+        'Specializations (comma separated)': 'Orthopedics, Joint Replacement',
+        'Experience (Years)': 15,
+        'Consultation Fee (INR)': 850,
+        'Languages (comma separated)': 'English, Marathi, Hindi',
+        'Bio': 'Renowned Orthopedic Surgeon specialized in knee and hip replacements and sports trauma.',
         'Hospital Name (Optional)': hospitals[2]?.name || 'Jupiter Hospital',
       },
     ];
 
     const ws = XLSX.utils.json_to_sheet(sampleData);
     ws['!cols'] = [
-      { wch: 24 },
+      { wch: 26 },
       { wch: 18 },
       { wch: 22 },
       { wch: 38 },
       { wch: 18 },
       { wch: 22 },
       { wch: 28 },
-      { wch: 45 },
+      { wch: 55 },
       { wch: 32 },
     ];
     const wb = XLSX.utils.book_new();
@@ -188,7 +188,7 @@ export const DoctorManagementPage: React.FC = () => {
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data: any[] = XLSX.utils.sheet_to_json(ws);
-        setPreviewRows(data.slice(0, 5)); // preview top 5 rows
+        setPreviewRows(data.slice(0, 5));
       } catch (err) {
         console.error('Failed to parse Excel preview:', err);
       }
@@ -265,7 +265,7 @@ export const DoctorManagementPage: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Action Header */}
+      {/* Action Header - Light Mode */}
       <div
         style={{
           display: 'flex',
@@ -276,10 +276,10 @@ export const DoctorManagementPage: React.FC = () => {
         }}
       >
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
             Doctor Registry & Management
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#64748B', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
             Add, verify, import Excel spreadsheets, and manage medical practitioners.
           </p>
         </div>
@@ -294,13 +294,14 @@ export const DoctorManagementPage: React.FC = () => {
               alignItems: 'center',
               gap: '0.5rem',
               padding: '0.625rem 1rem',
-              backgroundColor: '#1E293B',
-              color: '#38BDF8',
-              border: '1px solid #38BDF8',
+              backgroundColor: '#FFFFFF',
+              color: '#0284C7',
+              border: '1px solid #BAE6FD',
               borderRadius: '8px',
               fontWeight: 700,
               fontSize: '0.8125rem',
               cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
             }}
             title="Download formatted sample template (.xlsx)"
           >
@@ -324,7 +325,7 @@ export const DoctorManagementPage: React.FC = () => {
               fontWeight: 700,
               fontSize: '0.8125rem',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(13, 148, 136, 0.3)',
+              boxShadow: '0 4px 12px rgba(13, 148, 136, 0.25)',
             }}
           >
             <FileSpreadsheet size={15} />
@@ -347,7 +348,7 @@ export const DoctorManagementPage: React.FC = () => {
               fontWeight: 700,
               fontSize: '0.8125rem',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(26, 86, 219, 0.3)',
+              boxShadow: '0 4px 12px rgba(26, 86, 219, 0.25)',
             }}
           >
             <PlusCircle size={15} />
@@ -364,9 +365,9 @@ export const DoctorManagementPage: React.FC = () => {
               alignItems: 'center',
               gap: '0.375rem',
               padding: '0.625rem 0.875rem',
-              backgroundColor: '#334155',
-              color: '#FFFFFF',
-              border: 'none',
+              backgroundColor: '#FFFFFF',
+              color: '#475569',
+              border: '1px solid #CBD5E1',
               borderRadius: '8px',
               fontSize: '0.8125rem',
               fontWeight: 600,
@@ -393,29 +394,30 @@ export const DoctorManagementPage: React.FC = () => {
           style={{
             width: '100%',
             padding: '0.625rem 1rem 0.625rem 2.5rem',
-            backgroundColor: '#1C2541',
-            border: '1px solid #3A506B',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #CBD5E1',
             borderRadius: '8px',
-            color: '#FFFFFF',
+            color: '#0F172A',
             fontSize: '0.875rem',
             outline: 'none',
           }}
         />
       </div>
 
-      {/* Doctors Table */}
+      {/* Doctors Table - Light Mode */}
       <div
         style={{
-          backgroundColor: '#1C2541',
+          backgroundColor: '#FFFFFF',
           borderRadius: '12px',
-          border: '1px solid #3A506B',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
           overflow: 'hidden',
         }}
       >
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ backgroundColor: '#0B132B', borderBottom: '1px solid #3A506B', color: '#94A3B8' }}>
+              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B' }}>
                 <th style={{ padding: '0.875rem 1rem' }}>Doctor</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Specialization</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Reg. Number</th>
@@ -428,17 +430,17 @@ export const DoctorManagementPage: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>
+                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>
                     Loading doctors...
                   </td>
                 </tr>
               ) : doctors.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>
-                    <Stethoscope size={36} color="#64748B" style={{ margin: '0 auto 0.75rem auto' }} />
-                    <div>No doctors registered yet.</div>
-                    <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                      Click <b>"Bulk Upload Excel"</b> to import hundreds of doctors in seconds!
+                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>
+                    <Stethoscope size={36} color="#94A3B8" style={{ margin: '0 auto 0.75rem auto' }} />
+                    <div style={{ fontWeight: 700, color: '#0F172A' }}>No doctors registered yet.</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>
+                      Click <b>"Bulk Upload Excel"</b> to import doctors from your spreadsheet!
                     </div>
                   </td>
                 </tr>
@@ -449,19 +451,19 @@ export const DoctorManagementPage: React.FC = () => {
                     <tr
                       key={doc.id}
                       style={{
-                        borderBottom: '1px solid rgba(58, 80, 107, 0.4)',
+                        borderBottom: '1px solid #F1F5F9',
                         transition: 'background-color 0.15s ease',
                       }}
                     >
                       <td style={{ padding: '0.875rem 1rem' }}>
-                        <div style={{ fontWeight: 700, color: '#FFFFFF' }}>{doc.fullName}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{doc.user?.phone}</div>
+                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{doc.fullName}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{doc.user?.phone}</div>
                       </td>
                       <td style={{ padding: '0.875rem 1rem' }}>
                         <span
                           style={{
-                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                            color: '#60A5FA',
+                            backgroundColor: '#EFF6FF',
+                            color: '#1D4ED8',
                             padding: '3px 8px',
                             borderRadius: '6px',
                             fontSize: '0.75rem',
@@ -471,17 +473,17 @@ export const DoctorManagementPage: React.FC = () => {
                           {Array.isArray(doc.specializations) ? doc.specializations[0] : doc.specializations}
                         </span>
                       </td>
-                      <td style={{ padding: '0.875rem 1rem', color: '#CBD5E1', fontFamily: 'monospace' }}>
+                      <td style={{ padding: '0.875rem 1rem', color: '#475569', fontFamily: 'monospace' }}>
                         {doc.registrationNumber}
                       </td>
-                      <td style={{ padding: '0.875rem 1rem', color: '#CBD5E1' }}>
+                      <td style={{ padding: '0.875rem 1rem', color: '#475569' }}>
                         {doc.affiliations?.length > 0 ? (
                           doc.affiliations.map((a: any) => a.hospital?.name).join(', ')
                         ) : (
-                          <span style={{ color: '#64748B' }}>Independent</span>
+                          <span style={{ color: '#94A3B8' }}>Independent</span>
                         )}
                       </td>
-                      <td style={{ padding: '0.875rem 1rem', color: '#CBD5E1' }}>
+                      <td style={{ padding: '0.875rem 1rem', color: '#475569' }}>
                         {doc.experienceYears} Years
                       </td>
                       <td style={{ padding: '0.875rem 1rem' }}>
@@ -494,8 +496,8 @@ export const DoctorManagementPage: React.FC = () => {
                             borderRadius: '9999px',
                             fontSize: '0.75rem',
                             fontWeight: 700,
-                            backgroundColor: isActive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                            color: isActive ? '#4ADE80' : '#F87171',
+                            backgroundColor: isActive ? '#F0FDF4' : '#FEF2F2',
+                            color: isActive ? '#16A34A' : '#DC2626',
                           }}
                         >
                           {isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
@@ -510,8 +512,8 @@ export const DoctorManagementPage: React.FC = () => {
                             padding: '0.375rem 0.625rem',
                             borderRadius: '6px',
                             border: 'none',
-                            backgroundColor: isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                            color: isActive ? '#F87171' : '#4ADE80',
+                            backgroundColor: isActive ? '#FEE2E2' : '#DCFCE7',
+                            color: isActive ? '#DC2626' : '#16A34A',
                             fontSize: '0.75rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -532,7 +534,7 @@ export const DoctorManagementPage: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL 1: BULK EXCEL UPLOADER & PREVIEW */}
+      {/* MODAL 1: BULK EXCEL UPLOADER & PREVIEW - LIGHT MODE */}
       {/* ========================================================================= */}
       {showUploadModal && (
         <div
@@ -540,7 +542,7 @@ export const DoctorManagementPage: React.FC = () => {
             position: 'fixed',
             inset: 0,
             zIndex: 100,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
             backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
@@ -550,21 +552,21 @@ export const DoctorManagementPage: React.FC = () => {
         >
           <div
             style={{
-              backgroundColor: '#1C2541',
+              backgroundColor: '#FFFFFF',
               borderRadius: '16px',
-              border: '1px solid #3A506B',
+              border: '1px solid #E2E8F0',
               width: '100%',
               maxWidth: '650px',
-              padding: '1.5rem',
+              padding: '1.75rem',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FileSpreadsheet size={22} color="#0D9488" />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
                   Bulk Import Doctors via Excel
                 </h2>
               </div>
@@ -576,7 +578,7 @@ export const DoctorManagementPage: React.FC = () => {
                   setPreviewRows([]);
                   setUploadResult(null);
                 }}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}
               >
                 <X size={20} />
               </button>
@@ -585,8 +587,8 @@ export const DoctorManagementPage: React.FC = () => {
             {/* Template Download Prompt */}
             <div
               style={{
-                backgroundColor: '#0B132B',
-                border: '1px solid #3A506B',
+                backgroundColor: '#F0FDFA',
+                border: '1px solid #CCFBF1',
                 borderRadius: '8px',
                 padding: '0.875rem',
                 display: 'flex',
@@ -596,8 +598,8 @@ export const DoctorManagementPage: React.FC = () => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText size={18} color="#38BDF8" />
-                <span style={{ fontSize: '0.8125rem', color: '#CBD5E1' }}>
+                <FileText size={18} color="#0D9488" />
+                <span style={{ fontSize: '0.8125rem', color: '#0F766E' }}>
                   Need the Excel format? Download our pre-filled template.
                 </span>
               </div>
@@ -609,9 +611,9 @@ export const DoctorManagementPage: React.FC = () => {
                   alignItems: 'center',
                   gap: '0.375rem',
                   padding: '0.375rem 0.75rem',
-                  backgroundColor: '#1E293B',
-                  border: '1px solid #38BDF8',
-                  color: '#38BDF8',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #0D9488',
+                  color: '#0D9488',
                   borderRadius: '6px',
                   fontSize: '0.75rem',
                   fontWeight: 700,
@@ -627,11 +629,11 @@ export const DoctorManagementPage: React.FC = () => {
             <div
               onClick={() => fileInputRef.current?.click()}
               style={{
-                border: '2px dashed #3A506B',
+                border: '2px dashed #CBD5E1',
                 borderRadius: '12px',
                 padding: '2rem 1.5rem',
                 textAlign: 'center',
-                backgroundColor: 'rgba(11, 19, 43, 0.6)',
+                backgroundColor: '#F8FAFC',
                 cursor: 'pointer',
                 marginBottom: '1.25rem',
               }}
@@ -643,11 +645,11 @@ export const DoctorManagementPage: React.FC = () => {
                 style={{ display: 'none' }}
                 onChange={handleFileChange}
               />
-              <Upload size={32} color="#60A5FA" style={{ margin: '0 auto 0.75rem auto' }} />
-              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#FFFFFF' }}>
+              <Upload size={32} color="#1A56DB" style={{ margin: '0 auto 0.75rem auto' }} />
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0F172A' }}>
                 {selectedFile ? selectedFile.name : 'Click or Drag & Drop Excel File here'}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>
                 Supports .xlsx, .xls, and .csv (Max 10MB)
               </div>
             </div>
@@ -655,21 +657,21 @@ export const DoctorManagementPage: React.FC = () => {
             {/* Live Parsing Preview */}
             {previewRows.length > 0 && (
               <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#94A3B8', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#475569', marginBottom: '0.5rem' }}>
                   Preview (First {previewRows.length} Doctors detected):
                 </div>
                 <div
                   style={{
-                    backgroundColor: '#0B132B',
+                    backgroundColor: '#F8FAFC',
                     borderRadius: '8px',
-                    border: '1px solid #3A506B',
+                    border: '1px solid #E2E8F0',
                     overflowX: 'auto',
                     maxHeight: '180px',
                   }}
                 >
                   <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #3A506B', color: '#60A5FA' }}>
+                      <tr style={{ borderBottom: '1px solid #E2E8F0', color: '#1A56DB', backgroundColor: '#EFF6FF' }}>
                         <th style={{ padding: '6px 10px' }}>Name</th>
                         <th style={{ padding: '6px 10px' }}>Phone</th>
                         <th style={{ padding: '6px 10px' }}>Reg No</th>
@@ -678,11 +680,11 @@ export const DoctorManagementPage: React.FC = () => {
                     </thead>
                     <tbody>
                       {previewRows.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(58, 80, 107, 0.4)' }}>
-                          <td style={{ padding: '6px 10px', color: '#FFFFFF' }}>{r['Full Name'] || r['fullName']}</td>
-                          <td style={{ padding: '6px 10px', color: '#CBD5E1' }}>{r['Phone (10 digits)'] || r['phone']}</td>
-                          <td style={{ padding: '6px 10px', color: '#CBD5E1' }}>{r['Registration Number'] || r['registrationNumber']}</td>
-                          <td style={{ padding: '6px 10px', color: '#CBD5E1' }}>{r['Specializations (comma separated)'] || r['specializations']}</td>
+                        <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '6px 10px', color: '#0F172A', fontWeight: 600 }}>{r['Full Name'] || r['fullName']}</td>
+                          <td style={{ padding: '6px 10px', color: '#475569' }}>{r['Phone (10 digits)'] || r['phone']}</td>
+                          <td style={{ padding: '6px 10px', color: '#475569' }}>{r['Registration Number'] || r['registrationNumber']}</td>
+                          <td style={{ padding: '6px 10px', color: '#475569' }}>{r['Specializations (comma separated)'] || r['specializations']}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -698,17 +700,17 @@ export const DoctorManagementPage: React.FC = () => {
                   padding: '1rem',
                   borderRadius: '8px',
                   marginBottom: '1.25rem',
-                  backgroundColor: uploadResult.successCount > 0 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  border: `1px solid ${uploadResult.successCount > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  backgroundColor: uploadResult.successCount > 0 ? '#F0FDF4' : '#FEF2F2',
+                  border: `1px solid ${uploadResult.successCount > 0 ? '#DCFCE7' : '#FEE2E2'}`,
                 }}
               >
-                <div style={{ fontWeight: 700, color: uploadResult.successCount > 0 ? '#4ADE80' : '#F87171', fontSize: '0.875rem' }}>
+                <div style={{ fontWeight: 700, color: uploadResult.successCount > 0 ? '#16A34A' : '#DC2626', fontSize: '0.875rem' }}>
                   {uploadResult.successCount > 0
                     ? `🎉 Success: ${uploadResult.successCount} doctors created/updated!`
                     : 'Import encountered errors:'}
                 </div>
                 {uploadResult.failedCount > 0 && (
-                  <div style={{ fontSize: '0.75rem', color: '#FCA5A5', marginTop: '0.375rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#B91C1C', marginTop: '0.375rem' }}>
                     {uploadResult.failedCount} rows failed. Errors:
                     <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
                       {uploadResult.errors?.map((err: any, idx: number) => (
@@ -730,8 +732,8 @@ export const DoctorManagementPage: React.FC = () => {
                 style={{
                   padding: '0.625rem 1.25rem',
                   backgroundColor: 'transparent',
-                  border: '1px solid #3A506B',
-                  color: '#94A3B8',
+                  border: '1px solid #CBD5E1',
+                  color: '#64748B',
                   borderRadius: '8px',
                   fontWeight: 600,
                   fontSize: '0.875rem',
@@ -764,7 +766,7 @@ export const DoctorManagementPage: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: MANUAL ADD DOCTOR FORM */}
+      {/* MODAL 2: MANUAL ADD DOCTOR FORM - LIGHT MODE */}
       {/* ========================================================================= */}
       {showAddModal && (
         <div
@@ -772,7 +774,7 @@ export const DoctorManagementPage: React.FC = () => {
             position: 'fixed',
             inset: 0,
             zIndex: 100,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
             backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
@@ -782,28 +784,28 @@ export const DoctorManagementPage: React.FC = () => {
         >
           <div
             style={{
-              backgroundColor: '#1C2541',
+              backgroundColor: '#FFFFFF',
               borderRadius: '16px',
-              border: '1px solid #3A506B',
+              border: '1px solid #E2E8F0',
               width: '100%',
               maxWidth: '580px',
               padding: '1.75rem',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Stethoscope size={22} color="#1A56DB" />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
                   Add Doctor Profile
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}
               >
                 <X size={20} />
               </button>
@@ -813,9 +815,9 @@ export const DoctorManagementPage: React.FC = () => {
               <div
                 style={{
                   padding: '0.75rem 1rem',
-                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#F87171',
+                  backgroundColor: '#FEF2F2',
+                  border: '1px solid #FEE2E2',
+                  color: '#DC2626',
                   borderRadius: '8px',
                   fontSize: '0.8125rem',
                   marginBottom: '1rem',
@@ -831,7 +833,7 @@ export const DoctorManagementPage: React.FC = () => {
 
             <form onSubmit={handleAddDoctorSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Doctor Full Name *
                 </label>
                 <input
@@ -843,10 +845,10 @@ export const DoctorManagementPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 />
@@ -854,7 +856,7 @@ export const DoctorManagementPage: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Phone Number *
                   </label>
                   <input
@@ -866,16 +868,16 @@ export const DoctorManagementPage: React.FC = () => {
                     style={{
                       width: '100%',
                       padding: '0.625rem 0.875rem',
-                      backgroundColor: '#0B132B',
-                      border: '1px solid #3A506B',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
                       borderRadius: '8px',
-                      color: '#FFFFFF',
+                      color: '#0F172A',
                       outline: 'none',
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Login Password
                   </label>
                   <input
@@ -886,10 +888,10 @@ export const DoctorManagementPage: React.FC = () => {
                     style={{
                       width: '100%',
                       padding: '0.625rem 0.875rem',
-                      backgroundColor: '#0B132B',
-                      border: '1px solid #3A506B',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
                       borderRadius: '8px',
-                      color: '#FFFFFF',
+                      color: '#0F172A',
                       outline: 'none',
                     }}
                   />
@@ -898,7 +900,7 @@ export const DoctorManagementPage: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Medical Reg. Number *
                   </label>
                   <input
@@ -910,16 +912,16 @@ export const DoctorManagementPage: React.FC = () => {
                     style={{
                       width: '100%',
                       padding: '0.625rem 0.875rem',
-                      backgroundColor: '#0B132B',
-                      border: '1px solid #3A506B',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
                       borderRadius: '8px',
-                      color: '#FFFFFF',
+                      color: '#0F172A',
                       outline: 'none',
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Experience (Years)
                   </label>
                   <input
@@ -929,10 +931,10 @@ export const DoctorManagementPage: React.FC = () => {
                     style={{
                       width: '100%',
                       padding: '0.625rem 0.875rem',
-                      backgroundColor: '#0B132B',
-                      border: '1px solid #3A506B',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
                       borderRadius: '8px',
-                      color: '#FFFFFF',
+                      color: '#0F172A',
                       outline: 'none',
                     }}
                   />
@@ -941,7 +943,7 @@ export const DoctorManagementPage: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Specializations (comma-sep)
                   </label>
                   <input
@@ -952,16 +954,16 @@ export const DoctorManagementPage: React.FC = () => {
                     style={{
                       width: '100%',
                       padding: '0.625rem 0.875rem',
-                      backgroundColor: '#0B132B',
-                      border: '1px solid #3A506B',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
                       borderRadius: '8px',
-                      color: '#FFFFFF',
+                      color: '#0F172A',
                       outline: 'none',
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                     Consultation Fee (INR)
                   </label>
                   <input
@@ -971,10 +973,10 @@ export const DoctorManagementPage: React.FC = () => {
                     style={{
                       width: '100%',
                       padding: '0.625rem 0.875rem',
-                      backgroundColor: '#0B132B',
-                      border: '1px solid #3A506B',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
                       borderRadius: '8px',
-                      color: '#FFFFFF',
+                      color: '#0F172A',
                       outline: 'none',
                     }}
                   />
@@ -982,7 +984,7 @@ export const DoctorManagementPage: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Affiliated Hospital
                 </label>
                 <select
@@ -991,10 +993,10 @@ export const DoctorManagementPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 >
@@ -1014,8 +1016,8 @@ export const DoctorManagementPage: React.FC = () => {
                   style={{
                     padding: '0.625rem 1.25rem',
                     backgroundColor: 'transparent',
-                    border: '1px solid #3A506B',
-                    color: '#94A3B8',
+                    border: '1px solid #CBD5E1',
+                    color: '#64748B',
                     borderRadius: '8px',
                     fontWeight: 600,
                     fontSize: '0.875rem',

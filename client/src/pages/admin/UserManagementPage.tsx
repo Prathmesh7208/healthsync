@@ -42,16 +42,16 @@ export const UserManagementPage: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
             User Governance & Security Directory
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#64748B', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
             View, moderate, and manage authentication access for all user roles.
           </p>
         </div>
 
-        {/* Role Filter Buttons */}
-        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#1C2541', padding: '4px', borderRadius: '8px' }}>
+        {/* Role Filter Buttons - Light Mode */}
+        <div style={{ display: 'flex', gap: '0.375rem', backgroundColor: '#FFFFFF', padding: '4px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
           {['', 'PATIENT', 'DOCTOR', 'RECEPTIONIST', 'AMBULANCE_OPERATOR'].map((r) => (
             <button
               key={r}
@@ -62,10 +62,11 @@ export const UserManagementPage: React.FC = () => {
                 borderRadius: '6px',
                 border: 'none',
                 backgroundColor: roleFilter === r ? '#1A56DB' : 'transparent',
-                color: roleFilter === r ? '#FFFFFF' : '#94A3B8',
+                color: roleFilter === r ? '#FFFFFF' : '#64748B',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
             >
               {r === '' ? 'All Users' : r.replace('_', ' ')}
@@ -74,12 +75,12 @@ export const UserManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div style={{ backgroundColor: '#1C2541', borderRadius: '12px', border: '1px solid #3A506B', overflow: 'hidden' }}>
+      {/* Users Table - Light Mode */}
+      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ backgroundColor: '#0B132B', borderBottom: '1px solid #3A506B', color: '#94A3B8' }}>
+              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B' }}>
                 <th style={{ padding: '0.875rem 1rem' }}>User / Phone</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Role</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Profile Name</th>
@@ -90,26 +91,26 @@ export const UserManagementPage: React.FC = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>Loading users...</td></tr>
+                <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>Loading users...</td></tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>No users found.</td></tr>
+                <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>No users found.</td></tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid rgba(58, 80, 107, 0.4)' }}>
-                    <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: '#FFFFFF' }}>{u.phone}</td>
+                  <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: '#0F172A' }}>{u.phone}</td>
                     <td style={{ padding: '0.875rem 1rem' }}>
-                      <span style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60A5FA', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6875rem', fontWeight: 700 }}>
+                      <span style={{ backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6875rem', fontWeight: 700 }}>
                         {u.role}
                       </span>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#CBD5E1' }}>
+                    <td style={{ padding: '0.875rem 1rem', color: '#334155' }}>
                       {u.patient?.fullName || u.doctor?.fullName || '—'}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#94A3B8', fontSize: '0.75rem' }}>
+                    <td style={{ padding: '0.875rem 1rem', color: '#64748B', fontSize: '0.75rem' }}>
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
                     <td style={{ padding: '0.875rem 1rem' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 700, color: u.isActive ? '#4ADE80' : '#F87171' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 700, color: u.isActive ? '#16A34A' : '#DC2626' }}>
                         {u.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
                         <span>{u.isActive ? 'Active' : 'Suspended'}</span>
                       </span>
@@ -123,8 +124,8 @@ export const UserManagementPage: React.FC = () => {
                             padding: '0.375rem 0.625rem',
                             borderRadius: '6px',
                             border: 'none',
-                            backgroundColor: u.isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                            color: u.isActive ? '#F87171' : '#4ADE80',
+                            backgroundColor: u.isActive ? '#FEE2E2' : '#DCFCE7',
+                            color: u.isActive ? '#DC2626' : '#16A34A',
                             fontSize: '0.75rem',
                             fontWeight: 700,
                             cursor: 'pointer',

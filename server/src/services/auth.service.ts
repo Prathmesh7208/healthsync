@@ -170,6 +170,11 @@ export class AuthService {
   }): Promise<{ token: string; refreshToken: string; user: any }> {
     const normalizedPhone = data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '')}`;
     const passwordHash = await bcrypt.hash(data.password, 10);
+    const cleanedName = (data.fullName || '')
+      .trim()
+      .replace(/^(dr\.?|doctor)\s+/i, '')
+      .replace(/^(dr\.?|doctor)\s+/i, '')
+      .trim();
 
     const user = await prisma.user.create({
       data: {
@@ -179,11 +184,11 @@ export class AuthService {
         isActive: true,
         doctor: {
           create: {
-            fullName: data.fullName,
+            fullName: cleanedName,
             registrationNumber: data.registrationNumber,
             specializations: data.specializations,
             experienceYears: data.experienceYears,
-            bio: data.bio,
+            bio: data.bio || `Dr. ${cleanedName} is an experienced medical specialist.`,
             languages: data.languages,
             isAvailable: true,
           },

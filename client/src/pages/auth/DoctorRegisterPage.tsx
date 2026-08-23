@@ -59,13 +59,13 @@ export const DoctorRegisterPage: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         padding: '2rem 1rem',
-        background: 'linear-gradient(135deg, #0B132B 0%, #1C2541 100%)',
-        color: '#F8FAFC',
+        background: 'linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 50%, #F0FDFA 100%)',
+        color: '#0F172A',
       }}
     >
       <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-        <Logo size="lg" variant="dark" />
-        <p style={{ color: '#94A3B8', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+        <Logo size="lg" />
+        <p style={{ color: '#64748B', fontSize: '0.875rem', marginTop: '0.5rem' }}>
           Doctor Practitioner Onboarding & Medical Registry
         </p>
       </div>
@@ -74,21 +74,21 @@ export const DoctorRegisterPage: React.FC = () => {
         style={{
           width: '100%',
           maxWidth: '540px',
-          backgroundColor: '#1C2541',
-          border: '1px solid #3A506B',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #E2E8F0',
           borderRadius: '16px',
           padding: '2rem',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Stethoscope size={22} color="#60A5FA" />
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
+            <Stethoscope size={22} color="#1A56DB" />
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
               Doctor Self-Registration
             </h2>
           </div>
-          <Link to="/login" style={{ color: '#94A3B8', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none' }}>
+          <Link to="/login" style={{ color: '#1A56DB', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none', fontWeight: 600 }}>
             <ArrowLeft size={14} />
             <span>Back to Login</span>
           </Link>
@@ -98,9 +98,9 @@ export const DoctorRegisterPage: React.FC = () => {
           <div
             style={{
               padding: '0.75rem 1rem',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#F87171',
+              backgroundColor: '#FEF2F2',
+              border: '1px solid #FEE2E2',
+              color: '#DC2626',
               borderRadius: '8px',
               fontSize: '0.8125rem',
               marginBottom: '1.25rem',
@@ -116,18 +116,18 @@ export const DoctorRegisterPage: React.FC = () => {
 
         {registered ? (
           <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-            <CheckCircle2 size={48} color="#34D399" style={{ margin: '0 auto 1rem auto' }} />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: '0 0 0.5rem 0' }}>
+            <CheckCircle2 size={48} color="#16A34A" style={{ margin: '0 auto 1rem auto' }} />
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: '0 0 0.5rem 0' }}>
               Registration Successful!
             </h3>
-            <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>
+            <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
               Redirecting you to your Doctor Portal Dashboard...
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                 Full Name (with title) *
               </label>
               <input
@@ -139,10 +139,10 @@ export const DoctorRegisterPage: React.FC = () => {
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.875rem',
-                  backgroundColor: '#0B132B',
-                  border: '1px solid #3A506B',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
                   borderRadius: '8px',
-                  color: '#FFFFFF',
+                  color: '#0F172A',
                   outline: 'none',
                 }}
               />
@@ -150,7 +150,7 @@ export const DoctorRegisterPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Mobile Phone Number *
                 </label>
                 <input
@@ -162,16 +162,16 @@ export const DoctorRegisterPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Create Password *
                 </label>
                 <input
@@ -183,10 +183,10 @@ export const DoctorRegisterPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 />
@@ -195,7 +195,7 @@ export const DoctorRegisterPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Medical Council Reg. Number *
                 </label>
                 <input
@@ -207,16 +207,16 @@ export const DoctorRegisterPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Years of Experience
                 </label>
                 <input
@@ -226,10 +226,10 @@ export const DoctorRegisterPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 />
@@ -238,7 +238,7 @@ export const DoctorRegisterPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Specializations (comma-sep)
                 </label>
                 <input
@@ -249,16 +249,16 @@ export const DoctorRegisterPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                   Consultation Fee (INR)
                 </label>
                 <input
@@ -268,10 +268,10 @@ export const DoctorRegisterPage: React.FC = () => {
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    backgroundColor: '#0B132B',
-                    border: '1px solid #3A506B',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#0F172A',
                     outline: 'none',
                   }}
                 />
@@ -279,7 +279,7 @@ export const DoctorRegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
                 Professional Bio / Clinical Summary
               </label>
               <textarea
@@ -290,10 +290,10 @@ export const DoctorRegisterPage: React.FC = () => {
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.875rem',
-                  backgroundColor: '#0B132B',
-                  border: '1px solid #3A506B',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
                   borderRadius: '8px',
-                  color: '#FFFFFF',
+                  color: '#0F172A',
                   outline: 'none',
                 }}
               />
@@ -316,7 +316,7 @@ export const DoctorRegisterPage: React.FC = () => {
                 fontWeight: 700,
                 fontSize: '0.9375rem',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 14px rgba(26, 86, 219, 0.4)',
+                boxShadow: '0 4px 14px rgba(26, 86, 219, 0.25)',
               }}
             >
               <span>{loading ? 'Submitting Registration...' : 'Complete Doctor Registration'}</span>

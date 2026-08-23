@@ -89,7 +89,7 @@ export const DoctorProfilePage: React.FC = () => {
             <div style={{ flex: 1, minWidth: '240px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                 <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Dr. {doctor.fullName}
+                  Dr. {(doctor.fullName || '').replace(/^(dr\.?|doctor)\s+/i, '').replace(/^(dr\.?|doctor)\s+/i, '').trim()}
                 </h1>
                 <span title="Verified Practitioner" style={{ display: 'inline-flex', alignItems: 'center' }}>
                   <ShieldCheck size={20} color="var(--color-primary-600)" />

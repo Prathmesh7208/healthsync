@@ -118,6 +118,15 @@ router.get('/doctors', async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+const cleanDoctorName = (name: string): string => {
+  if (!name) return '';
+  return name
+    .trim()
+    .replace(/^(dr\.?|doctor)\s+/i, '')
+    .replace(/^(dr\.?|doctor)\s+/i, '')
+    .trim();
+};
+
 /**
  * POST /api/v1/admin/doctors
  * Manual Doctor Registration from Admin Panel
@@ -127,7 +136,7 @@ router.post('/doctors', async (req: Request, res: Response, next: NextFunction) 
     const {
       phone,
       password,
-      fullName,
+      fullName: rawFullName,
       registrationNumber,
       specializations,
       experienceYears = 1,
@@ -137,10 +146,11 @@ router.post('/doctors', async (req: Request, res: Response, next: NextFunction) 
       hospitalId,
     } = req.body;
 
-    if (!phone || !fullName || !registrationNumber) {
+    if (!phone || !rawFullName || !registrationNumber) {
       throw new AppError('Phone, Full Name, and Medical Registration Number are required', 400);
     }
 
+    const fullName = cleanDoctorName(rawFullName);
     const normalizedPhone = phone.startsWith('+') ? phone : `+91${phone.replace(/\D/g, '')}`;
     const passwordHash = await bcrypt.hash(password || 'HealthSync@123', 10);
 
@@ -321,7 +331,8 @@ router.post('/doctors/bulk-upload', upload.single('file'), async (req: Request, 
       const row = rows[i];
       const rowNum = i + 2;
 
-      const fullName = row['Full Name'] || row['fullName'] || row['Name'] || row['Doctor Name'];
+      const rawName = row['Full Name'] || row['fullName'] || row['Name'] || row['Doctor Name'] || '';
+      const fullName = cleanDoctorName(String(rawName));
       const rawPhone = String(row['Phone (10 digits)'] || row['phone'] || row['Phone'] || row['Mobile'] || '').replace(/\D/g, '');
       const registrationNumber = String(row['Registration Number'] || row['registrationNumber'] || row['Reg No'] || `REG-${Date.now()}-${i}`);
       const rawSpecs = row['Specializations (comma separated)'] || row['specializations'] || row['Specialty'] || 'General Medicine';
@@ -335,7 +346,7 @@ router.post('/doctors/bulk-upload', upload.single('file'), async (req: Request, 
         results.failedCount++;
         results.errors.push({
           row: rowNum,
-          doctorName: fullName || 'Unknown',
+          doctorName: rawName || 'Unknown',
           error: 'Missing Full Name or valid 10-digit Phone Number',
         });
         continue;

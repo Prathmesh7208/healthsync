@@ -249,7 +249,7 @@ export const DoctorSearchPage: React.FC = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                           <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            Dr. {doctor.fullName}
+                            Dr. {(doctor.fullName || '').replace(/^(dr\.?|doctor)\s+/i, '').replace(/^(dr\.?|doctor)\s+/i, '').trim()}
                           </h3>
                           <p style={{ margin: '0.125rem 0 0.5rem 0', fontSize: '0.8125rem', color: 'var(--color-primary-600)', fontWeight: 600 }}>
                             {specs}

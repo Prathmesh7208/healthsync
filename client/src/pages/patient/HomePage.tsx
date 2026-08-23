@@ -325,7 +325,7 @@ export const HomePage: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                       <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-                        Dr. {apt.doctor?.fullName || 'Specialist'}
+                        Dr. {(apt.doctor?.fullName || 'Specialist').replace(/^(dr\.?|doctor)\s+/i, '').replace(/^(dr\.?|doctor)\s+/i, '').trim()}
                       </h4>
                       <span style={{ fontSize: '0.8125rem', color: 'var(--color-primary-600)', fontWeight: 500 }}>
                         {Array.isArray(apt.doctor?.specializations) ? apt.doctor.specializations[0] : 'Consultant'}
