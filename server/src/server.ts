@@ -37,7 +37,7 @@ export const startServer = () => {
       try {
         await prisma.$disconnect();
         logger.info('Prisma disconnected.');
-        if (redis.status === 'ready') {
+        if (redis && redis.status === 'ready') {
           await redis.quit();
           logger.info('Redis disconnected.');
         }

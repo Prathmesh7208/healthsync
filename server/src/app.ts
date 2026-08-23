@@ -56,14 +56,18 @@ import reminderRoutes from './routes/reminder.routes';
 // Static file serving for uploads
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 
-// Health Check Route
-app.get('/api/v1/health', (_req: Request, res: Response) => {
+// Health Check & Root Endpoints
+app.get(['/health', '/api/v1/health', '/'], (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'HealthSync Backend Engine',
     version: '1.0.0',
   });
+});
+
+app.head(['/health', '/api/v1/health', '/'], (_req: Request, res: Response) => {
+  res.status(200).end();
 });
 
 import doctorDashboardRoutes from './routes/doctorDashboard.routes';

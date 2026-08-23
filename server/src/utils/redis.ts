@@ -1,45 +1,48 @@
 import Redis from 'ioredis';
 import logger from './logger';
 
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const redisUrl = process.env.REDIS_URL;
 
-export const redis = new Redis(redisUrl, {
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-  retryStrategy(times) {
-    const delay = Math.min(times * 500, 2000);
-    return delay;
-  },
-  lazyConnect: true,
-});
-
+let redis: Redis | null = null;
 let isConnected = false;
 
-redis.on('connect', () => {
-  isConnected = true;
-  logger.info('Connected to Redis');
-});
+if (redisUrl) {
+  redis = new Redis(redisUrl, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    retryStrategy(times) {
+      if (times > 3) return null; // Stop retry spam if Redis is permanently unavailable
+      return Math.min(times * 1000, 3000);
+    },
+    lazyConnect: true,
+  });
 
-redis.on('error', (err) => {
-  if (!isConnected) {
-    logger.warn(`Redis connection unavailable at ${redisUrl}. Background workers/cache may use fallback.`);
-  } else {
-    logger.error('Redis error:', err);
-  }
-});
+  redis.on('connect', () => {
+    isConnected = true;
+    logger.info('Connected to Redis');
+  });
 
-// Try non-blocking connect on startup
-redis.connect().catch(() => {
-  logger.warn(`Initial Redis connection attempt to ${redisUrl} failed. Redis operations will retry.`);
-});
+  redis.on('error', (_err) => {
+    if (!isConnected) {
+      logger.warn(`Redis connection unavailable at ${redisUrl}. Using memory cache fallback.`);
+    }
+  });
 
-// Simple in-memory fallback cache for dev when Redis is not running
+  // Try non-blocking connect
+  redis.connect().catch(() => {
+    logger.warn(`Initial Redis connection attempt to ${redisUrl} failed. In-memory fallback is active.`);
+  });
+} else {
+  logger.info('REDIS_URL not configured. Running with in-memory caching engine.');
+}
+
+// In-memory fallback cache
 const memoryStore = new Map<string, { val: string; expiresAt: number | null }>();
 
 export const cacheService = {
   async get(key: string): Promise<string | null> {
     try {
-      if (isConnected) return await redis.get(key);
+      if (isConnected && redis) return await redis.get(key);
     } catch {
       // fallback
     }
@@ -54,7 +57,7 @@ export const cacheService = {
 
   async set(key: string, val: string, ttlSeconds?: number): Promise<void> {
     try {
-      if (isConnected) {
+      if (isConnected && redis) {
         if (ttlSeconds) {
           await redis.set(key, val, 'EX', ttlSeconds);
         } else {
@@ -71,7 +74,7 @@ export const cacheService = {
 
   async del(key: string): Promise<void> {
     try {
-      if (isConnected) await redis.del(key);
+      if (isConnected && redis) await redis.del(key);
     } catch {
       // fallback
     }
