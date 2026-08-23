@@ -264,6 +264,8 @@ export const LoginPage: React.FC = () => {
           backdropFilter: 'blur(10px)',
           boxShadow: 'var(--shadow-xl)',
           border: '1px solid rgba(255, 255, 255, 0.8)',
+          overflow: 'visible',
+          position: 'relative',
         }}
       >
         {/* Language Selection Buttons */}
@@ -388,7 +390,7 @@ export const LoginPage: React.FC = () => {
                   {t.enterPhone}
                 </p>
 
-                <div style={{ display: 'flex', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.25rem', width: '100%' }}>
                   <CountryCodeSelector
                     selectedDialCode={selectedCountryCode}
                     onSelect={setCountryCode}
@@ -403,15 +405,16 @@ export const LoginPage: React.FC = () => {
                     required
                     style={{
                       flex: 1,
-                      padding: '0.625rem 0.875rem',
-                      fontSize: '1.125rem',
+                      height: '48px',
+                      padding: '0 1rem',
+                      fontSize: '1.0625rem',
                       fontWeight: 600,
                       letterSpacing: '0.05em',
-                      border: '1px solid var(--border-strong)',
+                      border: '1px solid #CBD5E1',
                       borderLeft: 'none',
-                      borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
-                      backgroundColor: 'var(--bg-surface)',
-                      color: 'var(--text-primary)',
+                      borderRadius: '0 8px 8px 0',
+                      backgroundColor: '#FFFFFF',
+                      color: '#0F172A',
                       outline: 'none',
                     }}
                   />

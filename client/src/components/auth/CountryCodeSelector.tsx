@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search, X } from 'lucide-react';
 
 export interface Country {
   name: string;
@@ -72,38 +72,39 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.375rem',
-          padding: '0.625rem 0.75rem',
-          background: 'var(--bg-surface-subtle)',
-          border: '1px solid var(--border-strong)',
-          borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)',
+          gap: '0.5rem',
+          padding: '0 0.875rem',
+          height: '48px',
+          background: '#F8FAFC',
+          border: '1px solid #CBD5E1',
+          borderRadius: '8px 0 0 8px',
           cursor: 'pointer',
-          minHeight: '44px',
-          color: 'var(--text-primary)',
+          color: '#0F172A',
           fontSize: '0.9375rem',
-          fontWeight: 500,
+          fontWeight: 600,
+          outline: 'none',
         }}
         aria-label="Select Country Code"
       >
-        <span style={{ fontSize: '1.25rem' }}>{selectedCountry.flag}</span>
-        <span>{selectedCountry.dialCode}</span>
-        <ChevronDown size={14} color="var(--text-muted)" />
+        <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{selectedCountry.flag}</span>
+        <span style={{ color: '#475569', fontSize: '0.8125rem', fontWeight: 700 }}>{selectedCountry.code}</span>
+        <span style={{ color: '#0F172A' }}>{selectedCountry.dialCode}</span>
+        <ChevronDown size={14} color="#64748B" />
       </button>
 
       {isOpen && (
         <div
           style={{
             position: 'absolute',
-            top: '100%',
+            top: 'calc(100% + 4px)',
             left: 0,
-            zIndex: 100,
-            marginTop: '4px',
-            width: '280px',
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            boxShadow: 'var(--shadow-lg)',
-            maxHeight: '260px',
+            zIndex: 9999,
+            width: '320px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '10px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            maxHeight: '280px',
             overflowY: 'auto',
             padding: '0.5rem',
           }}
@@ -113,93 +114,107 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
             style={{
               position: 'sticky',
               top: 0,
-              background: 'var(--bg-surface)',
+              backgroundColor: '#FFFFFF',
               paddingBottom: '0.5rem',
-              borderBottom: '1px solid var(--border-subtle)',
-              marginBottom: '0.5rem',
+              borderBottom: '1px solid #F1F5F9',
+              marginBottom: '0.375rem',
+              zIndex: 2,
             }}
           >
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Search
                 size={14}
-                style={{ position: 'absolute', left: '0.5rem', color: 'var(--text-muted)' }}
+                style={{ position: 'absolute', left: '0.75rem', color: '#94A3B8' }}
               />
               <input
                 type="text"
-                placeholder="Search country..."
+                placeholder="Search country name or code..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 autoFocus
                 style={{
                   width: '100%',
-                  padding: '0.375rem 0.5rem 0.375rem 2rem',
+                  padding: '0.5rem 0.75rem 0.5rem 2.25rem',
                   fontSize: '0.8125rem',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-surface-subtle)',
-                  color: 'var(--text-primary)',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '6px',
+                  backgroundColor: '#F8FAFC',
+                  color: '#0F172A',
                   outline: 'none',
                 }}
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  style={{
+                    position: 'absolute',
+                    right: '0.5rem',
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </div>
 
-          {filteredCountries.map((country) => (
-            <div
-              key={country.code}
-              onClick={() => {
-                onSelect(country.dialCode);
-                setIsOpen(false);
-                setSearch('');
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.5rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                background:
-                  country.dialCode === selectedDialCode
-                    ? 'var(--color-primary-50)'
-                    : 'transparent',
-                color:
-                  country.dialCode === selectedDialCode
-                    ? 'var(--color-primary-700)'
-                    : 'var(--text-primary)',
-              }}
-              onMouseEnter={(e) => {
-                if (country.dialCode !== selectedDialCode) {
-                  e.currentTarget.style.background = 'var(--bg-surface-subtle)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (country.dialCode !== selectedDialCode) {
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>{country.flag}</span>
-                <span>{country.name}</span>
+          {filteredCountries.map((country) => {
+            const isSelected = country.dialCode === selectedDialCode;
+            return (
+              <div
+                key={country.code}
+                onClick={() => {
+                  onSelect(country.dialCode);
+                  setIsOpen(false);
+                  setSearch('');
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  backgroundColor: isSelected ? '#EFF6FF' : 'transparent',
+                  color: isSelected ? '#1A56DB' : '#1E293B',
+                  fontWeight: isSelected ? 600 : 400,
+                  transition: 'background-color 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) e.currentTarget.style.backgroundColor = '#F8FAFC';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{country.flag}</span>
+                  <span style={{ fontSize: '0.875rem' }}>{country.name}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <span style={{ color: '#64748B', fontSize: '0.75rem', fontWeight: 600 }}>{country.code}</span>
+                  <span style={{ color: '#0F172A', fontWeight: 600, fontSize: '0.8125rem' }}>{country.dialCode}</span>
+                </div>
               </div>
-              <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
-                {country.dialCode}
-              </span>
-            </div>
-          ))}
+            );
+          })}
 
           {filteredCountries.length === 0 && (
             <div
               style={{
-                padding: '1rem',
+                padding: '1.25rem 0.5rem',
                 textAlign: 'center',
                 fontSize: '0.8125rem',
-                color: 'var(--text-muted)',
+                color: '#94A3B8',
               }}
             >
-              No countries found
+              No country found matching "{search}"
             </div>
           )}
         </div>
