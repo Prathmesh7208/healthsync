@@ -1,0 +1,49 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Backend Web Service (Node.js + Express + Prisma)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: healthsync-api
+    env: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: healthsync-db
+          property: connectionString
+
+  # ----------------------------------------------------------------------------
+  # 2. Frontend Web App (Vite + React Static Site)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: healthsync-client
+    env: static
+    rootDir: client
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# ----------------------------------------------------------------------------
+# 3. PostgreSQL Managed Database
+# ----------------------------------------------------------------------------
+databases:
+  - name: healthsync-db
+    plan: free
+    databaseName: healthsync_db
+    user: healthsync_user
