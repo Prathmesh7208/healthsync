@@ -315,3 +315,67 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+
+/* ==========================================================================
+   Mobile-First & Responsive Layout Utilities
+   ========================================================================== */
+
+/* Navigation Visibility Helpers */
+@media (max-width: 767px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+  .mobile-hide {
+    display: none !important;
+  }
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  .mobile-gap-sm {
+    gap: 0.5rem !important;
+  }
+  .mobile-p-sm {
+    padding: 0.75rem 1rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .desktop-nav {
+    display: flex !important;
+  }
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  .desktop-hide {
+    display: none !important;
+  }
+}
+
+/* Safe Area Insets for Modern Mobile Displays */
+.mobile-safe-bottom {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Touch Friendly Tap Targets */
+button, a, input, select {
+  touch-action: manipulation;
+}
+
+@media (max-width: 640px) {
+  .hs-modal {
+    margin: 0.75rem;
+    max-height: 85vh;
+  }
+  
+  .container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+}

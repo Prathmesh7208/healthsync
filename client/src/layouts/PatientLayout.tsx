@@ -2,7 +2,6 @@ import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Activity,
   Home,
   Search,
   Calendar,
@@ -15,6 +14,7 @@ import {
 import useAuthStore, { Language } from '../stores/authStore';
 import SOSButton from '../components/emergency/SOSButton';
 import Avatar from '../components/ui/Avatar';
+import Logo from '../components/ui/Logo';
 
 export const PatientLayout: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -59,33 +59,7 @@ export const PatientLayout: React.FC = () => {
           }}
         >
           {/* Logo */}
-          <div
-            onClick={() => navigate('/patient/home')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              cursor: 'pointer',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--color-primary-600)',
-                color: '#FFFFFF',
-              }}
-            >
-              <Activity size={22} />
-            </div>
-            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-slate-900)' }}>
-              Health<span style={{ color: 'var(--color-secondary-600)' }}>Sync</span>
-            </span>
-          </div>
+          <Logo size="sm" onClick={() => navigate('/patient/home')} />
 
           {/* Desktop Nav Links */}
           <nav style={{ display: 'none', gap: '1.5rem', alignItems: 'center' }} className="desktop-nav">

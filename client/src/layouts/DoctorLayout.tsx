@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Activity,
   LayoutDashboard,
   Calendar,
   Clock,
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import Avatar from '../components/ui/Avatar';
+import Logo from '../components/ui/Logo';
 
 export const DoctorLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -80,44 +80,24 @@ export const DoctorLayout: React.FC = () => {
           }}
         >
           {/* Logo & Portal Badge */}
-          <div
-            onClick={() => navigate('/doctor/dashboard')}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
-          >
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Logo size="sm" onClick={() => navigate('/doctor/dashboard')} />
+            <span
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--color-primary-600)',
-                color: '#FFFFFF',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                backgroundColor: 'var(--color-primary-50)',
+                color: 'var(--color-primary-700)',
+                padding: '2px 8px',
+                borderRadius: 'var(--radius-full)',
               }}
             >
-              <Activity size={22} />
-            </div>
-            <div>
-              <span style={{ fontSize: '1.125rem', fontWeight: 800 }}>HealthSync</span>
-              <span
-                style={{
-                  marginLeft: '0.5rem',
-                  fontSize: '0.6875rem',
-                  fontWeight: 700,
-                  backgroundColor: 'var(--color-primary-50)',
-                  color: 'var(--color-primary-700)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-full)',
-                }}
-              >
-                DOCTOR PORTAL
-              </span>
-            </div>
+              DOCTOR PORTAL
+            </span>
           </div>
 
           {/* Desktop Nav Items */}
-          <nav style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <nav className="desktop-nav" style={{ gap: '1rem', alignItems: 'center' }}>
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -142,7 +122,7 @@ export const DoctorLayout: React.FC = () => {
           </nav>
 
           {/* Availability Toggle & Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {/* Real-time Status Toggle */}
             <button
               type="button"
@@ -152,19 +132,19 @@ export const DoctorLayout: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.375rem',
-                padding: '0.375rem 0.75rem',
+                padding: '0.375rem 0.625rem',
                 borderRadius: 'var(--radius-full)',
                 border: `1px solid ${isAvailable ? 'var(--color-success-600)' : 'var(--color-danger-600)'}`,
                 backgroundColor: isAvailable ? 'var(--color-success-50)' : 'var(--color-danger-50)',
                 color: isAvailable ? 'var(--color-success-700)' : 'var(--color-danger-700)',
-                fontSize: '0.8125rem',
+                fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
               title="Toggle instant patient availability"
             >
               <Power size={14} />
-              <span>{isAvailable ? 'Available for Patients' : 'Off Duty / Busy'}</span>
+              <span className="mobile-hide">{isAvailable ? 'Available' : 'Busy'}</span>
             </button>
 
             {/* Profile & Logout */}
@@ -190,9 +170,47 @@ export const DoctorLayout: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '1.5rem 1rem' }}>
+      <main style={{ flex: 1, padding: '1.25rem 0.75rem', paddingBottom: '5rem' }}>
         <Outlet />
       </main>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav
+        className="mobile-bottom-nav"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 30,
+          backgroundColor: 'var(--bg-surface)',
+          borderTop: '1px solid var(--border-subtle)',
+          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
+          justifyContent: 'space-around',
+          padding: '0.5rem 0.25rem',
+        }}
+      >
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            style={({ isActive }) => ({
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none',
+              fontSize: '0.6875rem',
+              fontWeight: isActive ? 700 : 500,
+              color: isActive ? 'var(--color-primary-600)' : 'var(--text-muted)',
+              minWidth: '56px',
+            })}
+          >
+            {item.icon}
+            <span style={{ marginTop: '2px' }}>{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 };

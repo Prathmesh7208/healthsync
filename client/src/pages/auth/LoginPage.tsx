@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Activity, ShieldCheck, HeartPulse, Stethoscope, Phone, Lock, ArrowRight, RefreshCw } from 'lucide-react';
+import { ShieldCheck, HeartPulse, Stethoscope, Phone, Lock, ArrowRight, RefreshCw } from 'lucide-react';
 import useAuthStore, { Language } from '../../stores/authStore';
 import CountryCodeSelector from '../../components/auth/CountryCodeSelector';
 import OTPInput from '../../components/auth/OTPInput';
 import Button from '../../components/ui/Button';
+
+import Logo from '../../components/ui/Logo';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -210,43 +212,17 @@ export const LoginPage: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          marginBottom: '1.5rem',
+          marginBottom: '1.75rem',
           textAlign: 'center',
         }}
       >
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '60px',
-            height: '60px',
-            borderRadius: '16px',
-            backgroundColor: 'var(--color-primary-600)',
-            color: '#FFFFFF',
-            boxShadow: '0 8px 20px rgba(26, 86, 219, 0.3)',
-            marginBottom: '0.75rem',
-          }}
-        >
-          <Activity size={32} />
-        </div>
-        <h1
-          style={{
-            fontSize: '1.875rem',
-            fontWeight: 800,
-            color: 'var(--color-slate-900)',
-            letterSpacing: '-0.025em',
-            margin: 0,
-          }}
-        >
-          Health<span style={{ color: 'var(--color-secondary-600)' }}>Sync</span>
-        </h1>
+        <Logo size="lg" showText={true} />
         <p
           style={{
             fontSize: '0.875rem',
             color: 'var(--color-slate-600)',
             maxWidth: '380px',
-            marginTop: '0.25rem',
+            marginTop: '0.625rem',
             lineHeight: 1.4,
           }}
         >
