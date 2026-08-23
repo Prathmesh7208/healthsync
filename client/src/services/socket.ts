@@ -4,7 +4,12 @@ let socket: Socket | null = null;
 
 export const getSocket = (token?: string | null): Socket => {
   if (!socket) {
-    const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    const socketUrl =
+      import.meta.env.VITE_API_URL ||
+      (typeof window !== 'undefined' && window.location.origin.includes('onrender.com')
+        ? window.location.origin.replace('-client', '-api')
+        : window.location.origin);
+
     socket = io(socketUrl, {
       auth: { token },
       autoConnect: true,
