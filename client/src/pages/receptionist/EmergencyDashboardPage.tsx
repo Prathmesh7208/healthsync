@@ -161,12 +161,32 @@ export const EmergencyDashboardPage: React.FC = () => {
                       Patient: {emg.patient?.fullName || 'Emergency Patient'}
                     </h3>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                       <span>🩸 Blood Group: <strong>{emg.patient?.bloodGroup || 'UNKNOWN'}</strong></span>
                       <span>•</span>
                       <span>📞 Contact: <strong>{emg.patient?.emergencyContactPhone || 'Not provided'}</strong></span>
                       <span>•</span>
-                      <span>📍 GPS: {Number(emg.initialLatitude).toFixed(4)}, {Number(emg.initialLongitude).toFixed(4)}</span>
+                      <span>📍 GPS: <strong>{Number(emg.initialLatitude).toFixed(4)}, {Number(emg.initialLongitude).toFixed(4)}</strong></span>
+                      <span>•</span>
+                      <a
+                        href={`https://www.google.com/maps?q=${emg.initialLatitude},${emg.initialLongitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          backgroundColor: '#EFF6FF',
+                          color: '#1D4ED8',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          border: '1px solid #BFDBFE',
+                        }}
+                      >
+                        🌍 Open in Google Maps
+                      </a>
                       <span>•</span>
                       <span>🕒 Triggered: {new Date(emg.triggeredAt).toLocaleTimeString()}</span>
                     </div>

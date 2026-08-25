@@ -17,27 +17,37 @@ export const SOSButton: React.FC = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const hasTriggeredRef = useRef(false);
 
+  // Helper to fetch live GPS with timeout promise
+  const getPreciseGps = (): Promise<{ latitude: number; longitude: number; accuracy?: number }> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ latitude: 18.5204, longitude: 73.8567 });
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          };
+          setGpsLocation(coords);
+          resolve(coords);
+        },
+        (err) => {
+          console.warn('Geolocation error:', err.message);
+          resolve({ latitude: 18.5204, longitude: 73.8567 });
+        },
+        { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+      );
+    });
+  };
+
   // Acquire high-accuracy GPS coordinates as soon as modal opens
   useEffect(() => {
     if (isOpen) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setGpsLocation({
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-              accuracy: pos.coords.accuracy,
-            });
-          },
-          () => {
-            // Fallback default coordinates (Pune central)
-            setGpsLocation({ latitude: 18.5204, longitude: 73.8567 });
-          },
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      } else {
-        setGpsLocation({ latitude: 18.5204, longitude: 73.8567 });
-      }
+      getPreciseGps();
     }
   }, [isOpen]);
 
@@ -72,6 +82,7 @@ export const SOSButton: React.FC = () => {
 
   const handleOpenModal = () => {
     setIsOpen(true);
+    getPreciseGps();
   };
 
   const handleCancel = () => {
@@ -85,7 +96,10 @@ export const SOSButton: React.FC = () => {
     setLoading(true);
     playEmergencySiren(2);
 
-    const loc = manualLoc || gpsLocation || { latitude: 18.5204, longitude: 73.8567 };
+    let loc = manualLoc || gpsLocation;
+    if (!loc) {
+      loc = await getPreciseGps();
+    }
 
     try {
       const res = await axios.post(
@@ -106,7 +120,6 @@ export const SOSButton: React.FC = () => {
       console.error('Failed to trigger emergency SOS:', err);
       setIsOpen(false);
       setLoading(false);
-      // Even on API glitch, navigate to emergency tracking view
       navigate('/patient/home');
     }
   };

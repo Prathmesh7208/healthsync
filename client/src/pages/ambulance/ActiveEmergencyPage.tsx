@@ -218,26 +218,49 @@ export const ActiveEmergencyPage: React.FC = () => {
               </div>
             </div>
 
-            {patient?.emergencyContactPhone && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <a
-                href={`tel:${patient.emergencyContactPhone}`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${Number(emergency.latitude || emergency.initialLatitude || 18.5204)},${Number(emergency.longitude || emergency.initialLongitude || 73.8567)}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.375rem',
                   padding: '0.5rem 0.875rem',
                   borderRadius: 'var(--radius-full)',
-                  backgroundColor: '#22C55E',
+                  backgroundColor: '#0284C7',
                   color: '#FFFFFF',
                   textDecoration: 'none',
                   fontWeight: 700,
                   fontSize: '0.8125rem',
                 }}
               >
-                <Phone size={14} />
-                <span>Call SOS Contact</span>
+                <Navigation size={14} />
+                <span>Navigate (Google Maps)</span>
               </a>
-            )}
+
+              {patient?.emergencyContactPhone && (
+                <a
+                  href={`tel:${patient.emergencyContactPhone}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    padding: '0.5rem 0.875rem',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: '#22C55E',
+                    color: '#FFFFFF',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.8125rem',
+                  }}
+                >
+                  <Phone size={14} />
+                  <span>Call SOS Contact</span>
+                </a>
+              )}
+            </div>
           </div>
 
           {/* Allergies Alert */}

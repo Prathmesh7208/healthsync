@@ -58,6 +58,40 @@ export const EmergencyTrackingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [id, token]);
 
+  // Continuously stream patient's live GPS breadcrumbs to hospital reception and ambulance
+  useEffect(() => {
+    if (!id || !token) return;
+
+    let watchId: number | null = null;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          axios
+            .post(
+              `/api/v1/emergencies/${id}/patient-location`,
+              {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                speed: pos.coords.speed,
+                heading: pos.coords.heading,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            )
+            .catch(() => {});
+        },
+        (err) => console.warn('Live location watch error:', err),
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+      );
+    }
+
+    return () => {
+      if (watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [id, token]);
+
   const handleCancelEmergency = async () => {
     setCancelling(true);
     try {
