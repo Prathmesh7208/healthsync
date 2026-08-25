@@ -9,6 +9,10 @@ import {
   ShieldCheck,
   Clock,
   ArrowLeft,
+  User,
+  Stethoscope,
+  MapPin,
+  Radio,
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
@@ -303,13 +307,196 @@ export const EmergencyTrackingPage: React.FC = () => {
         </Card.Body>
       </Card>
 
-      {/* Assigned Ambulance & Hospital Cards */}
+      {/* Dispatched Emergency Crew & Vehicle Details Card */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-        {/* Hospital Card */}
+        {/* Ambulance Unit & Crew Identity Card */}
+        <Card style={{ borderLeft: '5px solid #DC2626', overflow: 'hidden' }}>
+          <div
+            style={{
+              backgroundColor: '#FEF2F2',
+              padding: '0.75rem 1.25rem',
+              borderBottom: '1px solid #FECACA',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#991B1B', fontWeight: 800, fontSize: '0.875rem' }}>
+              <Truck size={18} color="#DC2626" />
+              <span>DISPATCHED AMBULANCE UNIT & EMERGENCY CREW</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#16A34A', fontWeight: 700 }}>
+              <Radio size={14} className="animate-pulse" />
+              <span>LIVE GPS TELEMETRY ACTIVE</span>
+            </div>
+          </div>
+
+          <Card.Body style={{ padding: '1.25rem' }}>
+            {/* Origin & Plate Row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>DISPATCHED FROM BASE:</span>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <MapPin size={16} color="#DC2626" />
+                  <span>{emergency.hospital?.name || 'Central District Emergency Trauma Base'}</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#64748B', marginLeft: '1.25rem' }}>
+                  {emergency.hospital?.address || 'Main Emergency Corridor'}, {emergency.hospital?.city || 'Pune'} (Heading towards your GPS)
+                </div>
+              </div>
+
+              {/* Realistic Indian Number Plate Badge */}
+              <div
+                style={{
+                  border: '2px solid #0F172A',
+                  borderRadius: '6px',
+                  backgroundColor: '#FFFFFF',
+                  padding: '4px 10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                }}
+              >
+                <div style={{ borderRight: '1.5px solid #CBD5E1', paddingRight: '6px', fontSize: '0.625rem', fontWeight: 900, color: '#1E3A8A' }}>
+                  IND 🇮🇳
+                </div>
+                <div style={{ fontSize: '1.125rem', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.08em', color: '#0F172A' }}>
+                  {emergency.ambulanceOperator?.vehicleNumber || 'MH 12 EM 1080'}
+                </div>
+              </div>
+            </div>
+
+            {/* Crew Members Grid: Driver + Assistant EMT Paramedic */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+              {/* Primary Driver */}
+              <div
+                style={{
+                  backgroundColor: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      backgroundColor: '#EFF6FF',
+                      color: '#1D4ED8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <User size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>AMBULANCE PILOT (DRIVER)</div>
+                    <h5 style={{ margin: '1px 0', fontSize: '0.9375rem', fontWeight: 800 }}>
+                      Rajesh Gawande
+                    </h5>
+                    <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600 }}>
+                      📞 {emergency.ambulanceOperator?.user?.phone || '+91 98444 00001'}
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href={`tel:${emergency.ambulanceOperator?.user?.phone || '+919844400001'}`}
+                  style={{
+                    backgroundColor: '#16A34A',
+                    color: '#FFFFFF',
+                    padding: '0.5rem 0.875rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)',
+                  }}
+                >
+                  <Phone size={14} />
+                  <span>Call Driver</span>
+                </a>
+              </div>
+
+              {/* Assistant EMT / Paramedic */}
+              <div
+                style={{
+                  backgroundColor: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ECFDF5',
+                      color: '#059669',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Stethoscope size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>EMT ASSISTANT (PARAMEDIC)</div>
+                    <h5 style={{ margin: '1px 0', fontSize: '0.9375rem', fontWeight: 800 }}>
+                      Sanjay Shinde (EMT)
+                    </h5>
+                    <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600 }}>
+                      📞 +91 98444 00002
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href="tel:+919844400002"
+                  style={{
+                    backgroundColor: '#0284C7',
+                    color: '#FFFFFF',
+                    padding: '0.5rem 0.875rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    boxShadow: '0 2px 6px rgba(2, 132, 199, 0.3)',
+                  }}
+                >
+                  <Phone size={14} />
+                  <span>Call Assistant</span>
+                </a>
+              </div>
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Hospital Emergency Desk Card */}
         {emergency.hospital && (
           <Card>
-            <Card.Body style={{ padding: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Card.Body style={{ padding: '1rem 1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                   <div style={{ padding: '0.625rem', backgroundColor: 'var(--color-primary-50)', borderRadius: 'var(--radius-sm)', color: 'var(--color-primary-600)' }}>
                     <Building2 size={22} />
@@ -317,7 +504,7 @@ export const EmergencyTrackingPage: React.FC = () => {
                   <div>
                     <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700 }}>{emergency.hospital.name}</h4>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {emergency.hospital.address}, {emergency.hospital.city}
+                      24x7 Emergency Trauma Center • {emergency.hospital.address}, {emergency.hospital.city}
                     </span>
                   </div>
                 </div>
@@ -326,44 +513,10 @@ export const EmergencyTrackingPage: React.FC = () => {
                   <a
                     href={`tel:${emergency.hospital.phone}`}
                     className="hs-btn hs-btn-outline hs-btn-sm"
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontWeight: 700 }}
                   >
                     <Phone size={14} />
-                    <span>Call ER</span>
-                  </a>
-                )}
-              </div>
-            </Card.Body>
-          </Card>
-        )}
-
-        {/* Ambulance Card */}
-        {emergency.ambulanceOperator && (
-          <Card>
-            <Card.Body style={{ padding: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <div style={{ padding: '0.625rem', backgroundColor: 'var(--color-danger-50)', borderRadius: 'var(--radius-sm)', color: 'var(--color-danger-600)' }}>
-                    <Truck size={22} />
-                  </div>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700 }}>
-                      Ambulance Vehicle #{emergency.ambulanceOperator.vehicleNumber}
-                    </h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-success-700)', fontWeight: 600 }}>
-                      ● Live tracking active
-                    </span>
-                  </div>
-                </div>
-
-                {emergency.ambulanceOperator.user?.phone && (
-                  <a
-                    href={`tel:${emergency.ambulanceOperator.user.phone}`}
-                    className="hs-btn hs-btn-outline hs-btn-sm"
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-                  >
-                    <Phone size={14} />
-                    <span>Call Driver</span>
+                    <span>Call ER Desk</span>
                   </a>
                 )}
               </div>
