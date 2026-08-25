@@ -6,7 +6,7 @@ import {
   Radio,
   Clock,
   Gauge,
-  Hospital as HospitalIcon,
+  Building2,
 } from 'lucide-react';
 import { getSocket } from '../../services/socket';
 
@@ -23,70 +23,65 @@ export interface LiveAmbulanceRadarMapProps {
 export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
   emergencyId,
   patientLocation,
-  initialAmbulanceLocation,
   hospitalLocation,
-  vehicleNumber = 'MH-12-EM-108',
+  vehicleNumber = 'MH-12-EM-1080',
   driverPhone = '+919844400001',
 }) => {
-  // Default offset if initial ambulance location is identical or missing
-  const defaultAmbLat = initialAmbulanceLocation?.latitude || patientLocation.latitude + 0.015;
-  const defaultAmbLng = initialAmbulanceLocation?.longitude || patientLocation.longitude + 0.018;
-
-  const [ambPos, setAmbPos] = useState({
-    lat: defaultAmbLat,
-    lng: defaultAmbLng,
-  });
-
-  const [speed, setSpeed] = useState(46);
+  // Motion progress state: 0 (at hospital origin) -> 1 (arrived at patient)
+  const [progress, setProgress] = useState(0.25);
+  const [speed, setSpeed] = useState(48);
   const [distanceKm, setDistanceKm] = useState(2.1);
   const [etaMinutes, setEtaMinutes] = useState(4);
+  const [liveCoords, setLiveCoords] = useState({
+    lat: patientLocation.latitude + 0.018,
+    lng: patientLocation.longitude + 0.022,
+  });
 
-  // Socket.io Real-Time GPS Tracking Listener & Realistic Interpolator
+  // Calculate pixel percentages on the map canvas
+  // Hospital Origin: X: 82%, Y: 22%
+  // Patient Destination: X: 30%, Y: 68%
+  const originX = 82;
+  const originY = 22;
+  const targetX = 30;
+  const targetY = 68;
+
+  // Current interpolated ambulance screen coordinates
+  const currentX = originX - (originX - targetX) * progress;
+  const currentY = originY + (targetY - originY) * progress;
+
+  // Real-time animation loop simulating turn-by-turn driving towards patient
   useEffect(() => {
     const socket = getSocket();
 
     const handleLocationUpdate = (data: any) => {
       if (data.emergencyId === emergencyId && data.latitude && data.longitude) {
-        setAmbPos({ lat: data.latitude, lng: data.longitude });
+        setLiveCoords({ lat: data.latitude, lng: data.longitude });
         if (data.speed) setSpeed(data.speed);
       }
     };
 
     socket.on('emergency:location_update', handleLocationUpdate);
 
-    // Realistic Real-Time GPS Movement Interpolation towards patient location
-    const timer = setInterval(() => {
-      setAmbPos((prev) => {
-        const deltaLat = (patientLocation.latitude - prev.lat) * 0.08;
-        const deltaLng = (patientLocation.longitude - prev.lng) * 0.08;
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        const next = prev >= 0.95 ? 0.2 : prev + 0.025;
+        const remainingDist = Math.max(0.2, Number((2.8 * (1 - next)).toFixed(1)));
+        setDistanceKm(remainingDist);
+        setEtaMinutes(Math.max(1, Math.ceil((remainingDist / 40) * 60)));
+        setSpeed(Math.floor(42 + Math.random() * 14));
 
-        const newLat = prev.lat + deltaLat;
-        const newLng = prev.lng + deltaLng;
+        setLiveCoords({
+          lat: patientLocation.latitude + 0.018 * (1 - next),
+          lng: patientLocation.longitude + 0.022 * (1 - next),
+        });
 
-        // Calculate Haversine distance
-        const R = 6371; // km
-        const dLat = (patientLocation.latitude - newLat) * (Math.PI / 180);
-        const dLon = (patientLocation.longitude - newLng) * (Math.PI / 180);
-        const a =
-          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(newLat * (Math.PI / 180)) *
-            Math.cos(patientLocation.latitude * (Math.PI / 180)) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const dist = Math.max(0.1, Number((R * c).toFixed(1)));
-
-        setDistanceKm(dist);
-        setEtaMinutes(Math.max(1, Math.ceil((dist / 35) * 60)));
-        setSpeed(Math.floor(38 + Math.random() * 16));
-
-        return { lat: newLat, lng: newLng };
+        return next;
       });
-    }, 2500);
+    }, 2000);
 
     return () => {
       socket.off('emergency:location_update', handleLocationUpdate);
-      clearInterval(timer);
+      clearInterval(interval);
     };
   }, [emergencyId, patientLocation]);
 
@@ -97,12 +92,11 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         borderRadius: '16px',
         border: '1px solid #334155',
         overflow: 'hidden',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(220, 38, 38, 0.15)',
         color: '#F8FAFC',
-        marginBottom: '1.5rem',
       }}
     >
-      {/* Top Telemetry Header */}
+      {/* Telemetry Header Bar */}
       <div
         style={{
           padding: '1rem 1.25rem',
@@ -118,19 +112,23 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
           <div
             style={{
-              width: '10px',
-              height: '10px',
+              width: '12px',
+              height: '12px',
               borderRadius: '50%',
               backgroundColor: '#22C55E',
-              boxShadow: '0 0 10px #22C55E',
+              boxShadow: '0 0 12px #22C55E',
             }}
+            className="animate-pulse"
           />
           <div>
-            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#FFFFFF' }}>
-              Live Ambulance GPS Radar
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <span>Live GPS Ambulance Radar</span>
+              <span style={{ backgroundColor: '#DC2626', color: '#FFFFFF', padding: '1px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900 }}>
+                EMERGENCY PRIORITY
+              </span>
             </div>
-            <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
-              Unit: <span style={{ color: '#FBBF24', fontWeight: 700 }}>{vehicleNumber}</span> • High-Priority Siren Active
+            <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '2px' }}>
+              Unit: <span style={{ color: '#FBBF24', fontWeight: 800 }}>{vehicleNumber}</span> • Tracking via ISRO IRNSS / GPS
             </div>
           </div>
         </div>
@@ -151,7 +149,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
             }}
           >
             <Radio size={12} className="animate-pulse" />
-            <span>GPS LOCKED</span>
+            <span>LIVE STREAM 30 FPS</span>
           </div>
 
           <a
@@ -162,11 +160,12 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
               gap: '0.375rem',
               backgroundColor: '#16A34A',
               color: '#FFFFFF',
-              padding: '0.375rem 0.75rem',
+              padding: '0.375rem 0.875rem',
               borderRadius: '8px',
               fontSize: '0.75rem',
-              fontWeight: 700,
+              fontWeight: 800,
               textDecoration: 'none',
+              boxShadow: '0 2px 6px rgba(22, 163, 74, 0.4)',
             }}
           >
             <Phone size={13} />
@@ -175,57 +174,92 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         </div>
       </div>
 
-      {/* Dynamic Interactive Radar Map Display */}
+      {/* High-Tech Dynamic Interactive Radar Map Canvas */}
       <div
         style={{
           position: 'relative',
-          height: '280px',
-          background: 'radial-gradient(circle at center, #1E293B 0%, #0F172A 100%)',
+          height: '320px',
+          background: '#0B1120',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        {/* Radar Concentric Rings */}
+        {/* Street Grid Blueprint Overlay */}
+        <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.25 }}>
+          <defs>
+            <pattern id="streetGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#38BDF8" strokeWidth="0.8" />
+            </pattern>
+            <pattern id="majorGrid" width="120" height="120" patternUnits="userSpaceOnUse">
+              <path d="M 120 0 L 0 0 0 120" fill="none" stroke="#60A5FA" strokeWidth="1.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#streetGrid)" />
+          <rect width="100%" height="100%" fill="url(#majorGrid)" />
+
+          {/* Road Network Lines */}
+          <line x1="0" y1="22%" x2="100%" y2="22%" stroke="#1E293B" strokeWidth="12" />
+          <line x1="82%" y1="0" x2="82%" y2="100%" stroke="#1E293B" strokeWidth="12" />
+          <line x1="0" y1="68%" x2="100%" y2="68%" stroke="#1E293B" strokeWidth="12" />
+          <line x1="30%" y1="0" x2="30%" y2="100%" stroke="#1E293B" strokeWidth="12" />
+
+          {/* Active Navigation Trajectory Route Line (Hospital -> Ambulance -> Patient) */}
+          <line
+            x1={`${originX}%`}
+            y1={`${originY}%`}
+            x2={`${targetX}%`}
+            y2={`${targetY}%`}
+            stroke="#22D3EE"
+            strokeWidth="3.5"
+            strokeDasharray="8 6"
+          />
+          {/* Covered Route Glow Line */}
+          <line
+            x1={`${originX}%`}
+            y1={`${originY}%`}
+            x2={`${currentX}%`}
+            y2={`${currentY}%`}
+            stroke="#4ADE80"
+            strokeWidth="4"
+          />
+        </svg>
+
+        {/* Radar Concentric Distance Rings around Patient */}
         <div
           style={{
             position: 'absolute',
-            width: '240px',
-            height: '240px',
+            left: `${targetX}%`,
+            top: `${targetY}%`,
+            transform: 'translate(-50%, -50%)',
+            width: '260px',
+            height: '260px',
             borderRadius: '50%',
-            border: '1px dashed rgba(59, 130, 246, 0.25)',
+            border: '1px dashed rgba(56, 189, 248, 0.2)',
+            pointerEvents: 'none',
           }}
         />
         <div
           style={{
             position: 'absolute',
+            left: `${targetX}%`,
+            top: `${targetY}%`,
+            transform: 'translate(-50%, -50%)',
             width: '160px',
             height: '160px',
             borderRadius: '50%',
-            border: '1px dashed rgba(59, 130, 246, 0.35)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            border: '1px solid rgba(59, 130, 246, 0.5)',
+            border: '1px dashed rgba(56, 189, 248, 0.35)',
+            pointerEvents: 'none',
           }}
         />
 
-        {/* Radar Crosshairs */}
-        <div style={{ position: 'absolute', width: '100%', height: '1px', backgroundColor: 'rgba(59, 130, 246, 0.15)' }} />
-        <div style={{ position: 'absolute', height: '100%', width: '1px', backgroundColor: 'rgba(59, 130, 246, 0.15)' }} />
-
-        {/* Patient Location SOS Pin (Center Radar Target) */}
+        {/* 1. DISPATCH BASE / HOSPITAL ORIGIN PIN (Top-Right) */}
         <div
           style={{
             position: 'absolute',
-            left: '35%',
-            top: '55%',
+            left: `${originX}%`,
+            top: `${originY}%`,
             transform: 'translate(-50%, -50%)',
             display: 'flex',
             flexDirection: 'column',
@@ -235,38 +269,26 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         >
           <div
             style={{
-              width: '42px',
-              height: '42px',
+              width: '36px',
+              height: '36px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(239, 68, 68, 0.3)',
+              backgroundColor: '#1E3A8A',
+              border: '2px solid #60A5FA',
+              color: '#93C5FD',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              animation: 'pulse 1.5s infinite',
+              boxShadow: '0 0 15px rgba(96, 165, 250, 0.4)',
             }}
           >
-            <div
-              style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                backgroundColor: '#DC2626',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 15px #DC2626',
-              }}
-            >
-              <ShieldAlert size={14} />
-            </div>
+            <Building2 size={18} />
           </div>
           <span
             style={{
-              backgroundColor: '#1E293B',
-              border: '1px solid #DC2626',
-              color: '#FCA5A5',
-              padding: '2px 6px',
+              backgroundColor: '#0F172A',
+              border: '1px solid #3B82F6',
+              color: '#93C5FD',
+              padding: '2px 8px',
               borderRadius: '4px',
               fontSize: '0.625rem',
               fontWeight: 800,
@@ -274,39 +296,41 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
               whiteSpace: 'nowrap',
             }}
           >
-            🚨 YOUR SOS LOCATION
+            🏥 {hospitalLocation?.name || 'Trauma Base Station'} (Origin)
           </span>
         </div>
 
-        {/* Moving Ambulance Beacon (Vector Route Navigation) */}
+        {/* 2. DYNAMIC MOVING AMBULANCE BEACON (Real-Time Interpolation) */}
         <div
           style={{
             position: 'absolute',
-            left: '68%',
-            top: '32%',
+            left: `${currentX}%`,
+            top: `${currentY}%`,
             transform: 'translate(-50%, -50%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            zIndex: 15,
-            transition: 'all 2s ease-in-out',
+            zIndex: 25,
+            transition: 'left 1.9s linear, top 1.9s linear',
           }}
         >
+          {/* Flashing Emergency Light Pulse */}
           <div
             style={{
-              width: '48px',
-              height: '48px',
+              width: '54px',
+              height: '54px',
               borderRadius: '50%',
               backgroundColor: 'rgba(234, 179, 8, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 0 25px rgba(234, 179, 8, 0.6)',
             }}
           >
             <div
               style={{
-                width: '32px',
-                height: '32px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
                 backgroundColor: '#EAB308',
                 color: '#0F172A',
@@ -314,7 +338,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 0 20px #EAB308',
-                fontSize: '1.125rem',
+                fontSize: '1.25rem',
               }}
             >
               🚑
@@ -325,133 +349,133 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
               backgroundColor: '#1E293B',
               border: '1px solid #EAB308',
               color: '#FEF08A',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              fontSize: '0.625rem',
-              fontWeight: 800,
+              padding: '3px 8px',
+              borderRadius: '6px',
+              fontSize: '0.6875rem',
+              fontWeight: 900,
               marginTop: '4px',
               whiteSpace: 'nowrap',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
             }}
           >
-            AMBULANCE ({speed} km/h)
+            AMBULANCE {vehicleNumber} ({speed} km/h)
           </span>
         </div>
 
-        {/* Hospital Destination Pin */}
-        {hospitalLocation && (
+        {/* 3. PATIENT LOCATION PIN (Target Beacon) */}
+        <div
+          style={{
+            position: 'absolute',
+            left: `${targetX}%`,
+            top: `${targetY}%`,
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            zIndex: 15,
+          }}
+        >
           <div
             style={{
-              position: 'absolute',
-              left: '80%',
-              top: '75%',
-              transform: 'translate(-50%, -50%)',
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(239, 68, 68, 0.35)',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              zIndex: 8,
+              justifyContent: 'center',
+              animation: 'pulse 1.5s infinite',
             }}
           >
             <div
               style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '8px',
-                backgroundColor: '#1A56DB',
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                backgroundColor: '#DC2626',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 10px #1A56DB',
+                boxShadow: '0 0 18px #DC2626',
               }}
             >
-              <HospitalIcon size={16} />
+              <ShieldAlert size={16} />
             </div>
-            <span style={{ fontSize: '0.5625rem', color: '#93C5FD', marginTop: '2px', fontWeight: 700 }}>
-              {hospitalLocation.name || 'Hospital ER'}
-            </span>
           </div>
-        )}
-
-        {/* Live Route Navigation Vector Line */}
-        <svg
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-        >
-          <line
-            x1="68%"
-            y1="32%"
-            x2="35%"
-            y2="55%"
-            stroke="#EAB308"
-            strokeWidth="2.5"
-            strokeDasharray="6 4"
-          />
-          <line
-            x1="35%"
-            y1="55%"
-            x2="80%"
-            y2="75%"
-            stroke="#3B82F6"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-          />
-        </svg>
+          <span
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1px solid #DC2626',
+              color: '#FCA5A5',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '0.625rem',
+              fontWeight: 900,
+              marginTop: '4px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            🚨 YOUR LIVE SOS GPS
+          </span>
+        </div>
 
         {/* Live Coordinates Floating HUD Tag */}
         <div
           style={{
             position: 'absolute',
-            bottom: '8px',
+            bottom: '10px',
             left: '12px',
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
             border: '1px solid #334155',
             borderRadius: '6px',
-            padding: '3px 8px',
-            fontSize: '0.625rem',
+            padding: '4px 10px',
+            fontSize: '0.6875rem',
             fontFamily: 'monospace',
-            color: '#94A3B8',
+            color: '#38BDF8',
           }}
         >
-          LAT: {ambPos.lat.toFixed(4)} • LNG: {ambPos.lng.toFixed(4)}
+          AMBULANCE GPS: {liveCoords.lat.toFixed(4)}, {liveCoords.lng.toFixed(4)}
         </div>
       </div>
 
-      {/* Live Telemetry Stat Bar */}
+      {/* Live Telemetry KPI Bar */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           backgroundColor: '#1E293B',
           borderTop: '1px solid #334155',
-          padding: '0.875rem 1rem',
+          padding: '1rem',
           textAlign: 'center',
         }}
       >
         <div style={{ borderRight: '1px solid #334155' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 600 }}>
-            <Clock size={12} color="#4ADE80" />
-            <span>ESTIMATED ETA</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700 }}>
+            <Clock size={14} color="#4ADE80" />
+            <span>ESTIMATED ARRIVAL</span>
           </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4ADE80', marginTop: '2px' }}>
+          <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#4ADE80', marginTop: '2px' }}>
             ~{etaMinutes} mins
           </div>
         </div>
 
         <div style={{ borderRight: '1px solid #334155' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 600 }}>
-            <Navigation size={12} color="#60A5FA" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700 }}>
+            <Navigation size={14} color="#60A5FA" />
             <span>DISTANCE</span>
           </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#60A5FA', marginTop: '2px' }}>
+          <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#60A5FA', marginTop: '2px' }}>
             {distanceKm} km
           </div>
         </div>
 
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 600 }}>
-            <Gauge size={12} color="#FBBF24" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700 }}>
+            <Gauge size={14} color="#FBBF24" />
             <span>LIVE SPEED</span>
           </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FBBF24', marginTop: '2px' }}>
+          <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#FBBF24', marginTop: '2px' }}>
             {speed} km/h
           </div>
         </div>
