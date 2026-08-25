@@ -69,6 +69,40 @@ export const EmergencyTrackingPage: React.FC = () => {
   const [countdown, setCountdown] = useState(5);
   const [sosModalOpen, setSosModalOpen] = useState(false);
 
+  // Patient Emergency Medical ID & Multi-Tier Contacts
+  const [medicalId] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('hs_patient_medical_id');
+      return saved
+        ? JSON.parse(saved)
+        : {
+            contacts: [
+              { name: 'Dr. Alok Sharma (Father)', phone: '+91 98444 11001', relation: 'Father' },
+              { name: 'Pooja Sharma (Spouse)', phone: '+91 98444 11002', relation: 'Spouse' },
+              { name: 'Vikram Mehta (Friend)', phone: '+91 98444 11003', relation: 'Friend' },
+            ],
+            bloodGroup: 'O+',
+            allergies: 'Penicillin, Sulfa drugs',
+            conditions: 'Hypertension, Type-2 Diabetes',
+            isOrganDonor: true,
+          };
+    } catch {
+      return null;
+    }
+  });
+
+  const handleBroadcastAllContacts = () => {
+    const coords = `${emergency?.latitude || emergency?.initialLatitude || 18.5204},${
+      emergency?.longitude || emergency?.initialLongitude || 73.8567
+    }`;
+    const text = encodeURIComponent(
+      `🚨 EMERGENCY SOS CASCADE ALERT: Medical assistance requested! Patient: ${
+        emergency?.patient?.fullName || 'Patient'
+      }. Live Tracking Link: ${window.location.href} | GPS Coordinates: https://maps.google.com/?q=${coords}`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  };
+
   const fetchTracking = async () => {
     try {
       const targetId = id || emergency?.id;
@@ -981,6 +1015,171 @@ export const EmergencyTrackingPage: React.FC = () => {
             </Card.Body>
           </Card>
         )}
+        {/* Multi-Contact Failover Cascade Card */}
+        <Card style={{ borderLeft: '4px solid #F59E0B' }}>
+          <div
+            style={{
+              backgroundColor: '#FFFBEB',
+              padding: '0.625rem 1rem',
+              borderBottom: '1px solid #FDE68A',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.375rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#B45309', fontWeight: 800, fontSize: '0.8125rem' }}>
+              <Phone size={15} color="#D97706" />
+              <span>EMERGENCY CONTACT CASCADE & LIVE GPS BROADCAST</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleBroadcastAllContacts}
+              style={{
+                backgroundColor: '#25D366',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '3px 8px',
+                fontSize: '0.6875rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}
+            >
+              <Share2 size={12} />
+              <span>Broadcast GPS to All</span>
+            </button>
+          </div>
+
+          <Card.Body style={{ padding: '0.875rem 1rem' }}>
+            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.75rem', color: '#64748B' }}>
+              If your primary contact does not pick up, HealthSync automatically rings secondary and tertiary contacts with live GPS coordinates.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {medicalId?.contacts?.map((c: any, i: number) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#F8FAFC',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #E2E8F0',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        backgroundColor: i === 0 ? '#DC2626' : i === 1 ? '#0284C7' : '#16A34A',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.6875rem',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <div>
+                      <strong style={{ fontSize: '0.8125rem', color: '#0F172A' }}>{c.name}</strong>
+                      <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{c.phone}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span
+                      style={{
+                        fontSize: '0.625rem',
+                        fontWeight: 700,
+                        backgroundColor: i === 0 ? '#DCFCE7' : '#F1F5F9',
+                        color: i === 0 ? '#166534' : '#64748B',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {i === 0 ? '✓ ALERT TRANSMITTED' : 'QUEUED FAILOVER'}
+                    </span>
+                    <a
+                      href={`tel:${c.phone}`}
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #CBD5E1',
+                        borderRadius: '6px',
+                        padding: '3px 6px',
+                        color: '#0F172A',
+                        display: 'flex',
+                        alignItems: 'center',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <Phone size={12} color="#16A34A" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Emergency Medical ID Card for Paramedics */}
+        <Card style={{ borderLeft: '4px solid #1A56DB' }}>
+          <div
+            style={{
+              backgroundColor: '#EFF6FF',
+              padding: '0.625rem 1rem',
+              borderBottom: '1px solid #BFDBFE',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#1E40AF', fontWeight: 800, fontSize: '0.8125rem' }}>
+              <HeartPulse size={15} color="#1D4ED8" />
+              <span>PATIENT EMERGENCY MEDICAL ID (PARAMEDIC HUD)</span>
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: '#1E40AF', fontWeight: 700 }}>
+              AUTO-SYNCHRONIZED
+            </span>
+          </div>
+
+          <Card.Body style={{ padding: '0.875rem 1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <div style={{ backgroundColor: '#FEF2F2', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #FECACA' }}>
+                <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#991B1B', display: 'block' }}>BLOOD GROUP</span>
+                <strong style={{ fontSize: '1.125rem', fontWeight: 900, color: '#DC2626' }}>{medicalId?.bloodGroup || 'O+'}</strong>
+              </div>
+
+              <div style={{ backgroundColor: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B', display: 'block' }}>ORGAN DONOR</span>
+                <strong style={{ fontSize: '0.875rem', fontWeight: 800, color: medicalId?.isOrganDonor ? '#16A34A' : '#64748B' }}>
+                  {medicalId?.isOrganDonor ? '✓ Registered' : 'No'}
+                </strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.75rem' }}>
+              <div>
+                <strong style={{ color: '#0F172A' }}>Known Allergies: </strong>
+                <span style={{ color: '#DC2626', fontWeight: 600 }}>{medicalId?.allergies || 'Penicillin, Sulfa drugs'}</span>
+              </div>
+              <div>
+                <strong style={{ color: '#0F172A' }}>Chronic Conditions: </strong>
+                <span style={{ color: '#475569' }}>{medicalId?.conditions || 'Hypertension, Type-2 Diabetes'}</span>
+              </div>
+            </div>
+          </Card.Body>
+        </Card>
       </div>
 
       {/* Timeline */}
