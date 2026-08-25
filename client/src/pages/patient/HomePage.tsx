@@ -115,38 +115,66 @@ export const HomePage: React.FC = () => {
 
       {/* Emergency Banner */}
       <div
+        onClick={() => navigate('/patient/emergency')}
+        className="hs-card"
         style={{
-          backgroundColor: 'var(--color-danger-50)',
-          border: '1px solid var(--color-danger-100)',
-          borderRadius: 'var(--radius-md)',
-          padding: '1rem 1.25rem',
+          backgroundColor: '#FEF2F2',
+          border: '1.5px solid #FECACA',
+          borderRadius: '16px',
+          padding: '1.25rem 1.5rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           marginBottom: '1.75rem',
           gap: '1rem',
+          cursor: 'pointer',
+          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.08)',
+          transition: 'transform 0.15s ease',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
           <div
             style={{
-              padding: '0.5rem',
-              backgroundColor: 'var(--color-danger-600)',
+              width: '44px',
+              height: '44px',
+              backgroundColor: '#DC2626',
               color: '#FFFFFF',
-              borderRadius: 'var(--radius-sm)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 10px rgba(220, 38, 38, 0.3)',
             }}
+            className="animate-sos-pulse"
           >
-            <Siren size={20} />
+            <Siren size={24} />
           </div>
           <div>
-            <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-danger-700)' }}>
-              Emergency Assistance Needed?
+            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#991B1B' }}>
+              Emergency SOS & Live Ambulance Radar
             </h4>
-            <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--color-danger-600)' }}>
-              {t('home.emergencyBanner')}
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.8125rem', color: '#B91C1C' }}>
+              Instant GPS dispatch, 24x7 trauma desk, and real-time ambulance tracking HUD
             </p>
           </div>
         </div>
+
+        <button
+          type="button"
+          style={{
+            backgroundColor: '#DC2626',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '0.5rem 1rem',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          Open Radar
+        </button>
       </div>
 
       {/* AI Clinical Symptom Triage Widget */}

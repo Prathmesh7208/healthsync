@@ -146,6 +146,46 @@ router.post(
 );
 
 /**
+ * GET /api/v1/emergencies/active
+ * Get current active emergency for the logged-in patient
+ */
+router.get('/active', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: { userId: req.user!.id },
+    });
+
+    if (!patient) {
+      return res.status(200).json({ success: true, data: null });
+    }
+
+    const activeEmergency = await prisma.emergency.findFirst({
+      where: {
+        patientId: patient.id,
+        status: {
+          notIn: [EmergencyStatus.RESOLVED, EmergencyStatus.CANCELLED],
+        },
+      },
+      orderBy: { triggeredAt: 'desc' },
+      include: {
+        patient: true,
+        hospital: true,
+        ambulanceOperator: { include: { user: true } },
+        statusHistories: { orderBy: { timestamp: 'desc' } },
+        locationTrails: { orderBy: { recordedAt: 'desc' }, take: 20 },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: activeEmergency,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * GET /api/v1/emergencies/:id/track
  * Real-time tracking data for patient HUD
  */
