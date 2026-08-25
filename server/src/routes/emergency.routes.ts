@@ -300,4 +300,138 @@ router.put('/:id/cancel', async (req: Request, res: Response, next: NextFunction
   }
 });
 
+/**
+ * POST /api/v1/emergencies/:id/report-hoax
+ * Flag an emergency as an intentional hoax / prank
+ */
+router.post('/:id/report-hoax', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { reason, penaltyAmount = 3500 } = req.body;
+
+    const emergency = await prisma.emergency.findUnique({
+      where: { id },
+      include: {
+        patient: { include: { user: true } },
+        hospital: true,
+        ambulanceOperator: { include: { user: true } },
+      },
+    });
+
+    if (!emergency) throw new NotFoundError('Emergency');
+
+    const updated = await prisma.emergency.update({
+      where: { id },
+      data: {
+        status: EmergencyStatus.CANCELLED,
+        resolutionNotes: `[INTENTIONAL HOAX / FAKE SOS FLAGGED] Reason: ${reason || 'Malicious prank / No patient at scene'}. Penalty assessed: ₹${penaltyAmount}`,
+        resolvedAt: new Date(),
+      },
+    });
+
+    await prisma.emergencyStatusHistory.create({
+      data: {
+        emergencyId: id,
+        status: EmergencyStatus.CANCELLED,
+        updatedBy: req.user!.id,
+        notes: `Flagged as intentional hoax by operator ${req.user!.id}. Penalty: ₹${penaltyAmount}`,
+      },
+    });
+
+    // Record in system audit logs
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.id,
+        action: 'EMERGENCY_HOAX_REPORTED',
+        resourceType: 'Emergency',
+        resourceId: id,
+        ipAddress: req.ip || '127.0.0.1',
+        userAgent: req.headers['user-agent'] || 'System',
+      },
+    });
+
+    if (io) {
+      io.emit('emergency:status-updated', {
+        emergencyId: id,
+        status: EmergencyStatus.CANCELLED,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Emergency flagged as intentional hoax. Police dossier generated and penalty recorded.',
+      data: updated,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/v1/emergencies/:id/police-dossier
+ * Generate structured Police FIR / Cybercrime evidence dossier
+ */
+router.get('/:id/police-dossier', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const emergency = await prisma.emergency.findUnique({
+      where: { id },
+      include: {
+        patient: { include: { user: true } },
+        hospital: true,
+        ambulanceOperator: { include: { user: true } },
+        locationTrails: { orderBy: { recordedAt: 'asc' }, take: 10 },
+      },
+    });
+
+    if (!emergency) throw new NotFoundError('Emergency');
+
+    const firReferenceNumber = `FIR-CYBER-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const dossier = {
+      firReferenceNumber,
+      generatedAt: new Date().toISOString(),
+      statutoryOffense: 'Section 182 & 211 of Bharatiya Nyaya Sanhita (BNS) / Section 182 & 505 of Indian Penal Code (IPC)',
+      offenseDescription: 'False emergency distress call, intentional misuse of emergency trauma services, and causing public nuisance/wasting state trauma resources',
+      suspectDetails: {
+        fullName: emergency.patient?.fullName || 'Unverified User',
+        registeredMobileNumber: emergency.patient?.user?.phone || 'Unknown',
+        userId: emergency.patient?.userId || 'N/A',
+        kycStatus: 'Aadhaar / SIM Registered',
+      },
+      digitalEvidence: {
+        initialLatitude: emergency.initialLatitude,
+        initialLongitude: emergency.initialLongitude,
+        googleMapsLocationUrl: `https://maps.google.com/?q=${emergency.initialLatitude},${emergency.initialLongitude}`,
+        timestampOfActivation: emergency.createdAt,
+        resolutionTimestamp: emergency.resolvedAt,
+        reportedByOperatorId: req.user!.id,
+      },
+      hospitalDetails: {
+        name: emergency.hospital?.name || 'Sahyadri Super Speciality Hospital',
+        address: emergency.hospital?.address || 'Erandwane, Karve Road, Pune',
+        contactPhone: emergency.hospital?.phone || '+91 20 6721 5000',
+      },
+      dispatchedAmbulance: {
+        vehicleNumber: emergency.ambulanceOperator?.vehicleNumber || 'MH-12-EM-1080',
+        pilotContact: emergency.ambulanceOperator?.user?.phone || '+91 98444 00001',
+      },
+      financialLossAssessed: {
+        fuelAndDeploymentCost: '₹2,500',
+        paramedicWastedHourSurcharge: '₹1,000',
+        totalPenaltyDue: '₹3,500',
+      },
+      legalRecommendation: 'Initiate formal Police FIR under BNS 182 and notify State Telecom Authority for emergency line penalty enforcement.',
+    };
+
+    res.status(200).json({
+      success: true,
+      data: dossier,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

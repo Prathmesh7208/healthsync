@@ -390,9 +390,30 @@ export const EmergencyTrackingPage: React.FC = () => {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#991B1B', margin: '0 0 0.375rem 0' }}>
             {t('emergencyTracking.readyTitle')}
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#64748B', maxWidth: '480px', margin: '0 auto 1.5rem auto', lineHeight: 1.4 }}>
+          <p style={{ fontSize: '0.875rem', color: '#64748B', maxWidth: '480px', margin: '0 auto 1.25rem auto', lineHeight: 1.4 }}>
             {t('emergencyTracking.readySubtitle')}
           </p>
+
+          {/* Statutory Anti-Prank Legal Warning */}
+          <div
+            style={{
+              backgroundColor: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: '10px',
+              padding: '0.625rem 0.875rem',
+              maxWidth: '460px',
+              margin: '0 auto 1.5rem auto',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.5rem',
+            }}
+          >
+            <AlertTriangle size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div style={{ fontSize: '0.6875rem', color: '#991B1B', lineHeight: 1.4 }}>
+              <strong>⚖️ STATUTORY PENAL WARNING:</strong> False distress calls, pranks, or malicious emergency activations are criminal offenses punishable under <strong>Bharatiya Nyaya Sanhita (BNS) / IPC Section 182 & 505</strong> (Up to 6 months imprisonment & criminal penalty). Your mobile number, IP address, and high-accuracy GPS are logged for law enforcement audits.
+            </div>
+          </div>
 
           <button
             type="button"
@@ -413,6 +434,7 @@ export const EmergencyTrackingPage: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
+              transition: 'transform 0.15s ease',
             }}
           >
             <Siren size={22} />
