@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Home,
@@ -19,6 +19,7 @@ import Logo from '../components/ui/Logo';
 export const PatientLayout: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, language, setLanguage } = useAuthStore();
 
   const handleLanguageToggle = () => {
@@ -145,8 +146,8 @@ export const PatientLayout: React.FC = () => {
         <Outlet />
       </main>
 
-      {/* Floating SOS Action Button */}
-      <SOSButton />
+      {/* Floating SOS Action Button (Hidden on dedicated Emergency page to prevent button overlap) */}
+      {!location.pathname.startsWith('/patient/emergency') && <SOSButton />}
 
       {/* Mobile Bottom Navigation Bar - Clean, Icon-Centric HUD */}
       <nav
