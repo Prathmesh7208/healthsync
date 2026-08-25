@@ -22,6 +22,7 @@ import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import AISymptomChecker from '../../components/patient/AISymptomChecker';
 
 export const HomePage: React.FC = () => {
   const { t } = useTranslation();
@@ -147,6 +148,9 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* AI Clinical Symptom Triage Widget */}
+      <AISymptomChecker />
 
       {/* Quick Action Grid */}
       <div style={{ marginBottom: '2rem' }}>

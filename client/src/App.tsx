@@ -39,6 +39,7 @@ import AppointmentDashboardPage from './pages/receptionist/AppointmentDashboardP
 import QueueManagementPage from './pages/receptionist/QueueManagementPage';
 import DoctorBoardPage from './pages/receptionist/DoctorBoardPage';
 import EmergencyDashboardPage from './pages/receptionist/EmergencyDashboardPage';
+import WaitingRoomTvPage from './pages/receptionist/WaitingRoomTvPage';
 
 // Ambulance Pages
 import AmbulanceDashboardPage from './pages/ambulance/AmbulanceDashboardPage';
@@ -167,6 +168,16 @@ export const App: React.FC = () => {
           <Route path="doctors" element={<DoctorBoardPage />} />
           <Route path="emergencies" element={<EmergencyDashboardPage />} />
         </Route>
+
+        {/* Public / Lobby Waiting Room Full-Screen TV Display */}
+        <Route
+          path="/receptionist/tv-display"
+          element={
+            <ProtectedRoute allowedRoles={['RECEPTIONIST', 'ADMIN']}>
+              <WaitingRoomTvPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Ambulance Operator Routes (Protected) */}
         <Route

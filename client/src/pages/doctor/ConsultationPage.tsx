@@ -9,11 +9,13 @@ import {
   ArrowLeft,
   AlertTriangle,
   Pill,
+  Download,
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import { generatePrescriptionPdf } from '../../services/prescriptionPdf';
 
 interface PrescriptionRow {
   medicineName: string;
@@ -179,6 +181,38 @@ export const ConsultationPage: React.FC = () => {
     }
   };
 
+  const handleDownloadPdf = () => {
+    const validMeds = medicines.filter((m) => m.medicineName.trim() !== '').map((m) => ({
+      name: `${m.form === 'TABLET' ? 'Tab.' : m.form === 'SYRUP' ? 'Syp.' : m.form === 'CAPSULE' ? 'Cap.' : ''} ${m.medicineName}`,
+      dosage: m.dosage,
+      frequency: m.frequency,
+      duration: m.duration,
+      instructions: m.timing ? m.timing.replace('_', ' ').toLowerCase() : 'After food',
+    }));
+
+    generatePrescriptionPdf({
+      appointmentId: appointment.id,
+      date: appointment.date?.split('T')[0] || new Date().toLocaleDateString(),
+      doctor: {
+        fullName: appointment.doctor?.fullName || 'Doctor',
+        registrationNumber: appointment.doctor?.registrationNumber,
+        specializations: appointment.doctor?.specializations,
+        hospitalName: appointment.hospital?.name,
+        hospitalAddress: `${appointment.hospital?.address || ''}, ${appointment.hospital?.city || 'Pune'}`,
+      },
+      patient: {
+        fullName: patient?.fullName || 'Patient',
+        phone: patient?.user?.phone || appointment.patient?.user?.phone || '',
+        gender: patient?.gender,
+      },
+      diagnosis: diagnosis || 'General Medical Consultation',
+      symptoms,
+      medications: validMeds,
+      advice,
+      followUpDate: followUpDate || undefined,
+    });
+  };
+
   const handleFinalize = async () => {
     if (!diagnosis.trim()) {
       alert('Please enter a clinical diagnosis before finalizing');
@@ -228,6 +262,9 @@ export const ConsultationPage: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // Auto trigger PDF download
+      handleDownloadPdf();
+
       alert('Consultation completed and prescription generated!');
       navigate('/doctor/appointments');
     } catch (err: any) {
@@ -270,7 +307,15 @@ export const ConsultationPage: React.FC = () => {
           <span>Back to Schedule</span>
         </button>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Download size={14} />}
+            onClick={handleDownloadPdf}
+          >
+            Download Rx PDF
+          </Button>
           <Button variant="outline" size="sm" isLoading={saving} onClick={handleSaveDraft}>
             Save Draft
           </Button>

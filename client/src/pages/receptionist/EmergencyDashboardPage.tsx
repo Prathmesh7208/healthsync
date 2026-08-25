@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Siren, Truck, CheckCircle2 } from 'lucide-react';
+import { Siren, Truck, CheckCircle2, Volume2 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
+import { playEmergencySiren } from '../../utils/audioAlert';
 
 export const EmergencyDashboardPage: React.FC = () => {
   const { token } = useAuthStore();
@@ -101,6 +102,28 @@ export const EmergencyDashboardPage: React.FC = () => {
             Real-time emergency triage, ambulance unit dispatch, and patient GPS coordination.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => playEmergencySiren(3)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            backgroundColor: '#FEE2E2',
+            color: '#DC2626',
+            border: '1px solid #FECACA',
+            borderRadius: '8px',
+            fontWeight: 700,
+            fontSize: '0.8125rem',
+            cursor: 'pointer',
+          }}
+          title="Play 2-tone emergency siren sound"
+        >
+          <Volume2 size={16} />
+          <span>Test Audio Siren</span>
+        </button>
       </div>
 
       {/* Emergency List */}

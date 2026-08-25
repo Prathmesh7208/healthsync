@@ -16,6 +16,7 @@ import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import { generatePrescriptionPdf } from '../../services/prescriptionPdf';
 
 export const HealthRecordsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -215,16 +216,43 @@ export const HealthRecordsPage: React.FC = () => {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <a
-                      href={rec.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hs-btn hs-btn-ghost hs-btn-sm"
-                      title="Download / View"
-                      style={{ color: 'var(--color-primary-600)' }}
-                    >
-                      <Download size={16} />
-                    </a>
+                    {rec.type === 'PRESCRIPTION' ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generatePrescriptionPdf({
+                            appointmentId: rec.id,
+                            date: rec.recordDate?.split('T')[0] || new Date().toLocaleDateString(),
+                            doctor: {
+                              fullName: rec.category || 'Specialist Doctor',
+                            },
+                            patient: {
+                              fullName: 'Patient Record',
+                              phone: '',
+                            },
+                            diagnosis: rec.notes || 'Routine Medical Follow-up',
+                            medications: [],
+                            advice: 'Follow prescription regimen strictly as advised.',
+                          })
+                        }
+                        className="hs-btn hs-btn-ghost hs-btn-sm"
+                        title="Download Digital Rx PDF"
+                        style={{ color: 'var(--color-primary-600)' }}
+                      >
+                        <Download size={16} />
+                      </button>
+                    ) : (
+                      <a
+                        href={rec.fileUrl || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hs-btn hs-btn-ghost hs-btn-sm"
+                        title="Download / View"
+                        style={{ color: 'var(--color-primary-600)' }}
+                      >
+                        <Download size={16} />
+                      </a>
+                    )}
                     <button
                       type="button"
                       onClick={() => handleDelete(rec.id)}

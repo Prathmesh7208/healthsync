@@ -102,7 +102,13 @@ export const ReceptionistDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/receptionist/tv-display')}
+          >
+            📺 Lobby TV Display Mode
+          </Button>
           <Button
             variant="primary"
             leftIcon={<UserPlus size={16} />}

@@ -7,12 +7,13 @@ import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Avatar from '../../components/ui/Avatar';
+import PaymentModal from '../../components/payment/PaymentModal';
 
 export const BookingConfirmPage: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
 
   const state = location.state as {
     doctorId: string;
@@ -28,6 +29,7 @@ export const BookingConfirmPage: React.FC = () => {
   const [reasonForVisit, setReasonForVisit] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   if (!state || !state.doctorId) {
     return (
@@ -42,7 +44,8 @@ export const BookingConfirmPage: React.FC = () => {
 
   const { doctor, hospital, date, startTime, endTime, consultationFee } = state;
 
-  const handleConfirm = async () => {
+  const handlePaymentSuccess = async (paymentDetails: any) => {
+    setShowPaymentModal(false);
     setError(null);
     setLoading(true);
     try {
@@ -55,12 +58,16 @@ export const BookingConfirmPage: React.FC = () => {
           startTime: state.startTime,
           endTime: state.endTime,
           reasonForVisit,
+          paymentDetails,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       navigate('/patient/appointments/success', {
-        state: { appointment: res.data.data },
+        state: {
+          appointment: res.data.data,
+          payment: paymentDetails,
+        },
         replace: true,
       });
     } catch (err: any) {
@@ -197,11 +204,22 @@ export const BookingConfirmPage: React.FC = () => {
         variant="primary"
         size="lg"
         isLoading={loading}
-        onClick={handleConfirm}
+        onClick={() => setShowPaymentModal(true)}
         style={{ width: '100%' }}
       >
-        {t('booking.confirmButton')}
+        Proceed to Payment (₹{consultationFee}) & Confirm Slot
       </Button>
+
+      {/* Universal UPI & Card Payment Gateway Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+        amount={consultationFee}
+        doctorName={`Dr. ${(doctor?.fullName || 'Specialist').replace(/^(dr\.?|doctor)\s+/i, '').trim()}`}
+        hospitalName={hospital?.name}
+        patientName={user?.phone || 'Patient'}
+      />
     </div>
   );
 };
