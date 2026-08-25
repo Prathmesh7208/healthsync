@@ -42,6 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
       >
+        <div className="hs-modal-handle" />
         {title && (
           <div className="hs-card-header">
             <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>{title}</h3>

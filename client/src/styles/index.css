@@ -10,7 +10,7 @@
   --color-primary-300: #93C5FD;
   --color-primary-400: #60A5FA;
   --color-primary-500: #3B82F6;
-  --color-primary-600: #1A56DB; /* Primary Brand */
+  --color-primary-600: #1A56DB; /* Primary Brand Sapphire */
   --color-primary-700: #1D4ED8;
   --color-primary-800: #1E40AF;
   --color-primary-900: #1E3A8A;
@@ -29,13 +29,13 @@
   --color-danger-50: #FEF2F2;
   --color-danger-100: #FEE2E2;
   --color-danger-500: #EF4444;
-  --color-danger-600: #DC2626; /* Vivid Emergency SOS */
+  --color-danger-600: #DC2626; /* Emergency Crimson */
   --color-danger-700: #B91C1C;
 
   --color-success-50: #F0FDF4;
   --color-success-100: #DCFCE7;
   --color-success-500: #22C55E;
-  --color-success-600: #16A34A; /* Available & Confirmed */
+  --color-success-600: #16A34A; /* Confirmed Emerald */
   --color-success-700: #15803D;
 
   --color-warning-50: #FFFBEB;
@@ -70,6 +70,12 @@
   --border-strong: #CBD5E1;
   --border-focus: #1A56DB;
 
+  /* Safe Area Insets for iOS & Android Notches / Gestures */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
   /* Typography */
   --font-family-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-devanagari: 'Noto Sans Devanagari', 'Inter', system-ui, sans-serif;
@@ -78,14 +84,16 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-full: 9999px;
 
   /* Elevation Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-  --shadow-sos: 0 0 25px rgba(220, 38, 38, 0.6);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.02);
+  --shadow-lg: 0 10px 25px -4px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
+  --shadow-xl: 0 20px 35px -6px rgba(15, 23, 42, 0.12), 0 8px 10px -4px rgba(15, 23, 42, 0.04);
+  --shadow-sos: 0 0 25px rgba(220, 38, 38, 0.5);
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -136,6 +144,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Devanagari text support */
@@ -155,8 +164,45 @@ button, a, input, select, textarea {
 }
 
 button, a {
-  min-height: 44px;
+  min-height: 40px;
   touch-action: manipulation;
+}
+
+/* Haptic Press Scaling Effect */
+button:active:not(:disabled), .hs-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Custom Clean Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Shimmer Keyframes for Skeleton Loaders */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-loader {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
 }
 
 /* Pulse animation for SOS Button */
