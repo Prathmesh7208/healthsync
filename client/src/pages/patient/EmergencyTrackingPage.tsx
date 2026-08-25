@@ -18,6 +18,8 @@ import {
   Check,
   AlertOctagon,
   Sparkles,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
@@ -47,6 +49,7 @@ export const EmergencyTrackingPage: React.FC = () => {
   const [emergency, setEmergency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('Accidental Trigger / False Alarm');
   const [cancelling, setCancelling] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -77,10 +80,10 @@ export const EmergencyTrackingPage: React.FC = () => {
         }
       }
     } catch {
-      // Fallback to active simulation mode
+      // Fallback
     }
 
-    // Default Fallback Simulated Active Emergency so user always sees the live location and radar in action!
+    // Default Fallback Simulated Active Emergency so user always sees the live radar
     setEmergency({
       id: 'sim-emg-108',
       emergencyId: 'HS-EMR-2026-1080',
@@ -117,10 +120,10 @@ export const EmergencyTrackingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [id, token]);
 
-  // Continuously stream patient's live GPS breadcrumbs to hospital reception and ambulance
+  // Continuously stream patient's live GPS breadcrumbs
   useEffect(() => {
     const targetId = id || emergency?.id;
-    if (!targetId || targetId.startsWith('sim-') || !token) return;
+    if (!targetId || targetId.startsWith('sim-') || emergency?.status === 'CANCELLED' || !token) return;
 
     let watchId: number | null = null;
     if (navigator.geolocation) {
@@ -150,13 +153,15 @@ export const EmergencyTrackingPage: React.FC = () => {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [id, emergency?.id, token]);
+  }, [id, emergency?.id, emergency?.status, token]);
 
   const handleCancelEmergency = async () => {
     const targetId = id || emergency?.id;
+
     if (!targetId || targetId.startsWith('sim-')) {
-      alert('Emergency simulation reset');
-      navigate('/patient/home');
+      setEmergency((prev: any) => (prev ? { ...prev, status: 'CANCELLED' } : null));
+      setCancelModalOpen(false);
+      alert('Emergency SOS cancelled and ambulance recall broadcasted.');
       return;
     }
 
@@ -164,11 +169,11 @@ export const EmergencyTrackingPage: React.FC = () => {
     try {
       await axios.put(
         `/api/v1/emergencies/${targetId}/cancel`,
-        { reason: 'Cancelled by patient from tracking dashboard' },
+        { reason: cancelReason },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Emergency response cancelled');
-      navigate('/patient/home');
+      setEmergency((prev: any) => (prev ? { ...prev, status: 'CANCELLED' } : null));
+      alert('Emergency SOS successfully cancelled! Hospital ER and ambulance have been notified.');
     } catch (err: any) {
       alert(err.response?.data?.error?.message || 'Cancellation failed');
     } finally {
@@ -257,7 +262,7 @@ export const EmergencyTrackingPage: React.FC = () => {
   return (
     <div className="container" style={{ maxWidth: '820px', padding: '1.5rem 1rem 4rem 1rem' }}>
       {/* Top Navigation & Status Badge */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <button
           type="button"
           onClick={() => navigate('/patient/home')}
@@ -281,11 +286,36 @@ export const EmergencyTrackingPage: React.FC = () => {
             {emergency?.emergencyId}
           </span>
           <Badge variant={isCancelled ? 'neutral' : 'danger'}>{emergency?.status || 'AMBULANCE_EN_ROUTE'}</Badge>
+
+          {/* Prominent Header Cancel Button */}
+          {!isCancelled && (
+            <button
+              type="button"
+              onClick={() => setCancelModalOpen(true)}
+              style={{
+                backgroundColor: '#FEE2E2',
+                color: '#DC2626',
+                border: '1px solid #FECACA',
+                borderRadius: '8px',
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}
+              title="Cancel Emergency SOS"
+            >
+              <XCircle size={14} />
+              <span>Cancel SOS</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Simulation / Live Notification Pill */}
-      {emergency?.isSimulated && (
+      {emergency?.isSimulated && !isCancelled && (
         <div
           style={{
             backgroundColor: '#ECFDF5',
@@ -302,70 +332,112 @@ export const EmergencyTrackingPage: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#065F46', fontSize: '0.8125rem', fontWeight: 700 }}>
             <Sparkles size={16} color="#059669" />
-            <span>LIVE GPS SIMULATION ACTIVE • Tracking Ambulance Unit MH-12-EM-1080</span>
+            <span>LIVE GPS RADAR ACTIVE • Unit MH-12-EM-1080 En Route</span>
           </div>
 
-          <button
-            type="button"
-            onClick={startSosCountdown}
-            style={{
-              backgroundColor: '#DC2626',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '0.375rem 0.875rem',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-            }}
-          >
-            Trigger Real SOS Broadcast
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={startSosCountdown}
+              style={{
+                backgroundColor: '#DC2626',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.375rem 0.875rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Trigger Real SOS
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Main Alert Tracking Banner */}
-      <Card
-        style={{
-          marginBottom: '1.5rem',
-          borderLeft: `6px solid ${isCancelled ? '#94A3B8' : '#DC2626'}`,
-          background: isCancelled ? '#FFFFFF' : 'linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 60%, #EFF6FF 100%)',
-          boxShadow: '0 4px 20px rgba(220, 38, 38, 0.08)',
-        }}
-      >
-        <Card.Body style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-              <div
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '50%',
-                  backgroundColor: '#DC2626',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                className={!isCancelled ? 'animate-sos-pulse' : ''}
-              >
-                <Siren size={26} />
+      {/* Cancelled Banner State */}
+      {isCancelled ? (
+        <div
+          style={{
+            backgroundColor: '#F8FAFC',
+            border: '2px solid #CBD5E1',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            textAlign: 'center',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: '#F1F5F9',
+              color: '#64748B',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem auto',
+            }}
+          >
+            <XCircle size={32} />
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.25rem 0', color: '#334155' }}>
+            Emergency SOS Cancelled & Stood Down
+          </h2>
+          <p style={{ fontSize: '0.8125rem', color: '#64748B', maxWidth: '480px', margin: '0 auto 1.25rem auto' }}>
+            The ambulance unit and hospital emergency trauma desk have been notified that this request was cancelled as a false alarm.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+            <Button variant="outline" onClick={() => navigate('/patient/home')}>
+              Back to Home
+            </Button>
+            <Button variant="danger" onClick={startSosCountdown}>
+              Trigger New Emergency SOS
+            </Button>
+          </div>
+        </div>
+      ) : (
+        /* Main Active Alert Tracking Banner */
+        <Card
+          style={{
+            marginBottom: '1.5rem',
+            borderLeft: '6px solid #DC2626',
+            background: 'linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 60%, #EFF6FF 100%)',
+            boxShadow: '0 4px 20px rgba(220, 38, 38, 0.08)',
+          }}
+        >
+          <Card.Body style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  className="animate-sos-pulse"
+                >
+                  <Siren size={26} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0F172A' }}>
+                    Ambulance Live Tracking Active
+                  </h2>
+                  <span style={{ fontSize: '0.8125rem', color: '#64748B' }}>
+                    Real-time telemetry link synchronized with ambulance dispatch.
+                  </span>
+                </div>
               </div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#0F172A' }}>
-                  {isCancelled ? 'Emergency Alert Cancelled' : 'Ambulance Live Tracking Active'}
-                </h2>
-                <span style={{ fontSize: '0.8125rem', color: '#64748B' }}>
-                  {isCancelled
-                    ? 'This SOS request was resolved or cancelled.'
-                    : 'Real-time telemetry link synchronized with ambulance dispatch.'}
-                </span>
-              </div>
-            </div>
 
-            {/* Quick Share / WhatsApp / Copy Link Actions */}
-            {!isCancelled && (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {/* Action Buttons: WhatsApp Share + Cancel SOS */}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={handleShareWhatsApp}
@@ -385,7 +457,7 @@ export const EmergencyTrackingPage: React.FC = () => {
                   }}
                 >
                   <Share2 size={14} />
-                  <span>Share on WhatsApp</span>
+                  <span>Share WhatsApp</span>
                 </button>
 
                 <button
@@ -409,11 +481,33 @@ export const EmergencyTrackingPage: React.FC = () => {
                   {copiedLink ? <Check size={14} color="#16A34A" /> : <Copy size={14} />}
                   <span>{copiedLink ? 'Copied' : 'Copy'}</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCancelModalOpen(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.5rem 0.875rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)',
+                  }}
+                >
+                  <XCircle size={14} />
+                  <span>Cancel SOS</span>
+                </button>
               </div>
-            )}
-          </div>
-        </Card.Body>
-      </Card>
+            </div>
+          </Card.Body>
+        </Card>
+      )}
 
       {/* Live Interactive GPS Ambulance Radar Map */}
       {!isCancelled && (
@@ -449,353 +543,279 @@ export const EmergencyTrackingPage: React.FC = () => {
       )}
 
       {/* Dispatched Emergency Crew & Vehicle Details Card */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-        {/* Ambulance Unit & Crew Identity Card */}
-        <Card style={{ borderLeft: '5px solid #DC2626', overflow: 'hidden' }}>
-          <div
-            style={{
-              backgroundColor: '#FEF2F2',
-              padding: '0.75rem 1.25rem',
-              borderBottom: '1px solid #FECACA',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#991B1B', fontWeight: 800, fontSize: '0.875rem' }}>
-              <Truck size={18} color="#DC2626" />
-              <span>DISPATCHED AMBULANCE UNIT & EMERGENCY CREW</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#16A34A', fontWeight: 700 }}>
-              <Radio size={14} className="animate-pulse" />
-              <span>LIVE GPS TELEMETRY ACTIVE</span>
-            </div>
-          </div>
-
-          <Card.Body style={{ padding: '1.25rem' }}>
-            {/* Origin & Plate Row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>DISPATCHED FROM BASE:</span>
-                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  <MapPin size={16} color="#DC2626" />
-                  <span>{emergency?.hospital?.name || 'Central District Emergency Trauma Base'}</span>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', marginLeft: '1.25rem' }}>
-                  {emergency?.hospital?.address || 'Main Emergency Corridor'}, {emergency?.hospital?.city || 'Pune'} (Heading towards your GPS)
-                </div>
+      {!isCancelled && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+          {/* Ambulance Unit & Crew Identity Card */}
+          <Card style={{ borderLeft: '5px solid #DC2626', overflow: 'hidden' }}>
+            <div
+              style={{
+                backgroundColor: '#FEF2F2',
+                padding: '0.75rem 1.25rem',
+                borderBottom: '1px solid #FECACA',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#991B1B', fontWeight: 800, fontSize: '0.875rem' }}>
+                <Truck size={18} color="#DC2626" />
+                <span>DISPATCHED AMBULANCE UNIT & EMERGENCY CREW</span>
               </div>
-
-              {/* Realistic Indian Number Plate Badge */}
-              <div
-                style={{
-                  border: '2px solid #0F172A',
-                  borderRadius: '6px',
-                  backgroundColor: '#FFFFFF',
-                  padding: '4px 10px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                }}
-              >
-                <div style={{ borderRight: '1.5px solid #CBD5E1', paddingRight: '6px', fontSize: '0.625rem', fontWeight: 900, color: '#1E3A8A' }}>
-                  IND 🇮🇳
-                </div>
-                <div style={{ fontSize: '1.125rem', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.08em', color: '#0F172A' }}>
-                  {emergency?.ambulanceOperator?.vehicleNumber || 'MH 12 EM 1080'}
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#16A34A', fontWeight: 700 }}>
+                <Radio size={14} className="animate-pulse" />
+                <span>LIVE GPS TELEMETRY ACTIVE</span>
               </div>
             </div>
 
-            {/* Crew Members Grid: Driver + Assistant EMT Paramedic */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-              {/* Primary Driver */}
-              <div
-                style={{
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '12px',
-                  padding: '1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: '#EFF6FF',
-                      color: '#1D4ED8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <User size={20} />
+            <Card.Body style={{ padding: '1.25rem' }}>
+              {/* Origin & Plate Row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>DISPATCHED FROM BASE:</span>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <MapPin size={16} color="#DC2626" />
+                    <span>{emergency?.hospital?.name || 'Central District Emergency Trauma Base'}</span>
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>AMBULANCE PILOT (DRIVER)</div>
-                    <h5 style={{ margin: '1px 0', fontSize: '0.9375rem', fontWeight: 800 }}>
-                      Rajesh Gawande
-                    </h5>
-                    <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600 }}>
-                      📞 {emergency?.ambulanceOperator?.user?.phone || '+91 98444 00001'}
-                    </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', marginLeft: '1.25rem' }}>
+                    {emergency?.hospital?.address || 'Main Emergency Corridor'}, {emergency?.hospital?.city || 'Pune'} (Heading towards your GPS)
                   </div>
                 </div>
 
-                <a
-                  href={`tel:${emergency?.ambulanceOperator?.user?.phone || '+919844400001'}`}
+                {/* Realistic Indian Number Plate Badge */}
+                <div
                   style={{
-                    backgroundColor: '#16A34A',
-                    color: '#FFFFFF',
-                    padding: '0.5rem 0.875rem',
-                    borderRadius: '8px',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textDecoration: 'none',
-                    display: 'flex',
+                    border: '2px solid #0F172A',
+                    borderRadius: '6px',
+                    backgroundColor: '#FFFFFF',
+                    padding: '4px 10px',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.375rem',
-                    boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)',
+                    gap: '0.5rem',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   }}
                 >
-                  <Phone size={14} />
-                  <span>Call Driver</span>
-                </a>
-              </div>
-
-              {/* Assistant EMT / Paramedic */}
-              <div
-                style={{
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '12px',
-                  padding: '1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: '#ECFDF5',
-                      color: '#059669',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Stethoscope size={20} />
+                  <div style={{ borderRight: '1.5px solid #CBD5E1', paddingRight: '6px', fontSize: '0.625rem', fontWeight: 900, color: '#1E3A8A' }}>
+                    IND 🇮🇳
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>EMT ASSISTANT (PARAMEDIC)</div>
-                    <h5 style={{ margin: '1px 0', fontSize: '0.9375rem', fontWeight: 800 }}>
-                      Sanjay Shinde (EMT)
-                    </h5>
-                    <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600 }}>
-                      📞 +91 98444 00002
-                    </div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.08em', color: '#0F172A' }}>
+                    {emergency?.ambulanceOperator?.vehicleNumber || 'MH 12 EM 1080'}
                   </div>
                 </div>
+              </div>
 
-                <a
-                  href="tel:+919844400002"
+              {/* Crew Members Grid: Driver + Assistant EMT Paramedic */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                {/* Primary Driver */}
+                <div
                   style={{
-                    backgroundColor: '#0284C7',
-                    color: '#FFFFFF',
-                    padding: '0.5rem 0.875rem',
-                    borderRadius: '8px',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    textDecoration: 'none',
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '12px',
+                    padding: '1rem',
                     display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '0.375rem',
-                    boxShadow: '0 2px 6px rgba(2, 132, 199, 0.3)',
                   }}
                 >
-                  <Phone size={14} />
-                  <span>Call Assistant</span>
-                </a>
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
-
-        {/* Hospital Emergency Desk Card */}
-        {emergency?.hospital && (
-          <Card>
-            <Card.Body style={{ padding: '1rem 1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <div style={{ padding: '0.625rem', backgroundColor: '#EFF6FF', borderRadius: '8px', color: '#1D4ED8' }}>
-                    <Building2 size={22} />
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: '#EFF6FF',
+                        color: '#1D4ED8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>AMBULANCE PILOT (DRIVER)</div>
+                      <h5 style={{ margin: '1px 0', fontSize: '0.9375rem', fontWeight: 800 }}>
+                        Rajesh Gawande
+                      </h5>
+                      <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600 }}>
+                        📞 {emergency?.ambulanceOperator?.user?.phone || '+91 98444 00001'}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700 }}>{emergency.hospital.name}</h4>
-                    <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                      24x7 Emergency Trauma Center • {emergency.hospital.address}, {emergency.hospital.city}
-                    </span>
-                  </div>
-                </div>
 
-                {emergency.hospital.phone && (
                   <a
-                    href={`tel:${emergency.hospital.phone}`}
-                    className="hs-btn hs-btn-outline hs-btn-sm"
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontWeight: 700 }}
+                    href={`tel:${emergency?.ambulanceOperator?.user?.phone || '+919844400001'}`}
+                    style={{
+                      backgroundColor: '#16A34A',
+                      color: '#FFFFFF',
+                      padding: '0.5rem 0.875rem',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)',
+                    }}
                   >
                     <Phone size={14} />
-                    <span>Call ER Desk</span>
+                    <span>Call Driver</span>
                   </a>
-                )}
+                </div>
+
+                {/* Assistant EMT / Paramedic */}
+                <div
+                  style={{
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ECFDF5',
+                        color: '#059669',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Stethoscope size={20} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>EMT ASSISTANT (PARAMEDIC)</div>
+                      <h5 style={{ margin: '1px 0', fontSize: '0.9375rem', fontWeight: 800 }}>
+                        Sanjay Shinde (EMT)
+                      </h5>
+                      <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600 }}>
+                        📞 +91 98444 00002
+                      </div>
+                    </div>
+                  </div>
+
+                  <a
+                    href="tel:+919844400002"
+                    style={{
+                      backgroundColor: '#0284C7',
+                      color: '#FFFFFF',
+                      padding: '0.5rem 0.875rem',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      boxShadow: '0 2px 6px rgba(2, 132, 199, 0.3)',
+                    }}
+                  >
+                    <Phone size={14} />
+                    <span>Call Assistant</span>
+                  </a>
+                </div>
               </div>
             </Card.Body>
           </Card>
-        )}
-      </div>
 
-      {/* Emergency Status Stepper */}
-      <Card style={{ marginBottom: '1.5rem' }}>
-        <Card.Header>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Clock size={18} color="#1A56DB" />
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Live Response Timeline</h3>
-          </div>
-        </Card.Header>
-
-        <Card.Body style={{ padding: '1rem 1.25rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {STEPS.slice(0, 7).map((step, idx) => {
-              const isPast = currentStepIdx >= idx;
-              const isCurrent = currentStepIdx === idx;
-
-              return (
-                <div key={step.status} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      backgroundColor: isPast ? '#16A34A' : '#E2E8F0',
-                      color: isPast ? '#FFFFFF' : '#94A3B8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.75rem',
-                      fontWeight: 800,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {isPast ? '✓' : idx + 1}
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: '0.875rem',
-                        fontWeight: isCurrent ? 800 : isPast ? 600 : 400,
-                        color: isCurrent ? '#DC2626' : isPast ? '#0F172A' : '#94A3B8',
-                      }}
-                    >
-                      {step.label}
+          {/* Hospital Emergency Desk Card */}
+          {emergency?.hospital && (
+            <Card>
+              <Card.Body style={{ padding: '1rem 1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div style={{ padding: '0.625rem', backgroundColor: '#EFF6FF', borderRadius: '8px', color: '#1D4ED8' }}>
+                      <Building2 size={22} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700 }}>{emergency.hospital.name}</h4>
+                      <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                        24x7 Emergency Trauma Center • {emergency.hospital.address}, {emergency.hospital.city}
+                      </span>
                     </div>
                   </div>
+
+                  {emergency.hospital.phone && (
+                    <a
+                      href={`tel:${emergency.hospital.phone}`}
+                      className="hs-btn hs-btn-outline hs-btn-sm"
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontWeight: 700 }}
+                    >
+                      <Phone size={14} />
+                      <span>Call ER Desk</span>
+                    </a>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        </Card.Body>
-      </Card>
+              </Card.Body>
+            </Card>
+          )}
+        </div>
+      )}
 
-      {/* National 24x7 Emergency Hotlines */}
-      <h3 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '1rem', color: '#0F172A' }}>
-        Emergency Direct Hotlines
-      </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <a
-          href="tel:108"
-          style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            textDecoration: 'none',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#DC2626' }}>NATIONAL AMBULANCE</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#0F172A' }}>Dial 108</div>
-            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Toll-Free Emergency Response</div>
-          </div>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FEE2E2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Phone size={20} />
-          </div>
-        </a>
+      {/* Emergency Status Stepper */}
+      {!isCancelled && (
+        <Card style={{ marginBottom: '1.5rem' }}>
+          <Card.Header>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Clock size={18} color="#1A56DB" />
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Live Response Timeline</h3>
+            </div>
+          </Card.Header>
 
-        <a
-          href="tel:102"
-          style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            textDecoration: 'none',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#0284C7' }}>MATERNAL & INFANT SOS</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#0F172A' }}>Dial 102</div>
-            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Free Neonatal & Pregnant Care</div>
-          </div>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#E0F2FE', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Phone size={20} />
-          </div>
-        </a>
+          <Card.Body style={{ padding: '1rem 1.25rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {STEPS.slice(0, 7).map((step, idx) => {
+                const isPast = currentStepIdx >= idx;
+                const isCurrent = currentStepIdx === idx;
 
-        <a
-          href="tel:112"
-          style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            textDecoration: 'none',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#16A34A' }}>ALL-IN-ONE DISASTER SOS</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#0F172A' }}>Dial 112</div>
-            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>National Unified Response</div>
-          </div>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Phone size={20} />
-          </div>
-        </a>
-      </div>
+                return (
+                  <div key={step.status} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                    <div
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        backgroundColor: isPast ? '#16A34A' : '#E2E8F0',
+                        color: isPast ? '#FFFFFF' : '#94A3B8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isPast ? '✓' : idx + 1}
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: '0.875rem',
+                          fontWeight: isCurrent ? 800 : isPast ? 600 : 400,
+                          color: isCurrent ? '#DC2626' : isPast ? '#0F172A' : '#94A3B8',
+                        }}
+                      >
+                        {step.label}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card.Body>
+        </Card>
+      )}
 
       {/* Safety & First Aid Advice */}
       <Card style={{ marginBottom: '1.5rem', backgroundColor: '#F8FAFC' }}>
@@ -813,27 +833,100 @@ export const EmergencyTrackingPage: React.FC = () => {
         </Card.Body>
       </Card>
 
-      {/* Cancel Action if False Alarm */}
+      {/* Cancel Action Button at Bottom */}
       {!isCancelled && (
-        <div style={{ textAlign: 'center' }}>
-          <Button variant="ghost" size="sm" onClick={() => setCancelModalOpen(true)} style={{ color: '#DC2626' }}>
-            False Alarm? Cancel Emergency
-          </Button>
+        <div
+          style={{
+            backgroundColor: '#FFF1F2',
+            border: '1px solid #FECDD3',
+            borderRadius: '12px',
+            padding: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertTriangle size={20} color="#E11D48" />
+            <div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#9F1239' }}>Triggered by Mistake?</div>
+              <div style={{ fontSize: '0.75rem', color: '#BE123C' }}>Recall the ambulance immediately to prevent false emergency dispatch.</div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setCancelModalOpen(true)}
+            style={{
+              backgroundColor: '#E11D48',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '0.5rem 1.25rem',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(225, 29, 72, 0.3)',
+            }}
+          >
+            Cancel SOS Alert
+          </button>
         </div>
       )}
 
-      {/* Cancel Confirmation Modal */}
+      {/* Cancel Confirmation Modal with Reason Selection */}
       <Modal isOpen={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title="Cancel Emergency SOS?">
-        <p style={{ fontSize: '0.875rem', color: '#64748B' }}>
-          Are you sure you want to recall the ambulance dispatch and cancel this emergency request?
-        </p>
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
-          <Button variant="outline" onClick={() => setCancelModalOpen(false)} style={{ flex: 1 }}>
-            No, Keep Active
-          </Button>
-          <Button variant="danger" isLoading={cancelling} onClick={handleCancelEmergency} style={{ flex: 1 }}>
-            Yes, Cancel SOS
-          </Button>
+        <div style={{ padding: '0.5rem 0' }}>
+          <p style={{ fontSize: '0.875rem', color: '#64748B', marginTop: 0 }}>
+            Select the reason for cancelling this emergency dispatch:
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            {[
+              'Accidental Trigger / False Alarm',
+              'Patient Condition Stabilized / Recovered',
+              'Arranged Alternate Private Transport',
+              'Other Emergency Resolution',
+            ].map((r) => (
+              <label
+                key={r}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 0.75rem',
+                  borderRadius: '8px',
+                  border: `1px solid ${cancelReason === r ? '#DC2626' : '#E2E8F0'}`,
+                  backgroundColor: cancelReason === r ? '#FEF2F2' : '#FFFFFF',
+                  cursor: 'pointer',
+                  fontSize: '0.8125rem',
+                  fontWeight: cancelReason === r ? 700 : 500,
+                  color: cancelReason === r ? '#991B1B' : '#334155',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="cancelReason"
+                  checked={cancelReason === r}
+                  onChange={() => setCancelReason(r)}
+                  style={{ accentColor: '#DC2626' }}
+                />
+                <span>{r}</span>
+              </label>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <Button variant="outline" onClick={() => setCancelModalOpen(false)} style={{ flex: 1 }}>
+              Keep SOS Active
+            </Button>
+            <Button variant="danger" isLoading={cancelling} onClick={handleCancelEmergency} style={{ flex: 1 }}>
+              Yes, Cancel Emergency
+            </Button>
+          </div>
         </div>
       </Modal>
 
