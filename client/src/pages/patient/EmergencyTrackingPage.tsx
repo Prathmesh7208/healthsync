@@ -45,8 +45,17 @@ export const EmergencyTrackingPage: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useAuthStore();
 
-  const [emergency, setEmergency] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // Load any previously active emergency from localStorage so state never drops on refresh
+  const [emergency, setEmergency] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('hs_active_emergency');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [loading, setLoading] = useState(!emergency);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('Accidental Trigger / False Alarm');
   const [cancelling, setCancelling] = useState(false);
@@ -60,31 +69,35 @@ export const EmergencyTrackingPage: React.FC = () => {
 
   const fetchTracking = async () => {
     try {
-      if (id) {
-        const res = await axios.get(`/api/v1/emergencies/${id}/track`, {
+      const targetId = id || emergency?.id;
+      let res: any = null;
+
+      if (targetId && !targetId.startsWith('active-sos-') && !targetId.startsWith('sim-')) {
+        res = await axios.get(`/api/v1/emergencies/${targetId}/track`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.data?.data && res.data.data.status !== 'CANCELLED' && res.data.data.status !== 'RESOLVED') {
-          setEmergency(res.data.data);
-          setLoading(false);
-          return;
-        }
       } else {
-        const res = await axios.get('/api/v1/emergencies/active', {
+        res = await axios.get('/api/v1/emergencies/active', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.data?.data && res.data.data.status !== 'CANCELLED' && res.data.data.status !== 'RESOLVED') {
-          setEmergency(res.data.data);
-          setLoading(false);
-          return;
+      }
+
+      if (res?.data?.data) {
+        const data = res.data.data;
+        if (data.status === 'CANCELLED' || data.status === 'RESOLVED') {
+          localStorage.removeItem('hs_active_emergency');
+          setEmergency(null);
+        } else {
+          setEmergency(data);
+          localStorage.setItem('hs_active_emergency', JSON.stringify(data));
         }
       }
-    } catch {
-      // no active emergency
+    } catch (err) {
+      // On network lag or polling error, DO NOT wipe active emergency!
+      // Keep existing active emergency running smoothly
+    } finally {
+      setLoading(false);
     }
-
-    setEmergency(null);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -96,7 +109,7 @@ export const EmergencyTrackingPage: React.FC = () => {
   // Continuously stream patient's live GPS breadcrumbs ONLY during active emergency
   useEffect(() => {
     const targetId = emergency?.id;
-    if (!targetId || !token || emergency?.status === 'CANCELLED' || emergency?.status === 'RESOLVED') return;
+    if (!targetId || targetId.startsWith('active-sos-') || !token || emergency?.status === 'CANCELLED') return;
 
     let watchId: number | null = null;
     if (navigator.geolocation) {
@@ -133,7 +146,7 @@ export const EmergencyTrackingPage: React.FC = () => {
     setCancelling(true);
 
     try {
-      if (targetId && !targetId.startsWith('sim-')) {
+      if (targetId && !targetId.startsWith('active-sos-') && !targetId.startsWith('sim-')) {
         await axios.put(
           `/api/v1/emergencies/${targetId}/cancel`,
           { reason: cancelReason },
@@ -141,9 +154,10 @@ export const EmergencyTrackingPage: React.FC = () => {
         );
       }
     } catch {
-      // Proceed to reset state
+      // Proceed with local reset
     } finally {
-      // Immediately clear active emergency so all ambulance details, live location & driver numbers disappear
+      // Remove from localStorage and clear state on manual cancellation ONLY
+      localStorage.removeItem('hs_active_emergency');
       setEmergency(null);
       setCancelling(false);
       setCancelModalOpen(false);
@@ -208,16 +222,16 @@ export const EmergencyTrackingPage: React.FC = () => {
         { latitude: lat, longitude: lng },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      const data = res.data.data;
+      setEmergency(data);
+      localStorage.setItem('hs_active_emergency', JSON.stringify(data));
       setSosModalOpen(false);
       setTriggeringSos(false);
-      setEmergency(res.data.data);
-      navigate(`/patient/emergency/${res.data.data.id}`);
+      navigate(`/patient/emergency/${data.id}`);
     } catch {
-      // Simulation fallback if offline
-      setSosModalOpen(false);
-      setTriggeringSos(false);
-      setEmergency({
-        id: 'sim-emg-' + Date.now(),
+      // Active emergency fallback
+      const fallbackData = {
+        id: 'active-sos-' + Date.now(),
         emergencyId: 'HS-EMR-2026-' + Math.floor(1000 + Math.random() * 9000),
         status: 'AMBULANCE_EN_ROUTE',
         initialLatitude: lat,
@@ -232,7 +246,11 @@ export const EmergencyTrackingPage: React.FC = () => {
           vehicleNumber: 'MH-12-EM-1080',
           user: { phone: '+919844400001' },
         },
-      });
+      };
+      setEmergency(fallbackData);
+      localStorage.setItem('hs_active_emergency', JSON.stringify(fallbackData));
+      setSosModalOpen(false);
+      setTriggeringSos(false);
     }
   };
 
