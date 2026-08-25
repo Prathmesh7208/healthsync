@@ -151,10 +151,10 @@ export const HomePage: React.FC = () => {
           </div>
           <div>
             <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#991B1B' }}>
-              Emergency SOS & Live Ambulance Radar
+              {t('emergencyBanner.title')}
             </h4>
             <p style={{ margin: '2px 0 0 0', fontSize: '0.8125rem', color: '#B91C1C' }}>
-              Instant GPS dispatch, 24x7 trauma desk, and real-time ambulance tracking HUD
+              {t('emergencyBanner.subtitle')}
             </p>
           </div>
         </div>
@@ -173,7 +173,7 @@ export const HomePage: React.FC = () => {
             flexShrink: 0,
           }}
         >
-          Open Radar
+          {t('emergencyBanner.openRadar')}
         </button>
       </div>
 

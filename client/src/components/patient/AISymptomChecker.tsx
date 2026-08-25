@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Sparkles,
   Search,
@@ -18,19 +19,20 @@ interface TriageResult {
 }
 
 export const AISymptomChecker: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [inputSymptoms, setInputSymptoms] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<TriageResult | null>(null);
 
   const quickSymptoms = [
-    'Chest Pain & Sweating',
-    'High Fever with Shivering',
-    'Severe Knee & Joint Pain',
-    'Itchy Red Skin Rash',
-    'Severe Headache & Nausea',
-    'Child Cough & Wheezing',
-    'Acid Reflux & Stomach Burn',
+    { key: 'chestPain', label: t('triage.symptoms.chestPain'), query: 'chest pain' },
+    { key: 'fever', label: t('triage.symptoms.fever'), query: 'high fever shivering' },
+    { key: 'jointPain', label: t('triage.symptoms.jointPain'), query: 'knee joint pain' },
+    { key: 'skinRash', label: t('triage.symptoms.skinRash'), query: 'itchy skin rash' },
+    { key: 'headache', label: t('triage.symptoms.headache'), query: 'severe headache nausea' },
+    { key: 'cough', label: t('triage.symptoms.cough'), query: 'child cough wheezing' },
+    { key: 'acidReflux', label: t('triage.symptoms.acidReflux'), query: 'acid reflux stomach' },
   ];
 
   const handleAnalyze = (symptomText?: string) => {
@@ -45,20 +47,22 @@ export const AISymptomChecker: React.FC = () => {
 
       // Clinical Triage Rules
       if (
-        text.includes('chest pain') ||
-        text.includes('sweating') ||
-        text.includes('left arm') ||
+        text.includes('chest') ||
+        text.includes('छाती') ||
+        text.includes('sweat') ||
+        text.includes('घाम') ||
+        text.includes('पसीना') ||
         text.includes('unconscious') ||
         text.includes('stroke') ||
         text.includes('breathless') ||
-        text.includes('heavy bleeding')
+        text.includes('bleeding')
       ) {
         setResult({
           isEmergency: true,
           recommendedSpecialty: 'Cardiology / Emergency Trauma',
           conditionPossibilities: ['Acute Coronary Syndrome', 'Myocardial Infarction', 'Cardiac Arrhythmia'],
           urgencyLevel: 'EMERGENCY',
-          clinicalAdvice: 'Critical Red Flag: Potential cardiac emergency. Do not delay. Dispatch an Emergency SOS ambulance immediately or visit the nearest 24x7 hospital ER.',
+          clinicalAdvice: t('triage.result.emergencyAlert'),
           searchKeyword: 'Cardiology',
         });
       } else if (
@@ -66,15 +70,17 @@ export const AISymptomChecker: React.FC = () => {
         text.includes('joint') ||
         text.includes('bone') ||
         text.includes('fracture') ||
-        text.includes('back pain') ||
-        text.includes('sprain')
+        text.includes('back') ||
+        text.includes('गुडघे') ||
+        text.includes('सांधे') ||
+        text.includes('घुटने')
       ) {
         setResult({
           isEmergency: false,
           recommendedSpecialty: 'Orthopedics',
           conditionPossibilities: ['Osteoarthritis', 'Ligament Strain', 'Lumbar Spondylosis'],
           urgencyLevel: 'ROUTINE',
-          clinicalAdvice: 'Symptoms point to musculoskeletal inflammation or joint wear. An orthopedic physical exam and digital X-Ray are advised.',
+          clinicalAdvice: t('triage.result.routineAlert'),
           searchKeyword: 'Orthopedics',
         });
       } else if (
@@ -82,14 +88,16 @@ export const AISymptomChecker: React.FC = () => {
         text.includes('baby') ||
         text.includes('infant') ||
         text.includes('pediatric') ||
-        text.includes('vaccin')
+        text.includes('लहान') ||
+        text.includes('बाळ') ||
+        text.includes('बच्चे')
       ) {
         setResult({
           isEmergency: false,
           recommendedSpecialty: 'Pediatrics',
           conditionPossibilities: ['Pediatric Viral Infection', 'Childhood Bronchitis', 'Growth Check'],
           urgencyLevel: 'ROUTINE',
-          clinicalAdvice: 'Consult a qualified pediatrician for infant vitals assessment, pediatric dosing, and immunization reviews.',
+          clinicalAdvice: t('triage.result.routineAlert'),
           searchKeyword: 'Pediatrics',
         });
       } else if (
@@ -97,15 +105,17 @@ export const AISymptomChecker: React.FC = () => {
         text.includes('rash') ||
         text.includes('itch') ||
         text.includes('acne') ||
-        text.includes('hair') ||
-        text.includes('allergy')
+        text.includes('त्वचा') ||
+        text.includes('पुरळ') ||
+        text.includes('खाज') ||
+        text.includes('खुजली')
       ) {
         setResult({
           isEmergency: false,
           recommendedSpecialty: 'Dermatology',
           conditionPossibilities: ['Allergic Contact Dermatitis', 'Eczema Flare-up', 'Fungal Infection'],
           urgencyLevel: 'ROUTINE',
-          clinicalAdvice: 'Avoid topical steroid self-medication. A dermatologist evaluation will pinpoint the exact allergic or fungal etiology.',
+          clinicalAdvice: t('triage.result.routineAlert'),
           searchKeyword: 'Dermatology',
         });
       } else if (
@@ -113,60 +123,77 @@ export const AISymptomChecker: React.FC = () => {
         text.includes('acid') ||
         text.includes('reflux') ||
         text.includes('vomit') ||
-        text.includes('liver') ||
-        text.includes('diarrhea')
+        text.includes('पोट') ||
+        text.includes('जळजळ') ||
+        text.includes('एसिडिटी') ||
+        text.includes('पेट')
       ) {
         setResult({
           isEmergency: false,
           recommendedSpecialty: 'Gastroenterology',
-          conditionPossibilities: ['GERD (Gastroesophageal Reflux)', 'Acute Gastritis', 'Irritable Bowel'],
+          conditionPossibilities: ['GERD (Acid Reflux)', 'Acute Gastritis', 'Dyspepsia'],
           urgencyLevel: 'ROUTINE',
-          clinicalAdvice: 'Maintain light hydration and avoid spicy meals. A gastroenterology consultation is recommended for gastrointestinal evaluation.',
+          clinicalAdvice: t('triage.result.routineAlert'),
           searchKeyword: 'Gastroenterology',
+        });
+      } else if (
+        text.includes('eye') ||
+        text.includes('vision') ||
+        text.includes('blind') ||
+        text.includes('डोळे') ||
+        text.includes('आँख')
+      ) {
+        setResult({
+          isEmergency: false,
+          recommendedSpecialty: 'Ophthalmology',
+          conditionPossibilities: ['Conjunctivitis', 'Refractive Error', 'Dry Eye Syndrome'],
+          urgencyLevel: 'ROUTINE',
+          clinicalAdvice: t('triage.result.routineAlert'),
+          searchKeyword: 'Ophthalmology',
         });
       } else if (
         text.includes('headache') ||
         text.includes('migraine') ||
         text.includes('dizzy') ||
-        text.includes('seizure') ||
-        text.includes('numbness')
+        text.includes('डोकेदुखी') ||
+        text.includes('सिरदर्द')
       ) {
         setResult({
           isEmergency: false,
           recommendedSpecialty: 'Neurology',
-          conditionPossibilities: ['Migraine with Aura', 'Tension Headache', 'Cervical Radiculopathy'],
+          conditionPossibilities: ['Tension Headache', 'Migraine with Aura', 'Cervicogenic Headache'],
           urgencyLevel: 'URGENT',
-          clinicalAdvice: 'Neurological evaluation recommended if headaches are recurrent or associated with visual auras, nausea, or localized tingling.',
+          clinicalAdvice: t('triage.result.urgentAlert'),
           searchKeyword: 'Neurology',
         });
       } else {
         setResult({
           isEmergency: false,
-          recommendedSpecialty: 'General Medicine / Internal Medicine',
-          conditionPossibilities: ['Viral Febrile Illness', 'Upper Respiratory Tract Infection', 'General Malaise'],
+          recommendedSpecialty: 'General Physician',
+          conditionPossibilities: ['Viral Syndrome', 'General Fatigue', 'Routine Checkup Required'],
           urgencyLevel: 'ROUTINE',
-          clinicalAdvice: 'General physical examination by a physician will help assess vitals, prescribe appropriate medications, and order baseline blood work.',
-          searchKeyword: 'General Medicine',
+          clinicalAdvice: t('triage.result.routineAlert'),
+          searchKeyword: 'General Physician',
         });
       }
-    }, 900);
+    }, 600);
   };
 
   return (
     <div
       style={{
         backgroundColor: '#FFFFFF',
+        border: '1px solid #CCFBF1',
         borderRadius: '16px',
-        border: '1px solid #E2E8F0',
-        padding: '1.5rem',
+        padding: '1.25rem',
         marginBottom: '1.75rem',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-        background: 'linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 60%, #EFF6FF 100%)',
+        background: 'linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 50%, #EFF6FF 100%)',
+        boxShadow: '0 4px 14px rgba(13, 148, 136, 0.08)',
       }}
     >
-      {/* Banner Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div
             style={{
               width: '36px',
@@ -185,7 +212,7 @@ export const AISymptomChecker: React.FC = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#0F172A' }}>
-                AI Clinical Symptom Triage
+                {t('triage.title')}
               </h3>
               <span
                 style={{
@@ -198,11 +225,11 @@ export const AISymptomChecker: React.FC = () => {
                   border: '1px solid #BBF7D0',
                 }}
               >
-                SMART TRIAGE
+                {t('triage.badge')}
               </span>
             </div>
             <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#64748B' }}>
-              Describe your symptoms naturally to get instant specialty recommendations and matched doctors.
+              {t('triage.subtitle')}
             </p>
           </div>
         </div>
@@ -214,7 +241,7 @@ export const AISymptomChecker: React.FC = () => {
           <Search size={18} style={{ position: 'absolute', left: '1rem', color: '#94A3B8' }} />
           <input
             type="text"
-            placeholder="e.g. Sharp pain in lower back after lifting weights, fever with shivering..."
+            placeholder={t('triage.placeholder')}
             value={inputSymptoms}
             onChange={(e) => setInputSymptoms(e.target.value)}
             onKeyDown={(e) => {
@@ -254,22 +281,22 @@ export const AISymptomChecker: React.FC = () => {
           }}
         >
           <Sparkles size={16} />
-          <span>{analyzing ? 'Analyzing...' : 'Analyze'}</span>
+          <span>{analyzing ? t('triage.analyzing') : t('triage.analyze')}</span>
         </button>
       </div>
 
       {/* Quick Clickable Symptom Pills */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
         <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', marginRight: '4px' }}>
-          Popular Symptoms:
+          {t('triage.popularSymptoms')}
         </span>
         {quickSymptoms.map((qs) => (
           <button
-            key={qs}
+            key={qs.key}
             type="button"
             onClick={() => {
-              setInputSymptoms(qs);
-              handleAnalyze(qs);
+              setInputSymptoms(qs.label);
+              handleAnalyze(qs.query);
             }}
             style={{
               backgroundColor: '#FFFFFF',
@@ -278,113 +305,148 @@ export const AISymptomChecker: React.FC = () => {
               padding: '3px 10px',
               fontSize: '0.75rem',
               color: '#475569',
+              fontWeight: 600,
               cursor: 'pointer',
-              fontWeight: 500,
-              transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
             }}
           >
-            {qs}
+            {qs.label}
           </button>
         ))}
       </div>
 
-      {/* TRIAGE RESULTS PANEL */}
+      {/* AI Triage Analysis Result Card */}
       {result && (
         <div
           style={{
             marginTop: '1.25rem',
-            backgroundColor: result.isEmergency ? '#FEF2F2' : '#F8FAFC',
-            border: `1px solid ${result.isEmergency ? '#FECACA' : '#BFDBFE'}`,
-            borderRadius: '12px',
+            backgroundColor: result.isEmergency ? '#FEF2F2' : '#FFFFFF',
+            border: `1.5px solid ${result.isEmergency ? '#FECACA' : '#99F6E4'}`,
+            borderRadius: '14px',
             padding: '1.25rem',
-            animation: 'fadeIn 0.2s ease',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            animation: 'fadeIn 0.25s ease-in-out',
           }}
         >
-          {result.isEmergency ? (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DC2626', fontWeight: 800, fontSize: '1rem', marginBottom: '0.5rem' }}>
-                <Siren size={22} className="animate-pulse" />
-                <span>EMERGENCY ALERT: IMMEDIATE ACTION REQUIRED</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: result.isEmergency ? '#DC2626' : '#0D9488',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {result.isEmergency ? <Siren size={18} /> : <Stethoscope size={18} />}
               </div>
-              <p style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#991B1B' }}>
-                {result.clinicalAdvice}
-              </p>
+              <div>
+                <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: result.isEmergency ? '#DC2626' : '#0D9488' }}>
+                  {t('triage.result.recommendedSpecialty').toUpperCase()}
+                </span>
+                <h4 style={{ margin: '1px 0', fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>
+                  {result.recommendedSpecialty}
+                </h4>
+              </div>
+            </div>
+
+            <span
+              style={{
+                backgroundColor: result.isEmergency ? '#FEE2E2' : result.urgencyLevel === 'URGENT' ? '#FEF3C7' : '#DCFCE7',
+                color: result.isEmergency ? '#991B1B' : result.urgencyLevel === 'URGENT' ? '#92400E' : '#166534',
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                fontSize: '0.6875rem',
+                fontWeight: 800,
+                border: `1px solid ${result.isEmergency ? '#FECACA' : result.urgencyLevel === 'URGENT' ? '#FDE68A' : '#BBF7D0'}`,
+              }}
+            >
+              {result.urgencyLevel}
+            </span>
+          </div>
+
+          <p style={{ margin: '0 0 0.875rem 0', fontSize: '0.8125rem', color: '#334155', lineHeight: 1.45 }}>
+            {result.clinicalAdvice}
+          </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>
+              {t('triage.result.differentialDiagnosis')}:
+            </span>
+            {result.conditionPossibilities.map((cp) => (
+              <span
+                key={cp}
+                style={{
+                  backgroundColor: '#F1F5F9',
+                  color: '#475569',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.6875rem',
+                  fontWeight: 600,
+                }}
+              >
+                {cp}
+              </span>
+            ))}
+          </div>
+
+          {/* Action Callouts */}
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {result.isEmergency ? (
               <button
                 type="button"
-                onClick={() => {
-                  const sosBtn = document.querySelector('[data-sos-button]') as HTMLElement;
-                  if (sosBtn) sosBtn.click();
-                  else navigate('/patient/home');
-                }}
+                onClick={() => navigate('/patient/emergency')}
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
+                  flex: 1,
                   backgroundColor: '#DC2626',
                   color: '#FFFFFF',
                   border: 'none',
-                  padding: '0.625rem 1.25rem',
                   borderRadius: '8px',
+                  padding: '0.625rem 1rem',
+                  fontSize: '0.8125rem',
                   fontWeight: 800,
-                  fontSize: '0.875rem',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.375rem',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
                 }}
               >
                 <Siren size={16} />
-                <span>ACTIVATE EMERGENCY SOS DISPATCH NOW</span>
+                <span>{t('triage.result.callAmbulanceBtn')}</span>
               </button>
-            </div>
-          ) : (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Stethoscope size={20} color="#1A56DB" />
-                  <div>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1E40AF' }}>RECOMMENDED MEDICAL SPECIALTY</span>
-                    <h4 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#0F172A' }}>
-                      {result.recommendedSpecialty}
-                    </h4>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => navigate(`/patient/doctors?specialization=${encodeURIComponent(result.searchKeyword)}`)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem',
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#1A56DB',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '0.8125rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(26, 86, 219, 0.25)',
-                  }}
-                >
-                  <span>View Matched Doctors</span>
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-
-              <div style={{ fontSize: '0.8125rem', color: '#475569', marginBottom: '0.625rem' }}>
-                {result.clinicalAdvice}
-              </div>
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700 }}>Clinical Indications:</span>
-                {result.conditionPossibilities.map((c, i) => (
-                  <span key={i} style={{ backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate(`/patient/doctors?specialization=${encodeURIComponent(result.searchKeyword)}`)}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#0D9488',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.625rem 1rem',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.375rem',
+                  boxShadow: '0 4px 12px rgba(13, 148, 136, 0.25)',
+                }}
+              >
+                <Stethoscope size={16} />
+                <span>{t('triage.result.bookDoctorBtn')}</span>
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

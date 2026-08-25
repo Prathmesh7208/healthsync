@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import {
   Siren,
@@ -28,22 +29,23 @@ import Modal from '../../components/ui/Modal';
 import LiveAmbulanceRadarMap from '../../components/emergency/LiveAmbulanceRadarMap';
 import { playEmergencySiren } from '../../utils/audioAlert';
 
-const STEPS = [
-  { status: 'INITIATED', label: 'SOS Alert Transmitted to Hospital' },
-  { status: 'ACKNOWLEDGED', label: 'Hospital Emergency Desk Acknowledged' },
-  { status: 'AMBULANCE_ASSIGNED', label: 'Ambulance Unit Dispatched' },
-  { status: 'AMBULANCE_EN_ROUTE', label: 'Ambulance En Route to Your GPS' },
-  { status: 'ARRIVED_AT_PATIENT', label: 'Ambulance Arrived at Your Location' },
-  { status: 'PATIENT_PICKED_UP', label: 'Patient Secured in Ambulance' },
-  { status: 'EN_ROUTE_TO_HOSPITAL', label: 'En Route to Hospital Emergency Room' },
-  { status: 'ARRIVED_AT_HOSPITAL', label: 'Arrived at Hospital Emergency Desk' },
-  { status: 'RESOLVED', label: 'Emergency Response Complete' },
-];
-
 export const EmergencyTrackingPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useAuthStore();
+
+  const STEPS = [
+    { status: 'INITIATED', label: t('emergency.hospitalNotified') || 'SOS Alert Transmitted to Hospital' },
+    { status: 'ACKNOWLEDGED', label: t('emergency.hospitalNotified') || 'Hospital Emergency Desk Acknowledged' },
+    { status: 'AMBULANCE_ASSIGNED', label: t('emergency.ambulanceAssigned') || 'Ambulance Unit Dispatched' },
+    { status: 'AMBULANCE_EN_ROUTE', label: t('emergency.enRoute') || 'Ambulance En Route to Your GPS' },
+    { status: 'ARRIVED_AT_PATIENT', label: t('emergency.arrived') || 'Ambulance Arrived at Your Location' },
+    { status: 'PATIENT_PICKED_UP', label: 'Patient Secured in Ambulance' },
+    { status: 'EN_ROUTE_TO_HOSPITAL', label: 'En Route to Hospital Emergency Room' },
+    { status: 'ARRIVED_AT_HOSPITAL', label: 'Arrived at Hospital Emergency Desk' },
+    { status: 'RESOLVED', label: 'Emergency Response Complete' },
+  ];
 
   // Load any previously active emergency from localStorage so state never drops on refresh
   const [emergency, setEmergency] = useState<any>(() => {
@@ -57,7 +59,7 @@ export const EmergencyTrackingPage: React.FC = () => {
 
   const [loading, setLoading] = useState(!emergency);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState('Accidental Trigger / False Alarm');
+  const [cancelReason, setCancelReason] = useState(t('emergencyTracking.reasons.accidental'));
   const [cancelling, setCancelling] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [justCancelled, setJustCancelled] = useState(false);
@@ -93,8 +95,7 @@ export const EmergencyTrackingPage: React.FC = () => {
         }
       }
     } catch (err) {
-      // On network lag or polling error, DO NOT wipe active emergency!
-      // Keep existing active emergency running smoothly
+      // Keep state intact
     } finally {
       setLoading(false);
     }
@@ -106,7 +107,7 @@ export const EmergencyTrackingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [id, token]);
 
-  // Continuously stream patient's live GPS breadcrumbs ONLY during active emergency
+  // Stream patient live GPS
   useEffect(() => {
     const targetId = emergency?.id;
     if (!targetId || targetId.startsWith('active-sos-') || !token || emergency?.status === 'CANCELLED') return;
@@ -154,9 +155,8 @@ export const EmergencyTrackingPage: React.FC = () => {
         );
       }
     } catch {
-      // Proceed with local reset
+      // Continue reset
     } finally {
-      // Remove from localStorage and clear state on manual cancellation ONLY
       localStorage.removeItem('hs_active_emergency');
       setEmergency(null);
       setCancelling(false);
@@ -180,7 +180,6 @@ export const EmergencyTrackingPage: React.FC = () => {
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
-  // Launch SOS Countdown
   const startSosCountdown = () => {
     setJustCancelled(false);
     setCountdown(5);
@@ -229,7 +228,6 @@ export const EmergencyTrackingPage: React.FC = () => {
       setTriggeringSos(false);
       navigate(`/patient/emergency/${data.id}`);
     } catch {
-      // Active emergency fallback
       const fallbackData = {
         id: 'active-sos-' + Date.now(),
         emergencyId: 'HS-EMR-2026-' + Math.floor(1000 + Math.random() * 9000),
@@ -264,8 +262,7 @@ export const EmergencyTrackingPage: React.FC = () => {
   }
 
   // =========================================================================
-  // CASE 1: NO ACTIVE EMERGENCY (OR CANCELLED) -> CLEAN READY STAND-DOWN HUB
-  // (No ambulance radar, no number plate, no driver number, no live location)
+  // CASE 1: NO ACTIVE EMERGENCY -> READY HUB
   // =========================================================================
   if (!emergency) {
     return (
@@ -288,7 +285,7 @@ export const EmergencyTrackingPage: React.FC = () => {
             }}
           >
             <ArrowLeft size={18} />
-            <span>Home</span>
+            <span>{t('nav.home')}</span>
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#16A34A', fontSize: '0.75rem', fontWeight: 800 }}>
@@ -297,7 +294,7 @@ export const EmergencyTrackingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Just Cancelled Success Alert Banner */}
+        {/* Just Cancelled Alert Banner */}
         {justCancelled && (
           <div
             style={{
@@ -317,16 +314,16 @@ export const EmergencyTrackingPage: React.FC = () => {
             </div>
             <div>
               <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#065F46' }}>
-                Emergency SOS Cancelled & Stood Down
+                {t('emergencyTracking.cancelledBannerTitle')}
               </h4>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.8125rem', color: '#047857' }}>
-                The hospital emergency desk and ambulance unit have been safely notified. All live tracking is stopped.
+                {t('emergencyTracking.cancelledBannerDesc')}
               </p>
             </div>
           </div>
         )}
 
-        {/* Hero Emergency SOS Trigger Banner */}
+        {/* Hero SOS Trigger Banner */}
         <div
           style={{
             background: 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 40%, #EFF6FF 100%)',
@@ -357,10 +354,10 @@ export const EmergencyTrackingPage: React.FC = () => {
           </div>
 
           <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#991B1B', margin: '0 0 0.375rem 0' }}>
-            Emergency SOS Response
+            {t('emergencyTracking.readyTitle')}
           </h1>
           <p style={{ fontSize: '0.875rem', color: '#64748B', maxWidth: '480px', margin: '0 auto 1.5rem auto', lineHeight: 1.4 }}>
-            Instant 1-click satellite dispatch to the nearest super-speciality hospital trauma bay with live turn-by-turn ambulance tracking.
+            {t('emergencyTracking.readySubtitle')}
           </p>
 
           <button
@@ -385,13 +382,13 @@ export const EmergencyTrackingPage: React.FC = () => {
             }}
           >
             <Siren size={22} />
-            <span>ACTIVATE EMERGENCY SOS</span>
+            <span>{t('emergencyTracking.activateBtn')}</span>
           </button>
         </div>
 
-        {/* 24x7 Direct Emergency Helplines */}
+        {/* Helplines */}
         <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.875rem', color: '#0F172A' }}>
-          National 24x7 Emergency Helplines
+          {t('emergencyTracking.helplines')}
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.75rem' }}>
           <a
@@ -457,7 +454,7 @@ export const EmergencyTrackingPage: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#16A34A' }}>UNIFIED POLICE & FIRE</div>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#16A34A' }}>UNIFIED EMERGENCY</div>
               <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A' }}>Dial 112</div>
               <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>All-In-One Emergency Line</div>
             </div>
@@ -467,12 +464,12 @@ export const EmergencyTrackingPage: React.FC = () => {
           </a>
         </div>
 
-        {/* First Aid & Critical Triage Checklist */}
+        {/* First Aid */}
         <Card style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
           <Card.Body style={{ padding: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontWeight: 800, fontSize: '0.9375rem', color: '#0F172A' }}>
               <HeartPulse size={18} color="#DC2626" />
-              <span>Immediate First-Aid Protocols</span>
+              <span>{t('emergencyTracking.firstAid')}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.625rem', fontSize: '0.8125rem', color: '#475569' }}>
               <div style={{ backgroundColor: '#FFFFFF', padding: '0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
@@ -488,7 +485,7 @@ export const EmergencyTrackingPage: React.FC = () => {
           </Card.Body>
         </Card>
 
-        {/* SOS 5-Second Countdown Trigger Modal */}
+        {/* 5-Second Countdown Modal */}
         {sosModalOpen && (
           <div
             style={{
@@ -537,7 +534,7 @@ export const EmergencyTrackingPage: React.FC = () => {
               </h2>
 
               <p style={{ fontSize: '0.8125rem', color: '#64748B', margin: '0 0 1.25rem 0' }}>
-                Auto-dispatching in <strong style={{ color: '#DC2626' }}>{countdown} seconds</strong>. Your live GPS coordinates will be sent to the nearest hospital.
+                Auto-dispatching in <strong style={{ color: '#DC2626' }}>{countdown} seconds</strong>.
               </p>
 
               <div
@@ -593,13 +590,13 @@ export const EmergencyTrackingPage: React.FC = () => {
   }
 
   // =========================================================================
-  // CASE 2: ACTIVE EMERGENCY SOS -> LIVE RADAR, CREW CONTACTS & NUMBER PLATE
+  // CASE 2: ACTIVE EMERGENCY SOS -> LIVE RADAR
   // =========================================================================
   const currentStepIdx = STEPS.findIndex((s) => s.status === emergency?.status) || 3;
 
   return (
     <div className="container" style={{ maxWidth: '768px', padding: '1rem 1rem 3rem 1rem' }}>
-      {/* Top Navigation & Status Bar */}
+      {/* Top Header */}
       <div
         style={{
           display: 'flex',
@@ -626,7 +623,7 @@ export const EmergencyTrackingPage: React.FC = () => {
           }}
         >
           <ArrowLeft size={16} />
-          <span>Home</span>
+          <span>{t('nav.home')}</span>
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -635,7 +632,6 @@ export const EmergencyTrackingPage: React.FC = () => {
           </span>
           <Badge variant="danger">{emergency?.status || 'AMBULANCE_EN_ROUTE'}</Badge>
 
-          {/* Prominent Header Cancel Button */}
           <button
             type="button"
             onClick={() => setCancelModalOpen(true)}
@@ -655,12 +651,12 @@ export const EmergencyTrackingPage: React.FC = () => {
             title="Cancel Emergency SOS"
           >
             <XCircle size={14} />
-            <span>Cancel SOS</span>
+            <span>{t('emergencyTracking.cancelSos')}</span>
           </button>
         </div>
       </div>
 
-      {/* Main Active Alert Tracking Banner */}
+      {/* Main Alert Banner */}
       <Card
         style={{
           marginBottom: '1.25rem',
@@ -690,15 +686,15 @@ export const EmergencyTrackingPage: React.FC = () => {
               </div>
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 900, color: '#0F172A' }}>
-                  Ambulance Live Tracking Active
+                  {t('emergencyTracking.sosActive')}
                 </h2>
                 <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                  Real-time GPS link synchronized with ambulance dispatch.
+                  {t('emergencyTracking.sosSubtitle')}
                 </span>
               </div>
             </div>
 
-            {/* Actions: Share WhatsApp + Cancel SOS */}
+            {/* Actions */}
             <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start' }}>
               <button
                 type="button"
@@ -721,7 +717,7 @@ export const EmergencyTrackingPage: React.FC = () => {
                 }}
               >
                 <Share2 size={13} />
-                <span>Share WhatsApp</span>
+                <span>{t('emergencyTracking.shareWhatsApp')}</span>
               </button>
 
               <button
@@ -744,7 +740,7 @@ export const EmergencyTrackingPage: React.FC = () => {
                 title="Copy Tracking Link"
               >
                 {copiedLink ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
-                <span>{copiedLink ? 'Copied' : 'Copy'}</span>
+                <span>{copiedLink ? t('emergencyTracking.copied') : t('emergencyTracking.copyLink')}</span>
               </button>
 
               <button
@@ -768,14 +764,14 @@ export const EmergencyTrackingPage: React.FC = () => {
                 }}
               >
                 <XCircle size={13} />
-                <span>Cancel SOS</span>
+                <span>{t('emergencyTracking.cancelSos')}</span>
               </button>
             </div>
           </div>
         </Card.Body>
       </Card>
 
-      {/* 1. Live Interactive GPS Ambulance Radar Map */}
+      {/* Radar Map */}
       <div style={{ marginBottom: '1.25rem' }}>
         <LiveAmbulanceRadarMap
           emergencyId={emergency?.id || 'active-emg'}
@@ -798,7 +794,7 @@ export const EmergencyTrackingPage: React.FC = () => {
         />
       </div>
 
-      {/* 2. Dispatched Emergency Crew & Vehicle Details Card */}
+      {/* Dispatched Unit & Crew Card */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
         <Card style={{ borderLeft: '4px solid #DC2626', overflow: 'hidden' }}>
           <div
@@ -815,19 +811,18 @@ export const EmergencyTrackingPage: React.FC = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#991B1B', fontWeight: 800, fontSize: '0.8125rem' }}>
               <Truck size={16} color="#DC2626" />
-              <span>DISPATCHED AMBULANCE UNIT & CREW</span>
+              <span>{t('emergencyTracking.dispatchedUnit')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.6875rem', color: '#16A34A', fontWeight: 700 }}>
               <Radio size={12} className="animate-pulse" />
-              <span>LIVE GPS TELEMETRY</span>
+              <span>{t('emergencyTracking.liveTelemetry')}</span>
             </div>
           </div>
 
           <Card.Body style={{ padding: '1rem' }}>
-            {/* Origin & Number Plate Row */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
               <div style={{ flex: 1, minWidth: '200px' }}>
-                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>DISPATCHED FROM BASE:</span>
+                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>{t('emergencyTracking.dispatchedFrom')}</span>
                 <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#0F172A', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   <MapPin size={15} color="#DC2626" />
                   <span>{emergency?.hospital?.name || 'Sahyadri Super Speciality Hospital'}</span>
@@ -837,7 +832,6 @@ export const EmergencyTrackingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Realistic Clean Number Plate Badge */}
               <div
                 style={{
                   border: '2px solid #0F172A',
@@ -859,9 +853,8 @@ export const EmergencyTrackingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Crew Members Grid: Driver + Paramedic Assistant */}
+            {/* Crew Contacts */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
-              {/* Primary Driver */}
               <div
                 style={{
                   backgroundColor: '#F8FAFC',
@@ -878,7 +871,7 @@ export const EmergencyTrackingPage: React.FC = () => {
                     <User size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B' }}>AMBULANCE PILOT</div>
+                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B' }}>{t('emergencyTracking.driver')}</div>
                     <h5 style={{ margin: '1px 0', fontSize: '0.875rem', fontWeight: 800 }}>
                       Rajesh Gawande
                     </h5>
@@ -904,11 +897,10 @@ export const EmergencyTrackingPage: React.FC = () => {
                   }}
                 >
                   <Phone size={12} />
-                  <span>Call</span>
+                  <span>{t('emergencyTracking.call')}</span>
                 </a>
               </div>
 
-              {/* Assistant EMT / Paramedic */}
               <div
                 style={{
                   backgroundColor: '#F8FAFC',
@@ -925,7 +917,7 @@ export const EmergencyTrackingPage: React.FC = () => {
                     <Stethoscope size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B' }}>EMT ASSISTANT</div>
+                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B' }}>{t('emergencyTracking.assistant')}</div>
                     <h5 style={{ margin: '1px 0', fontSize: '0.875rem', fontWeight: 800 }}>
                       Sanjay Shinde (EMT)
                     </h5>
@@ -951,14 +943,14 @@ export const EmergencyTrackingPage: React.FC = () => {
                   }}
                 >
                   <Phone size={12} />
-                  <span>Call</span>
+                  <span>{t('emergencyTracking.call')}</span>
                 </a>
               </div>
             </div>
           </Card.Body>
         </Card>
 
-        {/* Hospital Emergency Desk Card */}
+        {/* Hospital Card */}
         {emergency?.hospital && (
           <Card>
             <Card.Body style={{ padding: '0.875rem 1rem' }}>
@@ -982,7 +974,7 @@ export const EmergencyTrackingPage: React.FC = () => {
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700, fontSize: '0.75rem' }}
                   >
                     <Phone size={12} />
-                    <span>Call ER Desk</span>
+                    <span>{t('emergencyTracking.callEr')}</span>
                   </a>
                 )}
               </div>
@@ -991,12 +983,12 @@ export const EmergencyTrackingPage: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Emergency Status Stepper */}
+      {/* Timeline */}
       <Card style={{ marginBottom: '1.25rem' }}>
         <Card.Header>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Clock size={16} color="#1A56DB" />
-            <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700 }}>Live Response Timeline</h3>
+            <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700 }}>{t('emergencyTracking.timeline')}</h3>
           </div>
         </Card.Header>
 
@@ -1044,7 +1036,7 @@ export const EmergencyTrackingPage: React.FC = () => {
         </Card.Body>
       </Card>
 
-      {/* 4. Bottom Prominent Stand-Down Box */}
+      {/* Stand-Down Box */}
       <div
         style={{
           backgroundColor: '#FFF1F2',
@@ -1061,8 +1053,8 @@ export const EmergencyTrackingPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <AlertTriangle size={18} color="#E11D48" />
           <div>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#9F1239' }}>Triggered by Mistake?</div>
-            <div style={{ fontSize: '0.6875rem', color: '#BE123C' }}>Recall ambulance to prevent false emergency dispatch.</div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#9F1239' }}>{t('emergencyTracking.falseAlarm')}</div>
+            <div style={{ fontSize: '0.6875rem', color: '#BE123C' }}>{t('emergencyTracking.falseAlarmDesc')}</div>
           </div>
         </div>
 
@@ -1080,23 +1072,23 @@ export const EmergencyTrackingPage: React.FC = () => {
             cursor: 'pointer',
           }}
         >
-          Cancel SOS Alert
+          {t('emergencyTracking.cancelSos')}
         </button>
       </div>
 
-      {/* Cancel Confirmation Modal with Reason Selection */}
-      <Modal isOpen={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title="Cancel Emergency SOS?">
+      {/* Cancel Modal */}
+      <Modal isOpen={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title={t('emergencyTracking.cancelConfirmTitle')}>
         <div style={{ padding: '0.5rem 0' }}>
           <p style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: 0 }}>
-            Select the reason for cancelling this emergency dispatch:
+            {t('emergencyTracking.cancelReasonPrompt')}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
             {[
-              'Accidental Trigger / False Alarm',
-              'Patient Condition Stabilized / Recovered',
-              'Arranged Alternate Private Transport',
-              'Other Emergency Resolution',
+              t('emergencyTracking.reasons.accidental'),
+              t('emergencyTracking.reasons.stabilized'),
+              t('emergencyTracking.reasons.alternate'),
+              t('emergencyTracking.reasons.other'),
             ].map((r) => (
               <label
                 key={r}
@@ -1128,10 +1120,10 @@ export const EmergencyTrackingPage: React.FC = () => {
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <Button variant="outline" onClick={() => setCancelModalOpen(false)} style={{ flex: 1 }}>
-              Keep Active
+              {t('emergencyTracking.keepActive')}
             </Button>
             <Button variant="danger" isLoading={cancelling} onClick={handleCancelEmergency} style={{ flex: 1 }}>
-              Yes, Cancel SOS
+              {t('emergencyTracking.confirmCancel')}
             </Button>
           </div>
         </div>

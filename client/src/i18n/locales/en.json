@@ -23,6 +23,75 @@
     "bookNow": "Book Consultation",
     "emergencyBanner": "Medical Emergency? Tap SOS for instant hospital & ambulance dispatch"
   },
+  "emergencyBanner": {
+    "title": "Emergency SOS & Live Ambulance Radar",
+    "subtitle": "Instant GPS dispatch, 24x7 trauma desk, and real-time ambulance tracking HUD",
+    "openRadar": "Open Radar"
+  },
+  "triage": {
+    "title": "AI Clinical Symptom Triage",
+    "badge": "SMART TRIAGE",
+    "subtitle": "Describe your symptoms naturally to get instant specialty recommendations and matched doctors.",
+    "placeholder": "e.g. Sharp pain in lower abdomen, chest tightness, high fever...",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing...",
+    "popularSymptoms": "Popular Symptoms:",
+    "symptoms": {
+      "chestPain": "Chest Pain & Sweating",
+      "fever": "High Fever with Shivering",
+      "jointPain": "Severe Knee & Joint Pain",
+      "skinRash": "Itchy Red Skin Rash",
+      "headache": "Severe Headache & Nausea",
+      "cough": "Child Cough & Wheezing",
+      "acidReflux": "Acid Reflux & Stomach Burn"
+    },
+    "result": {
+      "title": "Clinical Recommendation",
+      "emergencyAlert": "CRITICAL EMERGENCY: Requires immediate hospital evaluation or Emergency SOS ambulance dispatch.",
+      "urgentAlert": "URGENT ATTENTION: Same-day specialist consultation recommended.",
+      "routineAlert": "ROUTINE CONSULTATION: Specialist examination advised within 24-48 hours.",
+      "recommendedSpecialty": "Recommended Specialty",
+      "differentialDiagnosis": "Condition Possibilities",
+      "clinicalGuidance": "Clinical Guidance",
+      "bookDoctorBtn": "Find & Book Matched Doctors",
+      "callAmbulanceBtn": "Dispatch Emergency SOS"
+    }
+  },
+  "emergencyTracking": {
+    "sosActive": "Ambulance Live Tracking Active",
+    "sosSubtitle": "Real-time telemetry link synchronized with ambulance dispatch.",
+    "cancelSos": "Cancel SOS",
+    "shareWhatsApp": "Share WhatsApp",
+    "copyLink": "Copy",
+    "copied": "Copied",
+    "dispatchedUnit": "DISPATCHED AMBULANCE UNIT & CREW",
+    "liveTelemetry": "LIVE GPS TELEMETRY",
+    "dispatchedFrom": "DISPATCHED FROM BASE:",
+    "driver": "AMBULANCE PILOT (DRIVER)",
+    "assistant": "EMT ASSISTANT (PARAMEDIC)",
+    "call": "Call",
+    "callEr": "Call ER Desk",
+    "timeline": "Live Response Timeline",
+    "falseAlarm": "Triggered by Mistake?",
+    "falseAlarmDesc": "Recall ambulance to prevent false emergency dispatch.",
+    "cancelConfirmTitle": "Cancel Emergency SOS?",
+    "cancelReasonPrompt": "Select the reason for cancelling this emergency dispatch:",
+    "reasons": {
+      "accidental": "Accidental Trigger / False Alarm",
+      "stabilized": "Patient Condition Stabilized / Recovered",
+      "alternate": "Arranged Alternate Private Transport",
+      "other": "Other Emergency Resolution"
+    },
+    "keepActive": "Keep Active",
+    "confirmCancel": "Yes, Cancel SOS",
+    "cancelledBannerTitle": "Emergency SOS Cancelled & Stood Down",
+    "cancelledBannerDesc": "The hospital emergency desk and ambulance unit have been safely notified. All live tracking is stopped.",
+    "readyTitle": "Emergency SOS Response",
+    "readySubtitle": "Instant 1-click satellite dispatch to the nearest super-speciality hospital trauma bay with live turn-by-turn ambulance tracking.",
+    "activateBtn": "ACTIVATE EMERGENCY SOS",
+    "helplines": "National 24x7 Emergency Helplines",
+    "firstAid": "Immediate First-Aid Protocols"
+  },
   "doctor": {
     "searchTitle": "Find Specialists & Doctors",
     "filter": "Filters",
