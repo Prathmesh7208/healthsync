@@ -279,11 +279,12 @@ export const LoginPage: React.FC = () => {
         style={{
           width: '100%',
           maxWidth: '440px',
-          padding: '2rem 1.75rem',
+          padding: '1.75rem 1.25rem',
           backdropFilter: 'blur(10px)',
           boxShadow: 'var(--shadow-xl)',
           border: '1px solid rgba(255, 255, 255, 0.8)',
-          overflow: 'visible',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
           position: 'relative',
         }}
       >
@@ -409,7 +410,7 @@ export const LoginPage: React.FC = () => {
                   {t.enterPhone}
                 </p>
 
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.25rem', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'stretch', marginBottom: '1.25rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <CountryCodeSelector
                     selectedDialCode={selectedCountryCode}
                     onSelect={setCountryCode}
@@ -423,9 +424,12 @@ export const LoginPage: React.FC = () => {
                     autoFocus
                     required
                     style={{
-                      flex: 1,
+                      flex: '1 1 0%',
+                      minWidth: 0,
+                      width: '100%',
+                      boxSizing: 'border-box',
                       height: '48px',
-                      padding: '0 1rem',
+                      padding: '0 0.875rem',
                       fontSize: '1.0625rem',
                       fontWeight: 600,
                       letterSpacing: '0.05em',
@@ -611,6 +615,7 @@ export const LoginPage: React.FC = () => {
           padding: '1rem',
           marginTop: '1.25rem',
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          boxSizing: 'border-box',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.75rem', color: '#0F172A', fontWeight: 800, fontSize: '0.8125rem' }}>
@@ -618,13 +623,13 @@ export const LoginPage: React.FC = () => {
           <span>1-CLICK DEMO ACCOUNTS (INSTANT ACCESS)</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', width: '100%', boxSizing: 'border-box' }}>
           <button
             type="button"
             onClick={() => handleQuickDemoLogin('PATIENT')}
             disabled={loading}
             style={{
-              padding: '0.5rem',
+              padding: '0.625rem 0.5rem',
               backgroundColor: '#FFFFFF',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
@@ -632,7 +637,9 @@ export const LoginPage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '2px',
+              boxSizing: 'border-box',
             }}
           >
             <UserCheck size={16} color="#0D9488" />
@@ -645,7 +652,7 @@ export const LoginPage: React.FC = () => {
             onClick={() => handleQuickDemoLogin('DOCTOR')}
             disabled={loading}
             style={{
-              padding: '0.5rem',
+              padding: '0.625rem 0.5rem',
               backgroundColor: '#FFFFFF',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
@@ -653,7 +660,9 @@ export const LoginPage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '2px',
+              boxSizing: 'border-box',
             }}
           >
             <Stethoscope size={16} color="#2563EB" />
@@ -666,7 +675,7 @@ export const LoginPage: React.FC = () => {
             onClick={() => handleQuickDemoLogin('RECEPTIONIST')}
             disabled={loading}
             style={{
-              padding: '0.5rem',
+              padding: '0.625rem 0.5rem',
               backgroundColor: '#FFFFFF',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
@@ -674,7 +683,9 @@ export const LoginPage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '2px',
+              boxSizing: 'border-box',
             }}
           >
             <Building2 size={16} color="#7C3AED" />
@@ -687,7 +698,7 @@ export const LoginPage: React.FC = () => {
             onClick={() => handleQuickDemoLogin('AMBULANCE_OPERATOR')}
             disabled={loading}
             style={{
-              padding: '0.5rem',
+              padding: '0.625rem 0.5rem',
               backgroundColor: '#FFFFFF',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
@@ -695,7 +706,9 @@ export const LoginPage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '2px',
+              boxSizing: 'border-box',
             }}
           >
             <Truck size={16} color="#DC2626" />
@@ -708,20 +721,22 @@ export const LoginPage: React.FC = () => {
             onClick={() => handleQuickDemoLogin('ADMIN')}
             disabled={loading}
             style={{
-              padding: '0.5rem',
+              gridColumn: 'span 2',
+              padding: '0.625rem 0.5rem',
               backgroundColor: '#FFFFFF',
               border: '1px solid #CBD5E1',
               borderRadius: '8px',
               cursor: 'pointer',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              gap: '2px',
+              justifyContent: 'center',
+              gap: '0.375rem',
+              boxSizing: 'border-box',
             }}
           >
             <Shield size={16} color="#059669" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Super Admin</span>
-            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Full Portal</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Super Admin Portal</span>
+            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>• Full Management</span>
           </button>
         </div>
       </div>

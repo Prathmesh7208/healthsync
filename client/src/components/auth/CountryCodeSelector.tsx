@@ -65,7 +65,7 @@ export const CountryCodeSelector: React.FC<CountryCodeSelectorProps> = ({
   }, []);
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
