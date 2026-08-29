@@ -1,0 +1,17 @@
+{
+  "short_name": "HealthSync",
+  "name": "HealthSync — Healthcare Access & Emergency Response",
+  "description": "Instant doctor consultations, live ambulance radar tracking, digital health records, and emergency trauma triage.",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0D9488",
+  "display": "standalone",
+  "orientation": "portrait"
+}

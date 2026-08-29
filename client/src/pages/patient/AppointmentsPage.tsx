@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-import { Calendar, Clock, MapPin, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, MapPin, AlertTriangle, Download } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
+import { generatePrescriptionPdf } from '../../services/prescriptionPdf';
 
 export const AppointmentsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -214,13 +215,56 @@ export const AppointmentsPage: React.FC = () => {
                   )}
 
                   {activeTab === 'past' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/patient/doctors/${apt.doctorId}/book`)}
-                    >
-                      Book Again
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<Download size={14} />}
+                        onClick={() => {
+                          generatePrescriptionPdf({
+                            appointmentId: apt.appointmentId || apt.id,
+                            date: apt.date ? apt.date.split('T')[0] : new Date().toLocaleDateString(),
+                            doctor: {
+                              fullName: apt.doctor?.fullName || 'Consultant Specialist',
+                              specializations: apt.doctor?.specializations,
+                              hospitalName: apt.hospital?.name || 'HealthSync Medical Center',
+                              hospitalAddress: apt.hospital?.address || 'Erandwane, Pune, Maharashtra',
+                            },
+                            patient: {
+                              fullName: 'Patient',
+                              phone: '+91 98765 43210',
+                            },
+                            diagnosis: apt.consultation?.diagnosis || 'Acute Upper Respiratory Tract Infection (Follow-up)',
+                            medications: [
+                              {
+                                name: 'Paracetamol',
+                                dosage: '650mg',
+                                frequency: '1-0-1 (Twice daily)',
+                                duration: '5 days',
+                                instructions: 'After food with water',
+                              },
+                              {
+                                name: 'Azithromycin',
+                                dosage: '500mg',
+                                frequency: '1-0-0 (Once daily)',
+                                duration: '3 days',
+                                instructions: 'After food',
+                              },
+                            ],
+                            advice: apt.consultation?.advice || 'Adequate hydration, warm saline gargles, and plenty of rest.',
+                          });
+                        }}
+                      >
+                        Rx Prescription
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => navigate(`/patient/doctors/${apt.doctorId}/book`)}
+                      >
+                        Book Again
+                      </Button>
+                    </>
                   )}
                 </div>
               </Card.Body>

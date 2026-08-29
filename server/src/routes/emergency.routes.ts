@@ -7,6 +7,7 @@ import { NotFoundError } from '../utils/errors';
 import { EmergencyStatus, LocationSource, NotificationType } from '@prisma/client';
 import NotificationService from '../services/notification.service';
 import { io } from '../server';
+import { emergencyRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 router.use(authenticate);
@@ -37,6 +38,7 @@ const triggerSchema = z.object({
  */
 router.post(
   '/trigger',
+  emergencyRateLimiter,
   validate(triggerSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

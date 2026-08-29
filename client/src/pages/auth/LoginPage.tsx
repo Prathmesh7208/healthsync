@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ShieldCheck, HeartPulse, Stethoscope, Phone, Lock, ArrowRight, RefreshCw } from 'lucide-react';
+import {
+  ShieldCheck,
+  HeartPulse,
+  Stethoscope,
+  Phone,
+  Lock,
+  ArrowRight,
+  RefreshCw,
+  Sparkles,
+  Building2,
+  Truck,
+  Shield,
+  UserCheck,
+} from 'lucide-react';
 import useAuthStore, { Language } from '../../stores/authStore';
 import CountryCodeSelector from '../../components/auth/CountryCodeSelector';
 import OTPInput from '../../components/auth/OTPInput';
@@ -67,6 +80,36 @@ export const LoginPage: React.FC = () => {
       case 'PATIENT':
       default:
         return '/patient/home';
+    }
+  };
+
+  const handleQuickDemoLogin = async (role: 'PATIENT' | 'DOCTOR' | 'RECEPTIONIST' | 'AMBULANCE_OPERATOR' | 'ADMIN') => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (role === 'PATIENT') {
+        setAuthMode('otp');
+        setPhone('9876543210');
+        await sendOTP('9876543210', '+91');
+        await verifyOTP('9876543210', '123456', '+91');
+        navigate('/patient/home', { replace: true });
+      } else if (role === 'DOCTOR') {
+        await loginWithCredentials('+919811100001', 'password123');
+        navigate('/doctor/dashboard', { replace: true });
+      } else if (role === 'RECEPTIONIST') {
+        await loginWithCredentials('+919822200001', 'password123');
+        navigate('/receptionist/dashboard', { replace: true });
+      } else if (role === 'AMBULANCE_OPERATOR') {
+        await loginWithCredentials('+919833300001', 'password123');
+        navigate('/ambulance/dashboard', { replace: true });
+      } else if (role === 'ADMIN') {
+        await loginWithCredentials('+919800000001', 'password123');
+        navigate('/admin/dashboard', { replace: true });
+      }
+    } catch (err: any) {
+      setError(err.message || 'Demo login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -557,13 +600,139 @@ export const LoginPage: React.FC = () => {
         )}
       </div>
 
+      {/* ⚡ 1-Click Evaluator & Demo Accounts */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          backgroundColor: '#F8FAFC',
+          border: '1px solid #E2E8F0',
+          borderRadius: '16px',
+          padding: '1rem',
+          marginTop: '1.25rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.75rem', color: '#0F172A', fontWeight: 800, fontSize: '0.8125rem' }}>
+          <Sparkles size={15} color="#0D9488" />
+          <span>1-CLICK DEMO ACCOUNTS (INSTANT ACCESS)</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('PATIENT')}
+            disabled={loading}
+            style={{
+              padding: '0.5rem',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #CBD5E1',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <UserCheck size={16} color="#0D9488" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Patient Demo</span>
+            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>OTP Auth</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('DOCTOR')}
+            disabled={loading}
+            style={{
+              padding: '0.5rem',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #CBD5E1',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <Stethoscope size={16} color="#2563EB" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Doctor Demo</span>
+            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Dr. Priya</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('RECEPTIONIST')}
+            disabled={loading}
+            style={{
+              padding: '0.5rem',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #CBD5E1',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <Building2 size={16} color="#7C3AED" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Receptionist</span>
+            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Hospital Desk</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('AMBULANCE_OPERATOR')}
+            disabled={loading}
+            style={{
+              padding: '0.5rem',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #CBD5E1',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <Truck size={16} color="#DC2626" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Ambulance</span>
+            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Operator HUD</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('ADMIN')}
+            disabled={loading}
+            style={{
+              padding: '0.5rem',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #CBD5E1',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <Shield size={16} color="#059669" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Super Admin</span>
+            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Full Portal</span>
+          </button>
+        </div>
+      </div>
+
       {/* Security footer */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '0.375rem',
-          marginTop: '1.5rem',
+          marginTop: '1.25rem',
           color: 'var(--text-muted)',
           fontSize: '0.75rem',
         }}

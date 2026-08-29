@@ -4,6 +4,7 @@ import OTPService from '../services/otp.service';
 import AuthService from '../services/auth.service';
 import { logAuditEvent } from '../middleware/auditLog';
 import { LanguagePreference } from '@prisma/client';
+import { otpRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
  * POST /api/v1/auth/otp/send
  * Non-blocking instant OTP response
  */
-router.post('/otp/send', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/otp/send', otpRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { phone, countryCode = '+91' } = req.body;
     const rawPhone = String(phone || '').replace(/\D/g, '');
