@@ -18,7 +18,6 @@ export const DoctorSearchPage: React.FC = () => {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [specialization, setSpecialization] = useState(searchParams.get('specialization') || '');
   const [availability, setAvailability] = useState('');
-  const [sortBy, setSortBy] = useState('rating');
   const [priceRange, setPriceRange] = useState<string>('ALL');
   const [customMaxFee, setCustomMaxFee] = useState<number>(2000);
 
@@ -49,7 +48,7 @@ export const DoctorSearchPage: React.FC = () => {
   const fetchDoctors = async () => {
     setLoading(true);
     try {
-      const params: any = { sortBy };
+      const params: any = {};
       if (query) params.q = query;
       if (specialization && specialization !== 'All') params.specialization = specialization;
       if (availability) params.availability = availability;
@@ -68,7 +67,7 @@ export const DoctorSearchPage: React.FC = () => {
 
   useEffect(() => {
     fetchDoctors();
-  }, [query, specialization, availability, sortBy]);
+  }, [query, specialization, availability]);
 
   // Client-side filtering by consultation fee
   const filteredDoctors = doctors.filter((doc) => {
@@ -144,7 +143,7 @@ export const DoctorSearchPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Money & Consultation Fee Filter Chips */}
+      {/* Consultation Fee Budget Filter Chips */}
       <div
         style={{
           display: 'flex',
@@ -178,30 +177,14 @@ export const DoctorSearchPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Advanced Filter Drawer with Custom Fee Slider */}
+      {/* Filter Drawer: Consultation Fee Customizer & Availability */}
       {showFilterDrawer && (
         <Card style={{ marginBottom: '1.5rem', backgroundColor: 'var(--bg-surface-subtle)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
           <Card.Body style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', alignItems: 'center' }}>
               <div>
                 <label className="hs-label" style={{ marginBottom: '0.375rem' }}>
-                  Sort Doctors By
-                </label>
-                <select
-                  className="hs-input"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  style={{ height: '42px' }}
-                >
-                  <option value="rating">Highest Rated ★</option>
-                  <option value="experience">Most Experienced</option>
-                  <option value="fee_asc">Consultation Fee: Low to High</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="hs-label" style={{ marginBottom: '0.375rem' }}>
-                  Customize Maximum Fee: <strong style={{ color: 'var(--color-secondary-700)' }}>₹{customMaxFee}</strong>
+                  Custom Consultation Fee Budget: <strong style={{ color: 'var(--color-secondary-700)', fontSize: '0.9375rem' }}>Up to ₹{customMaxFee}</strong>
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <input
@@ -216,7 +199,7 @@ export const DoctorSearchPage: React.FC = () => {
                     }}
                     style={{ flex: 1, accentColor: 'var(--color-secondary-600)', cursor: 'pointer' }}
                   />
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', minWidth: '48px' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-secondary-700)', minWidth: '54px' }}>
                     ₹{customMaxFee}
                   </span>
                 </div>
