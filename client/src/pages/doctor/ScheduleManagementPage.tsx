@@ -131,19 +131,19 @@ export const ScheduleManagementPage: React.FC = () => {
   return (
     <div className="container" style={{ maxWidth: '900px' }}>
       {/* Top Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Doctor Schedule & Shift Setup</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ minWidth: '220px', flex: '1 1 auto' }}>
+          <h1 style={{ fontSize: '1.625rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Doctor Schedule & Shift Setup</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
             Configure recurring working hours, slot lengths, and break intervals across partner hospitals.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
           <Button
             variant="outline"
             size="sm"
-            leftIcon={<Coffee size={16} />}
+            leftIcon={<Coffee size={15} />}
             onClick={() => setBreakModalOpen(true)}
           >
             Add Break
@@ -151,7 +151,7 @@ export const ScheduleManagementPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            leftIcon={<Plus size={16} />}
+            leftIcon={<Plus size={15} />}
             onClick={() => setScheduleModalOpen(true)}
           >
             Add Working Hours
@@ -160,7 +160,7 @@ export const ScheduleManagementPage: React.FC = () => {
       </div>
 
       {/* Weekly Schedule Overview */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '2rem' }}>
         {DAYS.map((day) => {
           const daySchedules = schedules.filter((s) => s.dayOfWeek === day);
           const dayBreaks = breaks.filter((b) => b.dayOfWeek === day);
@@ -168,15 +168,15 @@ export const ScheduleManagementPage: React.FC = () => {
           return (
             <Card key={day}>
               <Card.Body style={{ padding: '1rem 1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div style={{ width: '130px' }}>
-                    <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{day}</strong>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div style={{ minWidth: '110px', flexShrink: 0 }}>
+                    <strong style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>{day}</strong>
+                    <div style={{ fontSize: '0.75rem', color: daySchedules.length === 0 ? 'var(--text-muted)' : 'var(--color-primary-600)', fontWeight: 600 }}>
                       {daySchedules.length === 0 ? 'Off Duty' : `${daySchedules.length} Shift(s)`}
                     </div>
                   </div>
 
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
                     {daySchedules.length === 0 ? (
                       <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No working hours scheduled.</span>
                     ) : (
@@ -191,9 +191,10 @@ export const ScheduleManagementPage: React.FC = () => {
                             borderRadius: 'var(--radius-sm)',
                             backgroundColor: 'var(--color-primary-50)',
                             border: '1px solid var(--color-primary-200)',
+                            gap: '0.5rem',
                           }}
                         >
-                          <div>
+                          <div style={{ minWidth: 0 }}>
                             <span style={{ fontWeight: 700, color: 'var(--color-primary-900)' }}>
                               {sched.startTime} - {sched.endTime}
                             </span>

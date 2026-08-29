@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Calendar, Stethoscope } from 'lucide-react';
+import { Calendar, Stethoscope, Filter } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -15,6 +15,9 @@ export const DoctorAppointmentsPage: React.FC = () => {
   const [status, setStatus] = useState('ALL');
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -51,37 +54,91 @@ export const DoctorAppointmentsPage: React.FC = () => {
   return (
     <div className="container" style={{ maxWidth: '1000px' }}>
       {/* Header & Filter Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Consultation Schedule</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ minWidth: '220px', flex: '1 1 auto' }}>
+          <h1 style={{ fontSize: '1.625rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Consultation Schedule</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
             Manage appointments, conduct consultations, and issue digital prescriptions.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <input
-            type="date"
-            className="hs-input"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            style={{ width: 'auto' }}
-          />
+        {/* Filters Group */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', alignItems: 'center', width: '100%', maxWidth: '540px' }}>
+          {/* Quick Date Chips */}
+          <div style={{ display: 'flex', gap: '0.375rem', width: '100%', overflowX: 'auto', paddingBottom: '2px' }}>
+            <button
+              type="button"
+              className={`hs-filter-pill ${date === todayStr ? 'active' : ''}`}
+              onClick={() => setDate(todayStr)}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              className={`hs-filter-pill ${date === tomorrowStr ? 'active' : ''}`}
+              onClick={() => setDate(tomorrowStr)}
+            >
+              Tomorrow
+            </button>
+          </div>
 
-          <select
-            className="hs-input"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            style={{ width: 'auto' }}
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="BOOKED">Booked</option>
-            <option value="CONFIRMED">Confirmed</option>
-            <option value="IN_PROGRESS">In Consultation</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED_BY_PATIENT">Cancelled by Patient</option>
-            <option value="NO_SHOW">No Show</option>
-          </select>
+          {/* Styled Date Picker */}
+          <div style={{ position: 'relative', flex: '1 1 180px', minWidth: '150px' }}>
+            <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-primary-600)' }}>
+              <Calendar size={16} />
+            </div>
+            <input
+              type="date"
+              className="hs-input"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={{
+                paddingLeft: '36px',
+                height: '42px',
+                borderRadius: '12px',
+                border: '1.5px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-surface)',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                color: 'var(--text-primary)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                width: '100%',
+              }}
+            />
+          </div>
+
+          {/* Styled Status Dropdown */}
+          <div style={{ position: 'relative', flex: '1 1 160px', minWidth: '140px' }}>
+            <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
+              <Filter size={15} />
+            </div>
+            <select
+              className="hs-input"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{
+                paddingLeft: '34px',
+                height: '42px',
+                borderRadius: '12px',
+                border: '1.5px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-surface)',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                color: 'var(--text-primary)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                width: '100%',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="BOOKED">Booked</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="IN_PROGRESS">In Consultation</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED_BY_PATIENT">Cancelled</option>
+              <option value="NO_SHOW">No Show</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -93,13 +150,38 @@ export const DoctorAppointmentsPage: React.FC = () => {
           ))}
         </div>
       ) : appointments.length === 0 ? (
-        <Card>
-          <Card.Body style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-            <Calendar size={48} style={{ margin: '0 auto 1rem auto' }} />
-            <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>No Appointments Found</h3>
-            <p style={{ fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
-              No consultations scheduled for {date} with filter "{status}".
+        <Card style={{ borderRadius: '16px', border: '1.5px dashed var(--border-subtle)', backgroundColor: 'var(--bg-surface-subtle)' }}>
+          <Card.Body style={{ textAlign: 'center', padding: '3.5rem 1.5rem' }}>
+            <div
+              style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-primary-50)',
+                border: '1px solid var(--color-primary-200)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '1rem',
+                color: 'var(--color-primary-600)',
+              }}
+            >
+              <Calendar size={28} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>No Appointments Found</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '360px', margin: '0.5rem auto 1.5rem auto' }}>
+              No consultations scheduled for <strong>{date}</strong> with filter "<strong>{status}</strong>".
             </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDate(todayStr);
+                setStatus('ALL');
+              }}
+            >
+              Reset to Today's Schedule
+            </Button>
           </Card.Body>
         </Card>
       ) : (

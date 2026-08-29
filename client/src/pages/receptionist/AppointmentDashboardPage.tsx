@@ -55,48 +55,52 @@ export const AppointmentDashboardPage: React.FC = () => {
   return (
     <div>
       {/* Header & Filter Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Hospital Appointments & Check-In Desk</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ minWidth: '220px', flex: '1 1 auto' }}>
+          <h1 style={{ fontSize: '1.625rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Hospital Appointments & Check-In Desk</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
             Verify patient arrivals and dispatch notifications to consulting doctors.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+        <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '620px' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '170px' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="Search name, phone, ID..."
+              placeholder="Search patient, phone, ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="hs-input"
-              style={{ paddingLeft: '2.25rem', minHeight: '38px', fontSize: '0.875rem' }}
+              style={{ paddingLeft: '36px', height: '40px', fontSize: '0.875rem', borderRadius: '12px' }}
             />
           </div>
 
-          <input
-            type="date"
-            className="hs-input"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            style={{ width: 'auto', minHeight: '38px' }}
-          />
+          <div style={{ position: 'relative', flex: '1 1 150px', minWidth: '140px' }}>
+            <input
+              type="date"
+              className="hs-input"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={{ height: '40px', borderRadius: '12px', fontWeight: 600, fontSize: '0.8125rem' }}
+            />
+          </div>
 
-          <select
-            className="hs-input"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            style={{ width: 'auto', minHeight: '38px' }}
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="BOOKED">Booked</option>
-            <option value="CONFIRMED">Confirmed / Checked-In</option>
-            <option value="IN_PROGRESS">In Consultation</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED_BY_PATIENT">Cancelled</option>
-          </select>
+          <div style={{ position: 'relative', flex: '1 1 150px', minWidth: '140px' }}>
+            <select
+              className="hs-input"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{ height: '40px', borderRadius: '12px', fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer' }}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="BOOKED">Booked</option>
+              <option value="CONFIRMED">Confirmed / Checked-In</option>
+              <option value="IN_PROGRESS">In Consultation</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED_BY_PATIENT">Cancelled</option>
+            </select>
+          </div>
         </div>
       </div>
 
