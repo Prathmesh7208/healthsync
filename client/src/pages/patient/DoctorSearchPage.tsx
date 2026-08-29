@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-import { Search, Star, MapPin, SlidersHorizontal, Stethoscope } from 'lucide-react';
+import { Search, Star, MapPin, SlidersHorizontal, Stethoscope, Tag } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -19,6 +19,8 @@ export const DoctorSearchPage: React.FC = () => {
   const [specialization, setSpecialization] = useState(searchParams.get('specialization') || '');
   const [availability, setAvailability] = useState('');
   const [sortBy, setSortBy] = useState('rating');
+  const [priceRange, setPriceRange] = useState<string>('ALL');
+  const [customMaxFee, setCustomMaxFee] = useState<number>(2000);
 
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +36,14 @@ export const DoctorSearchPage: React.FC = () => {
     'Gynecologist',
     'Ophthalmologist',
     'Neurologist',
+  ];
+
+  const priceRanges = [
+    { key: 'ALL', label: 'All Fees' },
+    { key: 'UNDER_300', label: 'Under ₹300', max: 300 },
+    { key: '300_500', label: '₹300 - ₹500', min: 300, max: 500 },
+    { key: '500_1000', label: '₹500 - ₹1000', min: 500, max: 1000 },
+    { key: '1000_PLUS', label: '₹1000+', min: 1000 },
   ];
 
   const fetchDoctors = async () => {
@@ -60,46 +70,54 @@ export const DoctorSearchPage: React.FC = () => {
     fetchDoctors();
   }, [query, specialization, availability, sortBy]);
 
+  // Client-side filtering by consultation fee
+  const filteredDoctors = doctors.filter((doc) => {
+    const fee = doc.affiliations?.[0]?.consultationFee ? Number(doc.affiliations[0].consultationFee) : 500;
+    
+    if (priceRange === 'UNDER_300') return fee <= 300;
+    if (priceRange === '300_500') return fee >= 300 && fee <= 500;
+    if (priceRange === '500_1000') return fee >= 500 && fee <= 1000;
+    if (priceRange === '1000_PLUS') return fee >= 1000;
+    if (priceRange === 'CUSTOM') return fee <= customMaxFee;
+    return true;
+  });
+
   return (
     <div className="container" style={{ padding: '1.5rem 1rem' }}>
       {/* Header & Search Bar */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.875rem 0', color: 'var(--text-primary)' }}>
+      <div style={{ marginBottom: '1.25rem' }}>
+        <h1 style={{ fontSize: '1.625rem', fontWeight: 800, margin: '0 0 0.875rem 0', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
           {t('doctor.searchTitle')}
         </h1>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
             <Search size={18} style={{ position: 'absolute', left: '0.875rem', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="Search by doctor name or condition..."
+              placeholder="Search doctor, hospital, condition..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="hs-input"
-              style={{ paddingLeft: '2.5rem', minHeight: '44px' }}
+              style={{ paddingLeft: '2.5rem', minHeight: '44px', borderRadius: '12px' }}
             />
           </div>
 
           <button
             type="button"
             onClick={() => setShowFilterDrawer(!showFilterDrawer)}
+            className="hs-btn hs-btn-outline"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem',
               padding: '0 1rem',
-              backgroundColor: showFilterDrawer ? 'var(--color-primary-50)' : 'var(--bg-surface)',
-              border: `1px solid ${showFilterDrawer ? 'var(--color-primary-600)' : 'var(--border-strong)'}`,
-              borderRadius: 'var(--radius-sm)',
-              color: showFilterDrawer ? 'var(--color-primary-600)' : 'var(--text-primary)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.875rem',
+              minHeight: '44px',
+              borderRadius: '12px',
+              backgroundColor: showFilterDrawer ? 'var(--color-primary-50)' : undefined,
+              borderColor: showFilterDrawer ? 'var(--color-primary-600)' : undefined,
+              color: showFilterDrawer ? 'var(--color-primary-700)' : undefined,
             }}
           >
             <SlidersHorizontal size={16} />
-            <span>Filter</span>
+            <span>Filters</span>
           </button>
         </div>
       </div>
@@ -110,8 +128,8 @@ export const DoctorSearchPage: React.FC = () => {
           display: 'flex',
           gap: '0.5rem',
           overflowX: 'auto',
-          paddingBottom: '0.75rem',
-          marginBottom: '1.25rem',
+          paddingBottom: '0.5rem',
+          marginBottom: '0.75rem',
         }}
       >
         {specializationsList.map((s) => (
@@ -119,70 +137,107 @@ export const DoctorSearchPage: React.FC = () => {
             key={s}
             type="button"
             onClick={() => setSpecialization(s === 'All' ? '' : s)}
-            style={{
-              padding: '0.375rem 0.875rem',
-              borderRadius: 'var(--radius-full)',
-              border: `1px solid ${
-                (s === 'All' && !specialization) || specialization === s
-                  ? 'var(--color-primary-600)'
-                  : 'var(--border-subtle)'
-              }`,
-              backgroundColor:
-                (s === 'All' && !specialization) || specialization === s
-                  ? 'var(--color-primary-50)'
-                  : 'var(--bg-surface)',
-              color:
-                (s === 'All' && !specialization) || specialization === s
-                  ? 'var(--color-primary-700)'
-                  : 'var(--text-secondary)',
-              fontWeight: (s === 'All' && !specialization) || specialization === s ? 700 : 500,
-              fontSize: '0.8125rem',
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-            }}
+            className={`hs-filter-pill ${(s === 'All' && !specialization) || specialization === s ? 'active' : ''}`}
           >
             {s}
           </button>
         ))}
       </div>
 
-      {/* Filter Drawer / Controls */}
+      {/* Money & Consultation Fee Filter Chips */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          overflowX: 'auto',
+          paddingBottom: '0.625rem',
+          marginBottom: '1.25rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-secondary-700)', paddingRight: '0.25rem', flexShrink: 0 }}>
+          <Tag size={13} />
+          <span>FEE BUDGET:</span>
+        </div>
+        {priceRanges.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            onClick={() => setPriceRange(p.key)}
+            className={`hs-filter-pill ${priceRange === p.key ? 'active' : ''}`}
+            style={{
+              fontSize: '0.75rem',
+              padding: '0.3rem 0.75rem',
+              borderColor: priceRange === p.key ? 'var(--color-secondary-600)' : undefined,
+              backgroundColor: priceRange === p.key ? 'var(--color-secondary-50)' : undefined,
+              color: priceRange === p.key ? 'var(--color-secondary-800)' : undefined,
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Advanced Filter Drawer with Custom Fee Slider */}
       {showFilterDrawer && (
-        <Card style={{ marginBottom: '1.5rem', backgroundColor: 'var(--bg-surface-subtle)' }}>
-          <Card.Body style={{ padding: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <Card style={{ marginBottom: '1.5rem', backgroundColor: 'var(--bg-surface-subtle)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
+          <Card.Body style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', alignItems: 'start' }}>
               <div>
-                <label className="hs-label" style={{ marginBottom: '0.25rem', display: 'block' }}>
-                  Sort By
+                <label className="hs-label" style={{ marginBottom: '0.375rem' }}>
+                  Sort Doctors By
                 </label>
                 <select
                   className="hs-input"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  style={{ minHeight: '38px', padding: '0.375rem 0.625rem' }}
+                  style={{ height: '42px' }}
                 >
-                  <option value="rating">Highest Rated</option>
+                  <option value="rating">Highest Rated ★</option>
                   <option value="experience">Most Experienced</option>
                   <option value="fee_asc">Consultation Fee: Low to High</option>
                 </select>
               </div>
 
               <div>
-                <label className="hs-label" style={{ marginBottom: '0.25rem', display: 'block' }}>
-                  Availability
+                <label className="hs-label" style={{ marginBottom: '0.375rem' }}>
+                  Customize Maximum Fee: <strong style={{ color: 'var(--color-secondary-700)' }}>₹{customMaxFee}</strong>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <input
+                    type="range"
+                    min="100"
+                    max="3000"
+                    step="50"
+                    value={customMaxFee}
+                    onChange={(e) => {
+                      setCustomMaxFee(Number(e.target.value));
+                      setPriceRange('CUSTOM');
+                    }}
+                    style={{ flex: 1, accentColor: 'var(--color-secondary-600)', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', minWidth: '48px' }}>
+                    ₹{customMaxFee}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="hs-label" style={{ marginBottom: '0.375rem' }}>
+                  Doctor Availability
                 </label>
                 <button
                   type="button"
                   onClick={() => setAvailability(availability === 'today' ? '' : 'today')}
                   style={{
                     width: '100%',
-                    padding: '0.375rem 0.75rem',
-                    minHeight: '38px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: `1px solid ${availability === 'today' ? 'var(--color-success-600)' : 'var(--border-strong)'}`,
+                    padding: '0.5rem 0.875rem',
+                    minHeight: '42px',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${availability === 'today' ? 'var(--color-success-600)' : 'var(--border-subtle)'}`,
                     backgroundColor: availability === 'today' ? 'var(--color-success-50)' : 'var(--bg-surface)',
                     color: availability === 'today' ? 'var(--color-success-700)' : 'var(--text-primary)',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: '0.8125rem',
                     cursor: 'pointer',
                   }}
@@ -202,13 +257,13 @@ export const DoctorSearchPage: React.FC = () => {
             <div key={i} className="hs-skeleton" style={{ height: '140px', width: '100%' }} />
           ))}
         </div>
-      ) : doctors.length === 0 ? (
-        <Card>
-          <Card.Body style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+      ) : filteredDoctors.length === 0 ? (
+        <Card style={{ borderRadius: '16px', border: '1.5px dashed var(--border-subtle)' }}>
+          <Card.Body style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
             <Stethoscope size={48} color="var(--text-muted)" style={{ margin: '0 auto 1rem auto' }} />
-            <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>No Doctors Found</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '300px', margin: '0.5rem auto 1.5rem auto' }}>
-              Try searching with another specialization or resetting your filters.
+            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>No Doctors Found</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '340px', margin: '0.5rem auto 1.5rem auto' }}>
+              No doctors matched your fee budget or search criteria. Try expanding your price range.
             </p>
             <Button
               variant="outline"
@@ -217,15 +272,17 @@ export const DoctorSearchPage: React.FC = () => {
                 setQuery('');
                 setSpecialization('');
                 setAvailability('');
+                setPriceRange('ALL');
+                setCustomMaxFee(2000);
               }}
             >
-              Reset Filters
+              Reset All Filters
             </Button>
           </Card.Body>
         </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {doctors.map((doctor) => {
+          {filteredDoctors.map((doctor) => {
             const primaryAffiliation = doctor.affiliations?.[0];
             const specs = Array.isArray(doctor.specializations)
               ? doctor.specializations.join(', ')
