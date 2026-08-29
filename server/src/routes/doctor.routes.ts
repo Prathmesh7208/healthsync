@@ -38,6 +38,15 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       whereClause.OR = [
         { fullName: { contains: q, mode: 'insensitive' } },
         { bio: { contains: q, mode: 'insensitive' } },
+        {
+          affiliations: {
+            some: {
+              hospital: {
+                name: { contains: q, mode: 'insensitive' },
+              },
+            },
+          },
+        },
       ];
     }
 
