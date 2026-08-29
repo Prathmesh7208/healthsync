@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, UserCheck } from 'lucide-react';
+import { Search, UserCheck, Calendar } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -14,6 +14,9 @@ export const AppointmentDashboardPage: React.FC = () => {
   const [search, setSearch] = useState<string>('');
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
   const fetchData = async () => {
     setLoading(true);
@@ -63,57 +66,111 @@ export const AppointmentDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '620px' }}>
-          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '170px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Search patient, phone, ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="hs-input"
-              style={{ paddingLeft: '36px', height: '40px', fontSize: '0.875rem', borderRadius: '12px' }}
-            />
-          </div>
-
-          <div style={{ position: 'relative', flex: '1 1 150px', minWidth: '140px' }}>
-            <input
-              type="date"
-              className="hs-input"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              style={{ height: '40px', borderRadius: '12px', fontWeight: 600, fontSize: '0.8125rem' }}
-            />
-          </div>
-
-          <div style={{ position: 'relative', flex: '1 1 150px', minWidth: '140px' }}>
-            <select
-              className="hs-input"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              style={{ height: '40px', borderRadius: '12px', fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer' }}
+        {/* Filter Controls Stack */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', width: '100%', maxWidth: '640px' }}>
+          {/* Quick Date Chips */}
+          <div style={{ display: 'flex', gap: '0.375rem', overflowX: 'auto', paddingBottom: '2px' }}>
+            <button
+              type="button"
+              className={`hs-filter-pill ${date === todayStr ? 'active' : ''}`}
+              onClick={() => setDate(todayStr)}
             >
-              <option value="ALL">All Statuses</option>
-              <option value="BOOKED">Booked</option>
-              <option value="CONFIRMED">Confirmed / Checked-In</option>
-              <option value="IN_PROGRESS">In Consultation</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED_BY_PATIENT">Cancelled</option>
-            </select>
+              Today
+            </button>
+            <button
+              type="button"
+              className={`hs-filter-pill ${date === tomorrowStr ? 'active' : ''}`}
+              onClick={() => setDate(tomorrowStr)}
+            >
+              Tomorrow
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem', width: '100%' }}>
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: '160px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Search patient or ID..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="hs-input"
+                style={{ paddingLeft: '36px', height: '42px', fontSize: '0.875rem' }}
+              />
+            </div>
+
+            {/* Date Input */}
+            <div style={{ position: 'relative', minWidth: '140px' }}>
+              <input
+                type="date"
+                className="hs-input"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                style={{ height: '42px', fontWeight: 600, fontSize: '0.8125rem' }}
+              />
+            </div>
+
+            {/* Status Select */}
+            <div style={{ position: 'relative', minWidth: '140px' }}>
+              <select
+                className="hs-input"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                style={{ height: '42px', fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer' }}
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="BOOKED">Booked</option>
+                <option value="CONFIRMED">Confirmed / Checked-In</option>
+                <option value="IN_PROGRESS">In Consultation</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED_BY_PATIENT">Cancelled</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Table Card */}
-      <Card>
+      <Card style={{ borderRadius: '16px', overflow: 'hidden' }}>
         <Card.Body style={{ padding: 0 }}>
           {loading ? (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
               <div className="hs-skeleton" style={{ height: '200px', width: '100%' }} />
             </div>
           ) : appointments.length === 0 ? (
-            <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No appointments found matching your query criteria.
+            <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center' }}>
+              <div
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--color-primary-50)',
+                  border: '1px solid var(--color-primary-200)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '1rem',
+                  color: 'var(--color-primary-600)',
+                }}
+              >
+                <Calendar size={28} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>No Appointments Found</h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '360px', margin: '0.5rem auto 1.5rem auto' }}>
+                No appointments matched your search on <strong>{date}</strong>.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setDate(todayStr);
+                  setStatus('ALL');
+                  setSearch('');
+                }}
+              >
+                Reset Filters
+              </Button>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
