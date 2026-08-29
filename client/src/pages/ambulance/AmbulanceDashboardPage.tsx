@@ -126,55 +126,93 @@ export const AmbulanceDashboardPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        /* Standing By Active Radar */
+        /* Standing By Active Radar Cockpit */
         <div
           style={{
             backgroundColor: '#1E293B',
-            borderRadius: 'var(--radius-lg)',
+            borderRadius: '20px',
             border: '1px solid #334155',
-            padding: '3rem 1.5rem',
+            padding: '2.5rem 1.25rem',
             textAlign: 'center',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
+          {/* Radar Concentric Rings */}
           <div
             style={{
-              width: '88px',
-              height: '88px',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              border: '2px solid #38BDF8',
-              display: 'inline-flex',
+              position: 'relative',
+              width: '96px',
+              height: '96px',
+              margin: '0 auto 1.5rem auto',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: '1.25rem',
             }}
-            className="animate-sos-pulse"
           >
-            <Radio size={40} color="#38BDF8" />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                border: '2px solid rgba(56, 189, 248, 0.4)',
+              }}
+              className="animate-sos-pulse"
+            />
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                border: '2px solid #38BDF8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 20px rgba(56, 189, 248, 0.4)',
+              }}
+            >
+              <Radio size={32} color="#38BDF8" />
+            </div>
           </div>
 
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
+          <h2 style={{ fontSize: '1.375rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
             Standing By for Emergency Dispatch
           </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', maxWidth: '340px', margin: '0 auto' }}>
-            GPS position is broadcasting to hospital control centers. Keep your device active and audio enabled.
+          <p style={{ color: '#94A3B8', fontSize: '0.875rem', maxWidth: '340px', margin: '0 auto 1.5rem auto', lineHeight: 1.4 }}>
+            GPS position is broadcasting live to ER trauma rooms. Keep your device active and sirens ready.
           </p>
+
+          {/* Telemetry Chips */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.625rem', maxWidth: '440px', margin: '0 auto 1.5rem auto' }}>
+            <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '0.625rem 0.75rem', textAlign: 'left' }}>
+              <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700 }}>GPS TELEMETRY</div>
+              <div style={{ fontSize: '0.8125rem', color: '#4ADE80', fontWeight: 800, marginTop: '2px' }}>● Broadcasting</div>
+            </div>
+            <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '0.625rem 0.75rem', textAlign: 'left' }}>
+              <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700 }}>RADIO CHANNEL</div>
+              <div style={{ fontSize: '0.8125rem', color: '#38BDF8', fontWeight: 800, marginTop: '2px' }}>ER Trauma 108</div>
+            </div>
+          </div>
 
           <div
             style={{
-              marginTop: '2rem',
-              padding: '0.75rem 1rem',
+              padding: '0.625rem 1rem',
               backgroundColor: '#0F172A',
-              borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(74, 222, 128, 0.3)',
+              borderRadius: '9999px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
               fontSize: '0.8125rem',
               color: '#4ADE80',
+              fontWeight: 700,
             }}
           >
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ADE80' }} />
-            <span>Unit {operator?.vehicleNumber} is Ready & Operational</span>
+            <span>Unit {operator?.vehicleNumber || 'MH-12-AM-9999'} is Operational</span>
           </div>
         </div>
       )}

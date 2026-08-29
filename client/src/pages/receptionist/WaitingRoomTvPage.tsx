@@ -129,17 +129,17 @@ export const WaitingRoomTvPage: React.FC = () => {
       {/* Top TV Screen Header */}
       <header
         style={{
-          padding: '1rem 2rem',
+          padding: '0.875rem 1.25rem',
           backgroundColor: '#1E293B',
           borderBottom: '2px solid #334155',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '1rem',
+          gap: '0.875rem',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', minWidth: '220px', flex: '1 1 auto' }}>
           <button
             type="button"
             onClick={() => navigate('/receptionist/dashboard')}
@@ -150,27 +150,30 @@ export const WaitingRoomTvPage: React.FC = () => {
               borderRadius: '8px',
               padding: '0.5rem',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
             title="Exit to Receptionist Dashboard"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={18} />
           </button>
-          <Logo size="md" />
-          <div style={{ borderLeft: '2px solid #475569', paddingLeft: '1rem' }}>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>
-              {hospitalInfo?.name || 'Sahyadri Super Speciality Hospital'}
+          <Logo size="sm" />
+          <div style={{ borderLeft: '2px solid #475569', paddingLeft: '0.75rem' }}>
+            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
+              {hospitalInfo?.name || 'Ruby Hall Clinic'}
             </div>
-            <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>
-              Central OPD Live Token Announcement System • Ground Floor Waiting Lounge
+            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '2px' }}>
+              Central OPD Live Token Announcement System
             </div>
           </div>
         </div>
 
         {/* Live Clock & Audio Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#0F172A', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid #334155' }}>
-            <Clock size={18} color="#38BDF8" />
-            <span style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'monospace', color: '#38BDF8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', backgroundColor: '#0F172A', padding: '0.375rem 0.75rem', borderRadius: '8px', border: '1px solid #334155' }}>
+            <Clock size={16} color="#38BDF8" />
+            <span style={{ fontSize: '0.9375rem', fontWeight: 800, fontFamily: 'monospace', color: '#38BDF8' }}>
               {currentTime.toLocaleTimeString()}
             </span>
           </div>
@@ -181,19 +184,19 @@ export const WaitingRoomTvPage: React.FC = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '0.375rem',
               backgroundColor: voiceEnabled ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
               border: `1px solid ${voiceEnabled ? '#22C55E' : '#EF4444'}`,
               color: voiceEnabled ? '#4ADE80' : '#F87171',
-              padding: '0.5rem 1rem',
+              padding: '0.375rem 0.75rem',
               borderRadius: '8px',
               fontWeight: 700,
-              fontSize: '0.8125rem',
+              fontSize: '0.75rem',
               cursor: 'pointer',
             }}
           >
-            {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>{voiceEnabled ? 'Voice Caller ON' : 'Muted'}</span>
+            {voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            <span>{voiceEnabled ? 'Voice ON' : 'Muted'}</span>
           </button>
 
           <button
@@ -203,24 +206,24 @@ export const WaitingRoomTvPage: React.FC = () => {
               background: '#334155',
               border: 'none',
               color: '#F8FAFC',
-              padding: '0.5rem 0.75rem',
+              padding: '0.375rem 0.75rem',
               borderRadius: '8px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.375rem',
-              fontSize: '0.8125rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
             }}
           >
-            <Maximize2 size={16} />
-            <span>Full Screen TV</span>
+            <Maximize2 size={15} />
+            <span>Full Screen</span>
           </button>
         </div>
       </header>
 
       {/* Main Grid: Multi-Cabin OPD Token Displays */}
-      <main style={{ flex: 1, padding: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+      <main style={{ flex: 1, padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
         {activeRooms.map((room, i) => {
           const docName = (room.doctor?.fullName || 'Doctor').replace(/^(dr\.?|doctor)\s+/i, '').trim();
           const cabin = room.cabin || `Cabin 0${i + 1}`;
@@ -243,18 +246,19 @@ export const WaitingRoomTvPage: React.FC = () => {
               <div
                 style={{
                   backgroundColor: '#0F172A',
-                  padding: '1rem 1.25rem',
+                  padding: '0.875rem 1rem',
                   borderBottom: '1px solid #334155',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: '0.5rem',
                 }}
               >
-                <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.05em' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.05em' }}>
                     {cabin.toUpperCase()}
                   </div>
-                  <h3 style={{ margin: '0.125rem 0 0 0', fontSize: '1.125rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  <h3 style={{ margin: '0.125rem 0 0 0', fontSize: '1rem', fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     Dr. {docName}
                   </h3>
                   <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
@@ -266,11 +270,12 @@ export const WaitingRoomTvPage: React.FC = () => {
                   type="button"
                   onClick={() => handleCallToken(currentToken, docName, cabin)}
                   style={{
+                    flexShrink: 0,
                     backgroundColor: '#16A34A',
                     color: '#FFFFFF',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '0.5rem 0.875rem',
+                    padding: '0.4rem 0.75rem',
                     fontSize: '0.75rem',
                     fontWeight: 800,
                     cursor: 'pointer',
@@ -280,7 +285,7 @@ export const WaitingRoomTvPage: React.FC = () => {
                     boxShadow: '0 4px 10px rgba(22, 163, 74, 0.4)',
                   }}
                 >
-                  <Volume2 size={14} />
+                  <Volume2 size={13} />
                   <span>Call Token</span>
                 </button>
               </div>

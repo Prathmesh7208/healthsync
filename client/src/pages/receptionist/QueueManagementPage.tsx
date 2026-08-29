@@ -98,17 +98,18 @@ export const QueueManagementPage: React.FC = () => {
   return (
     <div>
       {/* Header with Walk-In trigger */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Live Patient Queue Kanban</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.875rem', marginBottom: '1.25rem' }}>
+        <div style={{ minWidth: '220px', flex: '1 1 auto' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Live Patient Queue Kanban</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
-            Real-time consultation flow tracker: Waiting Lobby → Consulting Room → Completed.
+            Real-time consultation flow: Waiting Lobby → Consulting Room → Completed.
           </p>
         </div>
 
         <Button
           variant="primary"
-          leftIcon={<UserPlus size={16} />}
+          size="sm"
+          leftIcon={<UserPlus size={15} />}
           onClick={() => setWalkInOpen(true)}
         >
           Check In Walk-In
@@ -116,19 +117,20 @@ export const QueueManagementPage: React.FC = () => {
       </div>
 
       {/* Doctor Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.25rem' }}>
         {doctors.map((d) => (
           <button
             key={d.id}
             type="button"
             onClick={() => setSelectedDoctorId(d.id)}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.45rem 0.875rem',
               borderRadius: 'var(--radius-md)',
               border: `2px solid ${selectedDoctorId === d.id ? 'var(--color-primary-600)' : 'var(--border-subtle)'}`,
               backgroundColor: selectedDoctorId === d.id ? 'var(--color-primary-50)' : 'var(--bg-surface)',
               color: selectedDoctorId === d.id ? 'var(--color-primary-800)' : 'var(--text-primary)',
               fontWeight: selectedDoctorId === d.id ? 700 : 500,
+              fontSize: '0.8125rem',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               display: 'flex',
@@ -147,14 +149,14 @@ export const QueueManagementPage: React.FC = () => {
                 fontWeight: 700,
               }}
             >
-              {d.waitingCount}
+              {d.waitingCount || 0}
             </span>
           </button>
         ))}
       </div>
 
-      {/* 3-Column Kanban Board */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', alignItems: 'start' }}>
+      {/* Responsive Kanban Board */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', alignItems: 'start' }}>
         {/* COLUMN 1: Waiting Lobby */}
         <div style={{ backgroundColor: 'var(--bg-surface-subtle)', padding: '1rem', borderRadius: 'var(--radius-md)', minHeight: '400px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

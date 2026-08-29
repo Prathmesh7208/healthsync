@@ -92,26 +92,28 @@ export const ReceptionistDashboardPage: React.FC = () => {
   return (
     <div>
       {/* Header with Quick Walk-in CTA */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ minWidth: '220px', flex: '1 1 auto' }}>
+          <h1 style={{ fontSize: '1.625rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             Hospital Front-Desk Control
           </h1>
           <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-            {hospital?.name} • Operations on {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            {hospital?.name || 'Ruby Hall Clinic'} • Operations on {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => navigate('/receptionist/tv-display')}
           >
             📺 Lobby TV Display Mode
           </Button>
           <Button
             variant="primary"
-            leftIcon={<UserPlus size={16} />}
+            size="sm"
+            leftIcon={<UserPlus size={15} />}
             onClick={() => setWalkInModalOpen(true)}
           >
             Register Walk-In Patient
@@ -119,46 +121,36 @@ export const ReceptionistDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
-        <Card>
-          <Card.Body style={{ padding: '1rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Today's Bookings</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{totalApts}</div>
-          </Card.Body>
-        </Card>
+      {/* KPI Stats Row - Responsive Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '0.875rem 1rem', boxShadow: 'var(--shadow-xs)' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Today's Bookings</span>
+          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>{totalApts}</div>
+        </div>
 
-        <Card>
-          <Card.Body style={{ padding: '1rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-primary-600)' }}>Checked In</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-primary-700)' }}>{checkedInCount}</div>
-          </Card.Body>
-        </Card>
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--color-primary-200)', borderRadius: '12px', padding: '0.875rem 1rem', boxShadow: 'var(--shadow-xs)' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--color-primary-600)', fontWeight: 700, textTransform: 'uppercase' }}>Checked In</span>
+          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--color-primary-700)', marginTop: '0.25rem' }}>{checkedInCount}</div>
+        </div>
 
-        <Card>
-          <Card.Body style={{ padding: '1rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-warning-600)' }}>Waiting in Lobby</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-warning-600)' }}>{waitingCount}</div>
-          </Card.Body>
-        </Card>
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--color-warning-200)', borderRadius: '12px', padding: '0.875rem 1rem', boxShadow: 'var(--shadow-xs)' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--color-warning-600)', fontWeight: 700, textTransform: 'uppercase' }}>Waiting in Lobby</span>
+          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--color-warning-600)', marginTop: '0.25rem' }}>{waitingCount}</div>
+        </div>
 
-        <Card>
-          <Card.Body style={{ padding: '1rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-secondary-600)' }}>In Consultation</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-secondary-600)' }}>{inConsultationCount}</div>
-          </Card.Body>
-        </Card>
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--color-secondary-200)', borderRadius: '12px', padding: '0.875rem 1rem', boxShadow: 'var(--shadow-xs)' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--color-secondary-600)', fontWeight: 700, textTransform: 'uppercase' }}>In Consultation</span>
+          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--color-secondary-600)', marginTop: '0.25rem' }}>{inConsultationCount}</div>
+        </div>
 
-        <Card>
-          <Card.Body style={{ padding: '1rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-success-600)' }}>Completed</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-success-600)' }}>{completedCount}</div>
-          </Card.Body>
-        </Card>
+        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--color-success-200)', borderRadius: '12px', padding: '0.875rem 1rem', boxShadow: 'var(--shadow-xs)' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--color-success-600)', fontWeight: 700, textTransform: 'uppercase' }}>Completed</span>
+          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--color-success-600)', marginTop: '0.25rem' }}>{completedCount}</div>
+        </div>
       </div>
 
       {/* Grid: Live Doctor Board (Left) & Recent Appointments (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.25rem', alignItems: 'start' }}>
         {/* Doctor Availability Board */}
         <Card>
           <Card.Header>
