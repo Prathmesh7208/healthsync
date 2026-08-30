@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';
+import 'leaflet/dist/leaflet.css';
 import App from './App';
 import './styles/index.css';
 import './styles/components.css';

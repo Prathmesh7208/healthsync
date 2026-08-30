@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import {
   Navigation,
   Phone,
-  ShieldAlert,
-  Radio,
   Clock,
   Gauge,
   Building2,
+  ExternalLink,
+  Crosshair,
+  Maximize2,
+  Compass,
 } from 'lucide-react';
 import { getSocket } from '../../services/socket';
 
@@ -27,35 +30,214 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
   vehicleNumber = 'MH-12-EM-1080',
   driverPhone = '+919844400001',
 }) => {
-  // Motion progress state: 0 (at hospital origin) -> 1 (arrived at patient)
-  const [progress, setProgress] = useState(0.25);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const ambulanceMarkerRef = useRef<L.Marker | null>(null);
+  const patientMarkerRef = useRef<L.Marker | null>(null);
+  const hospitalMarkerRef = useRef<L.Marker | null>(null);
+  const routePolylineRef = useRef<L.Polyline | null>(null);
+  const completedPolylineRef = useRef<L.Polyline | null>(null);
+
+  // Map Tile Style: 'streets' | 'satellite' | 'dark'
+  const [mapStyle, setMapStyle] = useState<'streets' | 'satellite' | 'dark'>('streets');
   const [speed, setSpeed] = useState(48);
-  const [distanceKm, setDistanceKm] = useState(2.1);
+  const [distanceKm, setDistanceKm] = useState(2.4);
   const [etaMinutes, setEtaMinutes] = useState(4);
-  const [liveCoords, setLiveCoords] = useState({
-    lat: patientLocation.latitude + 0.018,
-    lng: patientLocation.longitude + 0.022,
-  });
+  const [, setProgress] = useState(0.2);
 
-  // Calculate pixel percentages on the map canvas
-  // Hospital Origin: X: 82%, Y: 22%
-  // Patient Destination: X: 30%, Y: 68%
-  const originX = 82;
-  const originY = 22;
-  const targetX = 30;
-  const targetY = 68;
+  // Base coordinates (Defaults to Pune city center if GPS not available)
+  const pLat = patientLocation?.latitude || 18.5204;
+  const pLng = patientLocation?.longitude || 73.8567;
+  const hLat = hospitalLocation?.latitude || pLat + 0.024;
+  const hLng = hospitalLocation?.longitude || pLng + 0.028;
 
-  // Current interpolated ambulance screen coordinates
-  const currentX = originX - (originX - targetX) * progress;
-  const currentY = originY + (targetY - originY) * progress;
+  // Real-time ambulance coordinates state
+  const [ambCoords, setAmbCoords] = useState<[number, number]>([
+    hLat - (hLat - pLat) * 0.2,
+    hLng - (hLng - pLng) * 0.2,
+  ]);
 
-  // Real-time animation loop simulating turn-by-turn driving towards patient
+  // Tile layer URLs
+  const tileLayers = {
+    streets: {
+      url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+      maxZoom: 19,
+    },
+    dark: {
+      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    },
+  };
+
+  // 1. Initialize Leaflet Map
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        center: [(pLat + hLat) / 2, (pLng + hLng) / 2],
+        zoom: 14,
+        zoomControl: false,
+      });
+
+      // Custom Zoom Control top-right
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      // Default Tile Layer
+      const initialLayer = L.tileLayer(tileLayers.streets.url, {
+        attribution: tileLayers.streets.attribution,
+        maxZoom: tileLayers.streets.maxZoom,
+      }).addTo(map);
+      tileLayerRef.current = initialLayer;
+
+      // 2. Custom Google Maps HTML DivIcons
+      // Patient Pin (Red Google Maps Pin + Pulse Ring)
+      const patientIcon = L.divIcon({
+        className: 'custom-patient-marker',
+        html: `
+          <div style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -100%);">
+            <div style="position: absolute; width: 48px; height: 48px; border-radius: 50%; background: rgba(220, 38, 38, 0.25); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; background: rgba(220, 38, 38, 0.4); border: 2px solid #FFFFFF;"></div>
+            <div style="position: relative; width: 34px; height: 34px; border-radius: 50% 50% 50% 0; background: #DC2626; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.35); border: 2.5px solid #FFFFFF;">
+              <div style="transform: rotate(45deg); font-size: 14px; font-weight: 900; color: #FFFFFF;">👤</div>
+            </div>
+          </div>
+        `,
+        iconSize: [44, 44],
+        iconAnchor: [22, 44],
+      });
+
+      // Hospital Pin (Blue Medical Badge)
+      const hospitalIcon = L.divIcon({
+        className: 'custom-hospital-marker',
+        html: `
+          <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -100%);">
+            <div style="position: relative; width: 32px; height: 32px; border-radius: 8px; background: #1D4ED8; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid #FFFFFF;">
+              <span style="font-size: 16px; color: #FFFFFF; font-weight: 900;">🏥</span>
+            </div>
+          </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+      });
+
+      // Ambulance Pin (High-Visibility 3D Vehicle Icon + Beacon Ring)
+      const ambulanceIcon = L.divIcon({
+        className: 'custom-ambulance-marker',
+        html: `
+          <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%);">
+            <div style="position: absolute; width: 46px; height: 46px; border-radius: 50%; background: rgba(234, 179, 8, 0.3); animation: pulse 1s infinite;"></div>
+            <div style="position: relative; width: 38px; height: 38px; border-radius: 50%; background: #0F172A; border: 2.5px solid #EAB308; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 179, 8, 0.6);">
+              <span style="font-size: 20px;">🚑</span>
+            </div>
+            <div style="position: absolute; top: -18px; background: #0F172A; color: #FBBF24; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; border: 1px solid #FBBF24; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+              48 km/h
+            </div>
+          </div>
+        `,
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
+      });
+
+      // Add Markers to Map
+      patientMarkerRef.current = L.marker([pLat, pLng], { icon: patientIcon })
+        .addTo(map)
+        .bindPopup('<b>📍 Your Exact GPS Location</b><br/>Emergency Beacon Active');
+
+      hospitalMarkerRef.current = L.marker([hLat, hLng], { icon: hospitalIcon })
+        .addTo(map)
+        .bindPopup(`<b>🏥 ${hospitalLocation?.name || 'Trauma Base Station'}</b><br/>Dispatched Origin`);
+
+      ambulanceMarkerRef.current = L.marker([ambCoords[0], ambCoords[1]], { icon: ambulanceIcon })
+        .addTo(map)
+        .bindPopup(`<b>🚑 Ambulance Unit ${vehicleNumber}</b><br/>Status: En Route to Patient`);
+
+      // 3. Realistic Road Route Polyline (Simulated multi-segment street path)
+      const midLat1 = hLat - (hLat - pLat) * 0.35 + 0.003;
+      const midLng1 = hLng - (hLng - pLng) * 0.35 - 0.002;
+      const midLat2 = hLat - (hLat - pLat) * 0.7 - 0.002;
+      const midLng2 = hLng - (hLng - pLng) * 0.7 + 0.003;
+
+      const fullRoutePoints: [number, number][] = [
+        [hLat, hLng],
+        [midLat1, midLng1],
+        [midLat2, midLng2],
+        [pLat, pLng],
+      ];
+
+      // Outline casing for real Google Maps look
+      L.polyline(fullRoutePoints, {
+        color: '#1E40AF',
+        weight: 8,
+        opacity: 0.6,
+        lineCap: 'round',
+        lineJoin: 'round',
+      }).addTo(map);
+
+      // Active navigation route (Blue line)
+      routePolylineRef.current = L.polyline(fullRoutePoints, {
+        color: '#3B82F6',
+        weight: 5,
+        opacity: 0.9,
+        dashArray: '8, 8',
+        lineCap: 'round',
+      }).addTo(map);
+
+      // Traveled route (Solid Emerald Green line)
+      completedPolylineRef.current = L.polyline([[hLat, hLng], [ambCoords[0], ambCoords[1]]], {
+        color: '#10B981',
+        weight: 6,
+        opacity: 1,
+        lineCap: 'round',
+      }).addTo(map);
+
+      // Fit bounds nicely with padding
+      const bounds = L.latLngBounds([[pLat, pLng], [hLat, hLng]]);
+      map.fitBounds(bounds, { padding: [60, 60] });
+
+      mapInstanceRef.current = map;
+    }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [pLat, pLng, hLat, hLng]);
+
+  // Update map tiles when style changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+    mapInstanceRef.current.removeLayer(tileLayerRef.current);
+
+    const newLayer = L.tileLayer(tileLayers[mapStyle].url, {
+      attribution: tileLayers[mapStyle].attribution,
+      maxZoom: tileLayers[mapStyle].maxZoom,
+    }).addTo(mapInstanceRef.current);
+
+    tileLayerRef.current = newLayer;
+  }, [mapStyle]);
+
+  // Real-time animation loop simulating live GPS driving
   useEffect(() => {
     const socket = getSocket();
 
     const handleLocationUpdate = (data: any) => {
       if (data.emergencyId === emergencyId && data.latitude && data.longitude) {
-        setLiveCoords({ lat: data.latitude, lng: data.longitude });
+        const nextPos: [number, number] = [data.latitude, data.longitude];
+        setAmbCoords(nextPos);
+        if (ambulanceMarkerRef.current) {
+          ambulanceMarkerRef.current.setLatLng(nextPos);
+        }
         if (data.speed) setSpeed(data.speed);
       }
     };
@@ -64,16 +246,25 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
 
     const interval = setInterval(() => {
       setProgress((prev) => {
-        const next = prev >= 0.95 ? 0.2 : prev + 0.025;
+        const next = prev >= 0.95 ? 0.2 : prev + 0.03;
+        const currentLat = hLat - (hLat - pLat) * next;
+        const currentLng = hLng - (hLng - pLng) * next;
+        const nextCoords: [number, number] = [currentLat, currentLng];
+
+        setAmbCoords(nextCoords);
+
+        if (ambulanceMarkerRef.current) {
+          ambulanceMarkerRef.current.setLatLng(nextCoords);
+        }
+
+        if (completedPolylineRef.current) {
+          completedPolylineRef.current.setLatLngs([[hLat, hLng], nextCoords]);
+        }
+
         const remainingDist = Math.max(0.2, Number((2.8 * (1 - next)).toFixed(1)));
         setDistanceKm(remainingDist);
-        setEtaMinutes(Math.max(1, Math.ceil((remainingDist / 40) * 60)));
-        setSpeed(Math.floor(42 + Math.random() * 14));
-
-        setLiveCoords({
-          lat: patientLocation.latitude + 0.018 * (1 - next),
-          lng: patientLocation.longitude + 0.022 * (1 - next),
-        });
+        setEtaMinutes(Math.max(1, Math.ceil((remainingDist / 42) * 60)));
+        setSpeed(Math.floor(40 + Math.random() * 16));
 
         return next;
       });
@@ -83,400 +274,363 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
       socket.off('emergency:location_update', handleLocationUpdate);
       clearInterval(interval);
     };
-  }, [emergencyId, patientLocation]);
+  }, [emergencyId, pLat, pLng, hLat, hLng]);
+
+  // Center camera controls
+  const handleRecenter = (target: 'patient' | 'ambulance' | 'all') => {
+    if (!mapInstanceRef.current) return;
+    if (target === 'patient') {
+      mapInstanceRef.current.flyTo([pLat, pLng], 16, { duration: 1.2 });
+    } else if (target === 'ambulance') {
+      mapInstanceRef.current.flyTo(ambCoords, 16, { duration: 1.2 });
+    } else {
+      const bounds = L.latLngBounds([[pLat, pLng], [hLat, hLng]]);
+      mapInstanceRef.current.flyToBounds(bounds, { padding: [50, 50], duration: 1.2 });
+    }
+  };
+
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${ambCoords[0]},${ambCoords[1]}&destination=${pLat},${pLng}&travelmode=driving`;
 
   return (
     <div
       style={{
-        backgroundColor: '#0F172A',
+        backgroundColor: '#FFFFFF',
         borderRadius: '16px',
-        border: '1px solid #334155',
+        border: '1.5px solid #E2E8F0',
         overflow: 'hidden',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(220, 38, 38, 0.15)',
-        color: '#F8FAFC',
+        boxShadow: '0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 10px rgba(37, 99, 235, 0.08)',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      {/* Telemetry Header Bar */}
+      {/* 1. Google Maps Navigation Header Bar */}
       <div
         style={{
-          padding: '1rem 1.25rem',
-          backgroundColor: '#1E293B',
-          borderBottom: '1px solid #334155',
+          padding: '0.875rem 1.25rem',
+          backgroundColor: '#0F172A',
+          color: '#FFFFFF',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.75rem',
+          borderBottom: '1px solid #334155',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div
             style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              backgroundColor: '#22C55E',
-              boxShadow: '0 0 12px #22C55E',
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              backgroundColor: '#DC2626',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 12px rgba(220, 38, 38, 0.5)',
             }}
-            className="animate-pulse"
-          />
+          >
+            <Navigation size={18} color="#FFFFFF" className="animate-pulse" />
+          </div>
           <div>
-            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span>Live GPS Ambulance Radar</span>
-              <span style={{ backgroundColor: '#DC2626', color: '#FFFFFF', padding: '1px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900 }}>
-                EMERGENCY PRIORITY
+            <div style={{ fontSize: '0.9375rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>Live Emergency GPS Tracking</span>
+              <span style={{ backgroundColor: '#22C55E', color: '#0F172A', padding: '1px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900 }}>
+                ACTIVE GPS
               </span>
             </div>
-            <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '2px' }}>
-              Unit: <span style={{ color: '#FBBF24', fontWeight: 800 }}>{vehicleNumber}</span> • Tracking via ISRO IRNSS / GPS
+            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '2px' }}>
+              Unit: <strong style={{ color: '#FBBF24' }}>{vehicleNumber}</strong> • Real-time SatNav Route
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div
+        {/* Action Controls Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noreferrer"
             style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '0.375rem',
-              backgroundColor: 'rgba(34, 197, 94, 0.15)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              padding: '3px 8px',
-              borderRadius: '9999px',
-              fontSize: '0.6875rem',
-              color: '#4ADE80',
-              fontWeight: 700,
+              backgroundColor: '#2563EB',
+              color: '#FFFFFF',
+              padding: '0.4rem 0.875rem',
+              borderRadius: '10px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)',
             }}
           >
-            <Radio size={12} className="animate-pulse" />
-            <span>LIVE STREAM 30 FPS</span>
-          </div>
+            <ExternalLink size={14} />
+            <span>Open in Google Maps</span>
+          </a>
 
           <a
             href={`tel:${driverPhone}`}
             style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '0.375rem',
               backgroundColor: '#16A34A',
               color: '#FFFFFF',
-              padding: '0.375rem 0.875rem',
-              borderRadius: '8px',
+              padding: '0.4rem 0.875rem',
+              borderRadius: '10px',
               fontSize: '0.75rem',
               fontWeight: 800,
               textDecoration: 'none',
-              boxShadow: '0 2px 6px rgba(22, 163, 74, 0.4)',
+              boxShadow: '0 2px 8px rgba(22, 163, 74, 0.4)',
             }}
           >
-            <Phone size={13} />
+            <Phone size={14} />
             <span>Call Driver</span>
           </a>
         </div>
       </div>
 
-      {/* High-Tech Dynamic Interactive Radar Map Canvas */}
-      <div
-        style={{
-          position: 'relative',
-          height: '320px',
-          background: '#0B1120',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {/* Street Grid Blueprint Overlay */}
-        <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.25 }}>
-          <defs>
-            <pattern id="streetGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#38BDF8" strokeWidth="0.8" />
-            </pattern>
-            <pattern id="majorGrid" width="120" height="120" patternUnits="userSpaceOnUse">
-              <path d="M 120 0 L 0 0 0 120" fill="none" stroke="#60A5FA" strokeWidth="1.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#streetGrid)" />
-          <rect width="100%" height="100%" fill="url(#majorGrid)" />
+      {/* 2. Real Google Maps Container */}
+      <div style={{ position: 'relative', height: '380px', width: '100%', backgroundColor: '#E2E8F0' }}>
+        {/* Map Canvas */}
+        <div ref={mapContainerRef} style={{ height: '100%', width: '100%', zIndex: 1 }} />
 
-          {/* Road Network Lines */}
-          <line x1="0" y1="22%" x2="100%" y2="22%" stroke="#1E293B" strokeWidth="12" />
-          <line x1="82%" y1="0" x2="82%" y2="100%" stroke="#1E293B" strokeWidth="12" />
-          <line x1="0" y1="68%" x2="100%" y2="68%" stroke="#1E293B" strokeWidth="12" />
-          <line x1="30%" y1="0" x2="30%" y2="100%" stroke="#1E293B" strokeWidth="12" />
-
-          {/* Active Navigation Trajectory Route Line (Hospital -> Ambulance -> Patient) */}
-          <line
-            x1={`${originX}%`}
-            y1={`${originY}%`}
-            x2={`${targetX}%`}
-            y2={`${targetY}%`}
-            stroke="#22D3EE"
-            strokeWidth="3.5"
-            strokeDasharray="8 6"
-          />
-          {/* Covered Route Glow Line */}
-          <line
-            x1={`${originX}%`}
-            y1={`${originY}%`}
-            x2={`${currentX}%`}
-            y2={`${currentY}%`}
-            stroke="#4ADE80"
-            strokeWidth="4"
-          />
-        </svg>
-
-        {/* Radar Concentric Distance Rings around Patient */}
+        {/* Floating Google Maps Style Selector (Top-Left) */}
         <div
           style={{
             position: 'absolute',
-            left: `${targetX}%`,
-            top: `${targetY}%`,
-            transform: 'translate(-50%, -50%)',
-            width: '260px',
-            height: '260px',
-            borderRadius: '50%',
-            border: '1px dashed rgba(56, 189, 248, 0.2)',
-            pointerEvents: 'none',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            left: `${targetX}%`,
-            top: `${targetY}%`,
-            transform: 'translate(-50%, -50%)',
-            width: '160px',
-            height: '160px',
-            borderRadius: '50%',
-            border: '1px dashed rgba(56, 189, 248, 0.35)',
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* 1. DISPATCH BASE / HOSPITAL ORIGIN PIN (Top-Right) */}
-        <div
-          style={{
-            position: 'absolute',
-            left: `${originX}%`,
-            top: `${originY}%`,
-            transform: 'translate(-50%, -50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            zIndex: 10,
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: '#1E3A8A',
-              border: '2px solid #60A5FA',
-              color: '#93C5FD',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 15px rgba(96, 165, 250, 0.4)',
-            }}
-          >
-            <Building2 size={18} />
-          </div>
-          <span
-            style={{
-              backgroundColor: '#0F172A',
-              border: '1px solid #3B82F6',
-              color: '#93C5FD',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '0.625rem',
-              fontWeight: 800,
-              marginTop: '4px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            🏥 {hospitalLocation?.name || 'Trauma Base Station'} (Origin)
-          </span>
-        </div>
-
-        {/* 2. DYNAMIC MOVING AMBULANCE BEACON (Real-Time Interpolation) */}
-        <div
-          style={{
-            position: 'absolute',
-            left: `${currentX}%`,
-            top: `${currentY}%`,
-            transform: 'translate(-50%, -50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            zIndex: 25,
-            transition: 'left 1.9s linear, top 1.9s linear',
-          }}
-        >
-          {/* Flashing Emergency Light Pulse */}
-          <div
-            style={{
-              width: '54px',
-              height: '54px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(234, 179, 8, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 25px rgba(234, 179, 8, 0.6)',
-            }}
-          >
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                backgroundColor: '#EAB308',
-                color: '#0F172A',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 20px #EAB308',
-                fontSize: '1.25rem',
-              }}
-            >
-              🚑
-            </div>
-          </div>
-          <span
-            style={{
-              backgroundColor: '#1E293B',
-              border: '1px solid #EAB308',
-              color: '#FEF08A',
-              padding: '3px 8px',
-              borderRadius: '6px',
-              fontSize: '0.6875rem',
-              fontWeight: 900,
-              marginTop: '4px',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-            }}
-          >
-            AMBULANCE {vehicleNumber} ({speed} km/h)
-          </span>
-        </div>
-
-        {/* 3. PATIENT LOCATION PIN (Target Beacon) */}
-        <div
-          style={{
-            position: 'absolute',
-            left: `${targetX}%`,
-            top: `${targetY}%`,
-            transform: 'translate(-50%, -50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            zIndex: 15,
-          }}
-        >
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(239, 68, 68, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              animation: 'pulse 1.5s infinite',
-            }}
-          >
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                backgroundColor: '#DC2626',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 18px #DC2626',
-              }}
-            >
-              <ShieldAlert size={16} />
-            </div>
-          </div>
-          <span
-            style={{
-              backgroundColor: '#0F172A',
-              border: '1px solid #DC2626',
-              color: '#FCA5A5',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '0.625rem',
-              fontWeight: 900,
-              marginTop: '4px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            🚨 YOUR LIVE SOS GPS
-          </span>
-        </div>
-
-        {/* Live Coordinates Floating HUD Tag */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '10px',
+            top: '12px',
             left: '12px',
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            border: '1px solid #334155',
-            borderRadius: '6px',
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            fontFamily: 'monospace',
-            color: '#38BDF8',
+            zIndex: 1000,
+            display: 'flex',
+            gap: '4px',
+            backgroundColor: 'rgba(255, 255, 255, 0.92)',
+            backdropFilter: 'blur(8px)',
+            padding: '4px',
+            borderRadius: '10px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+            border: '1px solid #CBD5E1',
           }}
         >
-          AMBULANCE GPS: {liveCoords.lat.toFixed(4)}, {liveCoords.lng.toFixed(4)}
+          <button
+            type="button"
+            onClick={() => setMapStyle('streets')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '7px',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapStyle === 'streets' ? '#2563EB' : 'transparent',
+              color: mapStyle === 'streets' ? '#FFFFFF' : '#334155',
+            }}
+          >
+            🗺️ Streets
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapStyle('satellite')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '7px',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapStyle === 'satellite' ? '#2563EB' : 'transparent',
+              color: mapStyle === 'satellite' ? '#FFFFFF' : '#334155',
+            }}
+          >
+            🛰️ Satellite
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapStyle('dark')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '7px',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapStyle === 'dark' ? '#0F172A' : 'transparent',
+              color: mapStyle === 'dark' ? '#FFFFFF' : '#334155',
+            }}
+          >
+            🌙 Dark
+          </button>
+        </div>
+
+        {/* Floating Quick Camera Controls (Bottom-Right) */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '16px',
+            right: '12px',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+          }}
+        >
+          <button
+            type="button"
+            title="Recenter on My GPS Location"
+            onClick={() => handleRecenter('patient')}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1.5px solid #CBD5E1',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#DC2626',
+            }}
+          >
+            <Crosshair size={18} />
+          </button>
+
+          <button
+            type="button"
+            title="Follow Ambulance GPS"
+            onClick={() => handleRecenter('ambulance')}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1.5px solid #CBD5E1',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '16px',
+            }}
+          >
+            🚑
+          </button>
+
+          <button
+            type="button"
+            title="Fit Full Route"
+            onClick={() => handleRecenter('all')}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1.5px solid #CBD5E1',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#1E293B',
+            }}
+          >
+            <Maximize2 size={16} />
+          </button>
+        </div>
+
+        {/* Turn-by-Turn Instruction Banner (Top-Center overlay) */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            backgroundColor: '#0F172A',
+            color: '#FFFFFF',
+            padding: '6px 14px',
+            borderRadius: '9999px',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            maxWidth: '90%',
+            whiteSpace: 'nowrap',
+            border: '1px solid #334155',
+          }}
+        >
+          <Compass size={14} color="#38BDF8" className="animate-spin" />
+          <span>Ambulance En Route via Main Arterial Road • Traffic: Clear</span>
         </div>
       </div>
 
-      {/* Live Telemetry KPI Bar */}
+      {/* 3. Live Telemetry HUD Bar */}
       <div
         style={{
+          padding: '1rem 1.25rem',
+          backgroundColor: '#F8FAFC',
+          borderTop: '1px solid #E2E8F0',
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          backgroundColor: '#1E293B',
-          borderTop: '1px solid #334155',
-          padding: '1rem',
-          textAlign: 'center',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: '1rem',
         }}
       >
-        <div style={{ borderRight: '1px solid #334155' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700 }}>
-            <Clock size={14} color="#4ADE80" />
-            <span>ESTIMATED ARRIVAL</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <div style={{ padding: '0.5rem', borderRadius: '10px', backgroundColor: '#EFF6FF', color: '#2563EB' }}>
+            <Clock size={20} />
           </div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#4ADE80', marginTop: '2px' }}>
-            ~{etaMinutes} mins
-          </div>
-        </div>
-
-        <div style={{ borderRight: '1px solid #334155' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700 }}>
-            <Navigation size={14} color="#60A5FA" />
-            <span>DISTANCE</span>
-          </div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#60A5FA', marginTop: '2px' }}>
-            {distanceKm} km
+          <div>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              Estimated Arrival
+            </div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#1E293B' }}>
+              {etaMinutes} MINS
+            </div>
           </div>
         </div>
 
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700 }}>
-            <Gauge size={14} color="#FBBF24" />
-            <span>LIVE SPEED</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <div style={{ padding: '0.5rem', borderRadius: '10px', backgroundColor: '#FEF3C7', color: '#D97706' }}>
+            <Navigation size={20} />
           </div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#FBBF24', marginTop: '2px' }}>
-            {speed} km/h
+          <div>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              GPS Distance
+            </div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#1E293B' }}>
+              {distanceKm} KM
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <div style={{ padding: '0.5rem', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#059669' }}>
+            <Gauge size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              Live Telemetry Speed
+            </div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#1E293B' }}>
+              {speed} km/h
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <div style={{ padding: '0.5rem', borderRadius: '10px', backgroundColor: '#F3E8FF', color: '#7E22CE' }}>
+            <Building2 size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              Trauma Base
+            </div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+              {hospitalLocation?.name || 'Base Hospital'}
+            </div>
           </div>
         </div>
       </div>
