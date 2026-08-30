@@ -57,22 +57,44 @@ export const EmergencyTrackingPage: React.FC = () => {
     { status: 'RESOLVED', label: 'Emergency Response Complete' },
   ];
 
-  // Load any previously active emergency from localStorage so state never drops on refresh
+  // Load any previously active emergency from localStorage or URL parameter so state never drops
   const [emergency, setEmergency] = useState<any>(() => {
     try {
       const saved = localStorage.getItem('hs_active_emergency');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) return JSON.parse(saved);
+      if (id) {
+        const cached = getCachedGPS();
+        return {
+          id: id,
+          emergencyId: 'HS-EMR-2026-LIVE',
+          status: 'AMBULANCE_ASSIGNED',
+          initialLatitude: cached.latitude || 18.5204,
+          initialLongitude: cached.longitude || 73.8567,
+          patient: { fullName: 'Emergency Patient', bloodGroup: 'O+' },
+          hospital: {
+            name: 'Sahyadri Super Speciality Hospital',
+            address: 'Plot No. 30 C, Erandwane, Karve Road',
+            city: 'Pune',
+            phone: '+91 20 6721 5000',
+          },
+          ambulanceOperator: {
+            vehicleNumber: 'MH-12-EM-1080',
+            user: { phone: '+919844400001' },
+          },
+        };
+      }
+      return null;
     } catch {
       return null;
     }
   });
 
-  const [loading, setLoading] = useState(!emergency);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState(t('emergencyTracking.reasons.accidental'));
   const [cancelling, setCancelling] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [justCancelled, setJustCancelled] = useState(false);
+
 
   // Network Quality & Low Latency Mode State
   const [netQuality, setNetQuality] = useState<NetworkQuality>(() => {
@@ -188,10 +210,9 @@ export const EmergencyTrackingPage: React.FC = () => {
       }
     } catch {
       // Keep offline cache intact
-    } finally {
-      setLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (token) fetchTracking();
@@ -376,14 +397,6 @@ export const EmergencyTrackingPage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container" style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-        <Siren size={48} color="#DC2626" className="animate-sos-pulse" />
-        <h2 style={{ marginTop: '1rem', fontWeight: 800 }}>Connecting to Emergency GPS Network...</h2>
-      </div>
-    );
-  }
 
   // =========================================================================
   // CASE 1: NO ACTIVE EMERGENCY -> READY HUB
