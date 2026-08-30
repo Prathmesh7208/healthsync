@@ -13,9 +13,9 @@ export const helmetSecurityMiddleware = helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'https://*.basemaps.cartocdn.com', 'https://server.arcgisonline.com', 'https://*.tile.openstreetmap.org'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'https://*.basemaps.cartocdn.com', 'https://server.arcgisonline.com', 'https://*.tile.openstreetmap.org', 'https://*.google.com', 'https://*.googleapis.com'],
       connectSrc: ["'self'", 'https:', 'wss:', 'ws:'],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", 'https://maps.google.com', 'https://*.google.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
@@ -25,7 +25,7 @@ export const helmetSecurityMiddleware = helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   dnsPrefetchControl: { allow: false },
-  frameguard: { action: 'deny' },
+  frameguard: { action: 'sameorigin' },
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   ieNoOpen: true,
   noSniff: true,
@@ -61,10 +61,10 @@ export const authRateLimiter = rateLimit({
   },
 });
 
-// General API Rate Limiting (200 requests per minute per IP)
+// General API Rate Limiting (300 requests per minute per IP)
 export const apiRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 200,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -76,10 +76,10 @@ export const apiRateLimiter = rateLimit({
   },
 });
 
-// Sensitive Emergency Trigger Limiter (5 SOS triggers per 2 minutes)
+// Sensitive Emergency Trigger Limiter (25 SOS triggers per 2 minutes)
 export const emergencyRateLimiter = rateLimit({
   windowMs: 2 * 60 * 1000,
-  max: 8,
+  max: 25,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

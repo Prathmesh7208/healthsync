@@ -116,7 +116,7 @@ app.use('/api/v1/consultations', consultationRoutes);
 app.use('/api/v1/prescriptions', prescriptionRoutes);
 app.use('/api/v1/receptionist', receptionistRoutes);
 app.use('/api/v1/ambulance', ambulanceRoutes);
-app.use('/api/v1/emergencies', emergencyRateLimiter, emergencyRoutes);
+app.use('/api/v1/emergencies', emergencyRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // 404 Not Found Handler for unmatched routes

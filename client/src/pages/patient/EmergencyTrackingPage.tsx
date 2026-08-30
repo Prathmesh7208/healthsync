@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -261,20 +261,31 @@ export const EmergencyTrackingPage: React.FC = () => {
     setSosModalOpen(true);
   };
 
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    let t: NodeJS.Timeout;
     if (sosModalOpen && countdown > 0) {
-      t = setInterval(() => setCountdown((c) => c - 1), 1000);
+      timerRef.current = setTimeout(() => setCountdown((c) => c - 1), 1000);
     } else if (sosModalOpen && countdown === 0) {
       executeSosTrigger();
     }
-    return () => clearInterval(t);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [sosModalOpen, countdown]);
 
   // 0-LATENCY MULTI-TIER SOS TRIGGER ENGINE
   const executeSosTrigger = async () => {
+    if (triggeringSos) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
     setTriggeringSos(true);
-    playEmergencySiren(2);
+    setSosModalOpen(false);
+    
+    try {
+      playEmergencySiren(2);
+    } catch {
+      // Audio autoplay policy fallback
+    }
 
     // 1. Instant Cached GPS in 0ms (Never blocks on poor network)
     const cached = getCachedGPS();
