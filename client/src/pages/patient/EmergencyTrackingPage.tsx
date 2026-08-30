@@ -6,25 +6,18 @@ import {
   Siren,
   Phone,
   Truck,
-  Building2,
   Clock,
   ArrowLeft,
-  User,
-  Stethoscope,
-  MapPin,
   Radio,
   Share2,
-  Copy,
   Check,
   AlertOctagon,
-  XCircle,
   AlertTriangle,
   HeartPulse,
 } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import LiveAmbulanceRadarMap from '../../components/emergency/LiveAmbulanceRadarMap';
 import { playEmergencySiren } from '../../utils/audioAlert';
@@ -33,11 +26,10 @@ import {
   getNetworkQuality,
   getCachedGPS,
   updateCachedGPS,
-  generateOfflineSmsLink,
-  generateEmergencyContactSmsLink,
   queueOfflineEmergency,
   NetworkQuality,
 } from '../../utils/lowNetworkEmergency';
+
 
 export const EmergencyTrackingPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -92,8 +84,8 @@ export const EmergencyTrackingPage: React.FC = () => {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState(t('emergencyTracking.reasons.accidental'));
   const [cancelling, setCancelling] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
   const [justCancelled, setJustCancelled] = useState(false);
+
 
 
   // Network Quality & Low Latency Mode State
@@ -169,19 +161,8 @@ export const EmergencyTrackingPage: React.FC = () => {
     }
   }, []);
 
-  const handleBroadcastAllContacts = () => {
-    const coords = `${emergency?.latitude || emergency?.initialLatitude || 18.5204},${
-      emergency?.longitude || emergency?.initialLongitude || 73.8567
-    }`;
-    const text = encodeURIComponent(
-      `🚨 EMERGENCY SOS CASCADE ALERT: Medical assistance requested! Patient: ${
-        emergency?.patient?.fullName || 'Patient'
-      }. Live Tracking Link: ${window.location.href} | GPS Coordinates: https://maps.google.com/?q=${coords}`
-    );
-    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-  };
-
   const fetchTracking = async () => {
+
     try {
       const targetId = id || emergency?.id;
       let res: any = null;
@@ -280,14 +261,8 @@ export const EmergencyTrackingPage: React.FC = () => {
     }
   };
 
-  const handleCopyShareLink = () => {
-    const shareUrl = window.location.href;
-    navigator.clipboard.writeText(shareUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
   const handleShareWhatsApp = () => {
+
     const text = encodeURIComponent(
       `🚨 EMERGENCY SOS: Medical assistance requested! Track the live ambulance GPS location and response status here: ${window.location.href}`
     );
@@ -790,7 +765,7 @@ export const EmergencyTrackingPage: React.FC = () => {
   }
 
   // =========================================================================
-  // CASE 2: ACTIVE EMERGENCY SOS -> LIVE RADAR
+  // CASE 2: ACTIVE EMERGENCY SOS -> EXECUTIVE LIVE RADAR CONSOLE
   // =========================================================================
   const stepFound = STEPS.findIndex((s) => s.status === emergency?.status);
   const currentStepIdx = stepFound >= 0 ? stepFound : 3;
@@ -809,17 +784,24 @@ export const EmergencyTrackingPage: React.FC = () => {
     };
   }, [emergency?.hospital]);
 
+  const googleMapsNativeAppUrl = useMemo(() => {
+    return `https://www.google.com/maps/dir/?api=1&origin=${patientLoc.latitude.toFixed(5)},${patientLoc.longitude.toFixed(5)}&destination=${(hospitalLoc?.latitude || 18.5089).toFixed(5)},${(hospitalLoc?.longitude || 73.8344).toFixed(5)}&travelmode=driving`;
+  }, [patientLoc, hospitalLoc]);
+
   return (
-    <div className="container" style={{ maxWidth: '768px', padding: '1rem 1rem 3rem 1rem' }}>
-      {/* Top Header */}
+    <div className="container" style={{ maxWidth: '680px', padding: '0.75rem 0.75rem 3rem 0.75rem' }}>
+      {/* 1. Sleek Compact Top Bar */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '1rem',
-          flexWrap: 'wrap',
-          gap: '0.5rem',
+          marginBottom: '0.75rem',
+          backgroundColor: '#FFFFFF',
+          padding: '0.5rem 0.875rem',
+          borderRadius: '12px',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}
       >
         <button
@@ -832,281 +814,45 @@ export const EmergencyTrackingPage: React.FC = () => {
             background: 'none',
             border: 'none',
             color: '#1A56DB',
-            fontWeight: 700,
+            fontWeight: 800,
             cursor: 'pointer',
-            fontSize: '0.875rem',
+            fontSize: '0.8125rem',
           }}
         >
           <ArrowLeft size={16} />
           <span>{t('nav.home')}</span>
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#DC2626' }}>
-            {emergency?.emergencyId}
-          </span>
-          <Badge variant="danger">{emergency?.status || 'AMBULANCE_EN_ROUTE'}</Badge>
-
-          <button
-            type="button"
-            onClick={() => setCancelModalOpen(true)}
-            style={{
-              backgroundColor: '#FEE2E2',
-              color: '#DC2626',
-              border: '1px solid #FECACA',
-              borderRadius: '8px',
-              padding: '0.3125rem 0.625rem',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-            }}
-            title="Cancel Emergency SOS"
-          >
-            <XCircle size={14} />
-            <span>{t('emergencyTracking.cancelSos')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Connection Quality & Low Latency Indicator Bar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.5rem 0.875rem',
-          backgroundColor: netQuality?.isLowBandwidth ? '#FEF2F2' : '#F8FAFC',
-          border: `1px solid ${netQuality?.isLowBandwidth ? '#FECACA' : '#E2E8F0'}`,
-          borderRadius: '12px',
-          marginBottom: '1rem',
-          fontSize: '0.75rem',
-        }}
-      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div
-            style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: !netQuality?.online
-                ? '#DC2626'
-                : netQuality?.isLowBandwidth
-                ? '#D97706'
-                : '#16A34A',
-            }}
-          />
-          <span style={{ fontWeight: 700, color: '#0F172A' }}>
-            {!netQuality?.online
-              ? '⚠️ Offline Mode (Local GPS Active)'
-              : netQuality?.isLowBandwidth
-              ? `📶 Low Bandwidth Mode (${(netQuality?.effectiveType || '2g').toUpperCase()})`
-              : `⚡ High Speed Network (${(netQuality?.effectiveType || '4g').toUpperCase()})`}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ color: '#64748B', fontWeight: 600 }}>
-            {netQuality?.online ? `Ping: ~${netQuality?.rttMs || 50}ms` : 'SMS/GSM Fallback'}
-          </span>
-        </div>
-      </div>
-
-      {/* Main Alert Banner */}
-      <Card
-        style={{
-          marginBottom: '1.25rem',
-          borderLeft: '5px solid #DC2626',
-          background: 'linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 60%, #EFF6FF 100%)',
-          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.08)',
-        }}
-      >
-        <Card.Body style={{ padding: '1rem 1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: '#DC2626',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-                className="animate-sos-pulse"
-              >
-                <Siren size={22} />
-              </div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 900, color: '#0F172A' }}>
-                  {t('emergencyTracking.sosActive')}
-                </h2>
-                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                  {t('emergencyTracking.sosSubtitle')}
-                </span>
-              </div>
-            </div>
-
-            {/* Offline & Low Bandwidth Fallback Actions */}
-            <div
-              style={{
-                width: '100%',
-                backgroundColor: '#FFFBEB',
-                border: '1.5px solid #FDE68A',
-                borderRadius: '12px',
-                padding: '0.75rem 1rem',
-                marginTop: '0.25rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.625rem',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#92400E' }}>
-                  🚨 0-DATA / LOW NETWORK RESILIENT DISPATCH
-                </span>
-                <span style={{ fontSize: '0.6875rem', fontWeight: 700, backgroundColor: '#FEF3C7', color: '#B45309', padding: '1px 6px', borderRadius: '4px' }}>
-                  100% OFFLINE READY
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
-                <a
-                  href={generateOfflineSmsLink(
-                    {
-                      latitude: emergency?.latitude || emergency?.initialLatitude || 18.5204,
-                      longitude: emergency?.longitude || emergency?.initialLongitude || 73.8567,
-                    },
-                    emergency?.patient?.fullName || 'Emergency Patient',
-                    emergency?.patient?.bloodGroup || medicalId?.bloodGroup || 'O+'
-                  )}
-                  style={{
-                    backgroundColor: '#DC2626',
-                    color: '#FFFFFF',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '8px',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    textDecoration: 'none',
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.375rem',
-                    boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)',
-                  }}
-                >
-                  <span>💬 1-Tap Offline SMS to 108</span>
-                </a>
-
-                <a
-                  href="tel:108"
-                  style={{
-                    backgroundColor: '#16A34A',
-                    color: '#FFFFFF',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '8px',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    textDecoration: 'none',
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.375rem',
-                    boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)',
-                  }}
-                >
-                  <Phone size={13} />
-                  <span>📞 Call 108 Emergency</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start' }}>
-              <button
-                type="button"
-                onClick={handleShareWhatsApp}
-                style={{
-                  flex: 1,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.375rem',
-                  backgroundColor: '#25D366',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0.5rem 0.75rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  minWidth: '130px',
-                }}
-              >
-                <Share2 size={13} />
-                <span>{t('emergencyTracking.shareWhatsApp')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyShareLink}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.375rem',
-                  backgroundColor: '#FFFFFF',
-                  color: '#0F172A',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: '8px',
-                  padding: '0.5rem 0.75rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-                title="Copy Tracking Link"
-              >
-                {copiedLink ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
-                <span>{copiedLink ? t('emergencyTracking.copied') : t('emergencyTracking.copyLink')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCancelModalOpen(true)}
-                style={{
-                  flex: 1,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.375rem',
-                  backgroundColor: '#DC2626',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0.5rem 0.75rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  minWidth: '120px',
-                }}
-              >
-                <XCircle size={13} />
-                <span>{t('emergencyTracking.cancelSos')}</span>
-              </button>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#DC2626', fontWeight: 900, fontSize: '0.75rem' }}>
+            <Siren size={15} className="animate-sos-pulse" />
+            <span>AMBULANCE EN ROUTE</span>
           </div>
-        </Card.Body>
-      </Card>
+          <span style={{ fontSize: '0.6875rem', backgroundColor: '#FEE2E2', color: '#DC2626', padding: '2px 6px', borderRadius: '6px', fontWeight: 800 }}>
+            {emergency?.ambulanceOperator?.vehicleNumber || 'MH-12-EM-1080'}
+          </span>
+        </div>
 
-      {/* Radar Map */}
-      <div style={{ marginBottom: '1.25rem' }}>
+        <button
+          type="button"
+          onClick={() => setCancelModalOpen(true)}
+          style={{
+            backgroundColor: '#F1F5F9',
+            color: '#64748B',
+            border: '1px solid #CBD5E1',
+            borderRadius: '6px',
+            padding: '0.25rem 0.5rem',
+            fontSize: '0.6875rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+
+      {/* 2. Interactive Google Maps Canvas (Hero Feature) */}
+      <div style={{ marginBottom: '0.875rem' }}>
         <LiveAmbulanceRadarMap
           emergencyId={emergency?.id || 'active-emg'}
           patientLocation={patientLoc}
@@ -1117,386 +863,196 @@ export const EmergencyTrackingPage: React.FC = () => {
         />
       </div>
 
-      {/* Dispatched Unit & Crew Card */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
-        <Card style={{ borderLeft: '4px solid #DC2626', overflow: 'hidden' }}>
-          <div
+      {/* 3. Consolidated Executive Navigation & Telemetry Dashboard Card */}
+      <div
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '16px',
+          border: '1.5px solid #E2E8F0',
+          padding: '1.25rem',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+          marginBottom: '1rem',
+        }}
+      >
+        {/* Quick 4-Action Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.625rem', marginBottom: '1.25rem' }}>
+          <a
+            href={googleMapsNativeAppUrl}
+            target="_blank"
+            rel="noreferrer"
             style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.375rem',
+              backgroundColor: '#4285F4',
+              color: '#FFFFFF',
+              padding: '0.625rem 0.75rem',
+              borderRadius: '10px',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+              boxShadow: '0 2px 8px rgba(66, 133, 244, 0.35)',
+              textAlign: 'center',
+            }}
+          >
+            <span>↗️ Open Google Maps</span>
+          </a>
+
+          <a
+            href={`tel:${emergency?.ambulanceOperator?.user?.phone || '+919844400001'}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.375rem',
+              backgroundColor: '#16A34A',
+              color: '#FFFFFF',
+              padding: '0.625rem 0.75rem',
+              borderRadius: '10px',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+              boxShadow: '0 2px 8px rgba(22, 163, 74, 0.35)',
+              textAlign: 'center',
+            }}
+          >
+            <Phone size={15} />
+            <span>Call Driver</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={handleShareWhatsApp}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.375rem',
+              backgroundColor: '#25D366',
+              color: '#FFFFFF',
+              padding: '0.625rem 0.75rem',
+              borderRadius: '10px',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+            }}
+          >
+            <Share2 size={15} />
+            <span>Share WhatsApp</span>
+          </button>
+
+          <a
+            href="tel:108"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.375rem',
               backgroundColor: '#FEF2F2',
-              padding: '0.625rem 1rem',
-              borderBottom: '1px solid #FECACA',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.375rem',
+              color: '#DC2626',
+              border: '1.5px solid #FECACA',
+              padding: '0.625rem 0.75rem',
+              borderRadius: '10px',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+              textAlign: 'center',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#991B1B', fontWeight: 800, fontSize: '0.8125rem' }}>
-              <Truck size={16} color="#DC2626" />
-              <span>{t('emergencyTracking.dispatchedUnit')}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.6875rem', color: '#16A34A', fontWeight: 700 }}>
-              <Radio size={12} className="animate-pulse" />
-              <span>{t('emergencyTracking.liveTelemetry')}</span>
-            </div>
-          </div>
+            <Phone size={15} />
+            <span>Dial 108 Govt</span>
+          </a>
+        </div>
 
-          <Card.Body style={{ padding: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div style={{ flex: 1, minWidth: '200px' }}>
-                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B' }}>{t('emergencyTracking.dispatchedFrom')}</span>
-                <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#0F172A', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <MapPin size={15} color="#DC2626" />
-                  <span>{emergency?.hospital?.name || 'Sahyadri Super Speciality Hospital'}</span>
-                </div>
-                <div style={{ fontSize: '0.6875rem', color: '#64748B', marginLeft: '1.125rem' }}>
-                  {emergency?.hospital?.address || 'Erandwane, Karve Road'}, {emergency?.hospital?.city || 'Pune'}
-                </div>
+        {/* Assigned Ambulance Unit & Crew Information */}
+        <div
+          style={{
+            backgroundColor: '#F8FAFC',
+            borderRadius: '12px',
+            border: '1px solid #E2E8F0',
+            padding: '1rem',
+            marginBottom: '1.25rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ padding: '0.375rem', borderRadius: '8px', backgroundColor: '#EFF6FF', color: '#1D4ED8' }}>
+                <Truck size={18} />
               </div>
-
-              <div
-                style={{
-                  border: '2px solid #0F172A',
-                  borderRadius: '6px',
-                  backgroundColor: '#FFFFFF',
-                  padding: '3px 8px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                }}
-              >
-                <div style={{ borderRight: '1.5px solid #CBD5E1', paddingRight: '5px', fontSize: '0.5625rem', fontWeight: 900, color: '#1E3A8A' }}>
-                  IND 🇮🇳
+              <div>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0F172A' }}>
+                  {emergency?.hospital?.name || 'Sahyadri Super Speciality Hospital'}
                 </div>
-                <div style={{ fontSize: '1rem', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#0F172A' }}>
-                  {emergency?.ambulanceOperator?.vehicleNumber || 'MH-12-EM-1080'}
+                <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>
+                  Advanced Life Support (ALS) Ambulance Unit
                 </div>
               </div>
             </div>
 
-            {/* Crew Contacts */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
-              <div
-                style={{
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '10px',
-                  padding: '0.75rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#EFF6FF', color: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <User size={18} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B' }}>{t('emergencyTracking.driver')}</div>
-                    <h5 style={{ margin: '1px 0', fontSize: '0.875rem', fontWeight: 800 }}>
-                      Rajesh Gawande
-                    </h5>
-                    <div style={{ fontSize: '0.6875rem', color: '#16A34A', fontWeight: 600 }}>
-                      📞 {emergency?.ambulanceOperator?.user?.phone || '+91 98444 00001'}
-                    </div>
-                  </div>
-                </div>
-
-                <a
-                  href={`tel:${emergency?.ambulanceOperator?.user?.phone || '+919844400001'}`}
-                  style={{
-                    backgroundColor: '#16A34A',
-                    color: '#FFFFFF',
-                    padding: '0.375rem 0.75rem',
-                    borderRadius: '6px',
-                    fontWeight: 700,
-                    fontSize: '0.6875rem',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                  }}
-                >
-                  <Phone size={12} />
-                  <span>{t('emergencyTracking.call')}</span>
-                </a>
-              </div>
-
-              <div
-                style={{
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '10px',
-                  padding: '0.75rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Stethoscope size={18} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B' }}>{t('emergencyTracking.assistant')}</div>
-                    <h5 style={{ margin: '1px 0', fontSize: '0.875rem', fontWeight: 800 }}>
-                      Sanjay Shinde (EMT)
-                    </h5>
-                    <div style={{ fontSize: '0.6875rem', color: '#16A34A', fontWeight: 600 }}>
-                      📞 +91 98444 00002
-                    </div>
-                  </div>
-                </div>
-
-                <a
-                  href="tel:+919844400002"
-                  style={{
-                    backgroundColor: '#0284C7',
-                    color: '#FFFFFF',
-                    padding: '0.375rem 0.75rem',
-                    borderRadius: '6px',
-                    fontWeight: 700,
-                    fontSize: '0.6875rem',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                  }}
-                >
-                  <Phone size={12} />
-                  <span>{t('emergencyTracking.call')}</span>
-                </a>
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
-
-        {/* Hospital Card */}
-        {emergency?.hospital && (
-          <Card>
-            <Card.Body style={{ padding: '0.875rem 1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
-                  <div style={{ padding: '0.5rem', backgroundColor: '#EFF6FF', borderRadius: '6px', color: '#1D4ED8' }}>
-                    <Building2 size={18} />
-                  </div>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 700 }}>{emergency.hospital.name}</h4>
-                    <span style={{ fontSize: '0.6875rem', color: '#64748B' }}>
-                      24x7 Emergency Trauma Center • {emergency.hospital.address}, {emergency.hospital.city}
-                    </span>
-                  </div>
-                </div>
-
-                {emergency.hospital.phone && (
-                  <a
-                    href={`tel:${emergency.hospital.phone}`}
-                    className="hs-btn hs-btn-outline hs-btn-sm"
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700, fontSize: '0.75rem' }}
-                  >
-                    <Phone size={12} />
-                    <span>{t('emergencyTracking.callEr')}</span>
-                  </a>
-                )}
-              </div>
-            </Card.Body>
-          </Card>
-        )}
-        {/* Multi-Contact Failover Cascade Card */}
-        <Card style={{ borderLeft: '4px solid #F59E0B' }}>
-          <div
-            style={{
-              backgroundColor: '#FFFBEB',
-              padding: '0.625rem 1rem',
-              borderBottom: '1px solid #FDE68A',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.375rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#B45309', fontWeight: 800, fontSize: '0.8125rem' }}>
-              <Phone size={15} color="#D97706" />
-              <span>EMERGENCY CONTACT CASCADE & LIVE GPS BROADCAST</span>
-            </div>
-            <button
-              type="button"
-              onClick={handleBroadcastAllContacts}
+            <div
               style={{
-                backgroundColor: '#25D366',
-                color: '#FFFFFF',
-                border: 'none',
+                border: '1.5px solid #0F172A',
                 borderRadius: '6px',
-                padding: '3px 8px',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
+                backgroundColor: '#FFFFFF',
+                padding: '2px 6px',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 900,
+                fontFamily: 'monospace',
               }}
             >
-              <Share2 size={12} />
-              <span>Broadcast GPS to All</span>
-            </button>
+              <span style={{ fontSize: '0.625rem', color: '#1E3A8A' }}>IND 🇮🇳</span>
+              <span>{emergency?.ambulanceOperator?.vehicleNumber || 'MH-12-EM-1080'}</span>
+            </div>
           </div>
 
-          <Card.Body style={{ padding: '0.875rem 1rem' }}>
-            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.75rem', color: '#64748B' }}>
-              If your primary contact does not pick up, HealthSync automatically rings secondary and tertiary contacts with live GPS coordinates.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {medicalId?.contacts?.map((c: any, i: number) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    backgroundColor: '#F8FAFC',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '8px',
-                    border: '1px solid #E2E8F0',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        backgroundColor: i === 0 ? '#DC2626' : i === 1 ? '#0284C7' : '#16A34A',
-                        color: '#FFFFFF',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.6875rem',
-                        fontWeight: 800,
-                      }}
-                    >
-                      {i + 1}
-                    </span>
-                    <div>
-                      <strong style={{ fontSize: '0.8125rem', color: '#0F172A' }}>{c.name}</strong>
-                      <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{c.phone}</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <span
-                      style={{
-                        fontSize: '0.625rem',
-                        fontWeight: 700,
-                        backgroundColor: i === 0 ? '#DCFCE7' : '#F1F5F9',
-                        color: i === 0 ? '#166534' : '#64748B',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      {i === 0 ? '✓ ALERT TRANSMITTED' : 'QUEUED FAILOVER'}
-                    </span>
-                    <a
-                      href={`tel:${c.phone}`}
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #CBD5E1',
-                        borderRadius: '6px',
-                        padding: '4px 7px',
-                        color: '#0F172A',
-                        display: 'flex',
-                        alignItems: 'center',
-                        textDecoration: 'none',
-                      }}
-                      title="Call Contact"
-                    >
-                      <Phone size={13} color="#16A34A" />
-                    </a>
-
-                    <a
-                      href={generateEmergencyContactSmsLink(
-                        c.phone,
-                        {
-                          latitude: emergency?.latitude || emergency?.initialLatitude || 18.5204,
-                          longitude: emergency?.longitude || emergency?.initialLongitude || 73.8567,
-                        },
-                        emergency?.patient?.fullName || 'Patient'
-                      )}
-                      style={{
-                        backgroundColor: '#FEF2F2',
-                        border: '1px solid #FECACA',
-                        borderRadius: '6px',
-                        padding: '4px 7px',
-                        color: '#DC2626',
-                        display: 'flex',
-                        alignItems: 'center',
-                        textDecoration: 'none',
-                        fontSize: '0.6875rem',
-                        fontWeight: 800,
-                      }}
-                      title="Send Offline GPS SMS"
-                    >
-                      SMS
-                    </a>
-                  </div>
-                </div>
-              ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem' }}>
+            <div style={{ backgroundColor: '#FFFFFF', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '0.625rem', color: '#64748B', fontWeight: 700 }}>PRIMARY PILOT</div>
+              <strong style={{ color: '#0F172A' }}>Rajesh Gawande</strong>
             </div>
-          </Card.Body>
-        </Card>
-
-        {/* Emergency Medical ID Card for Paramedics */}
-        <Card style={{ borderLeft: '4px solid #1A56DB' }}>
-          <div
-            style={{
-              backgroundColor: '#EFF6FF',
-              padding: '0.625rem 1rem',
-              borderBottom: '1px solid #BFDBFE',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#1E40AF', fontWeight: 800, fontSize: '0.8125rem' }}>
-              <HeartPulse size={15} color="#1D4ED8" />
-              <span>PATIENT EMERGENCY MEDICAL ID (PARAMEDIC HUD)</span>
+            <div style={{ backgroundColor: '#FFFFFF', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '0.625rem', color: '#64748B', fontWeight: 700 }}>EMT ASSISTANT</div>
+              <strong style={{ color: '#0F172A' }}>Sanjay Shinde</strong>
             </div>
-            <span style={{ fontSize: '0.6875rem', color: '#1E40AF', fontWeight: 700 }}>
-              AUTO-SYNCHRONIZED
-            </span>
           </div>
+        </div>
 
-          <Card.Body style={{ padding: '0.875rem 1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', marginBottom: '0.5rem' }}>
-              <div style={{ backgroundColor: '#FEF2F2', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #FECACA' }}>
-                <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#991B1B', display: 'block' }}>BLOOD GROUP</span>
-                <strong style={{ fontSize: '1.125rem', fontWeight: 900, color: '#DC2626' }}>{medicalId?.bloodGroup || 'O+'}</strong>
-              </div>
-
-              <div style={{ backgroundColor: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748B', display: 'block' }}>ORGAN DONOR</span>
-                <strong style={{ fontSize: '0.875rem', fontWeight: 800, color: medicalId?.isOrganDonor ? '#16A34A' : '#64748B' }}>
-                  {medicalId?.isOrganDonor ? '✓ Registered' : 'No'}
-                </strong>
-              </div>
+        {/* Emergency Medical ID (Paramedic Profile) */}
+        <div
+          style={{
+            backgroundColor: '#EFF6FF',
+            borderRadius: '12px',
+            border: '1px solid #BFDBFE',
+            padding: '0.875rem 1rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '0.75rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <HeartPulse size={18} color="#1D4ED8" />
+            <div>
+              <span style={{ fontWeight: 800, color: '#1E40AF', display: 'block' }}>
+                Medical ID: {medicalId?.bloodGroup || 'O+'} Blood • {medicalId?.allergies || 'Penicillin'}
+              </span>
+              <span style={{ color: '#64748B', fontSize: '0.6875rem' }}>
+                Paramedic GPS Telemetry & Medical ID Synchronized
+              </span>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.75rem' }}>
-              <div>
-                <strong style={{ color: '#0F172A' }}>Known Allergies: </strong>
-                <span style={{ color: '#DC2626', fontWeight: 600 }}>{medicalId?.allergies || 'Penicillin, Sulfa drugs'}</span>
-              </div>
-              <div>
-                <strong style={{ color: '#0F172A' }}>Chronic Conditions: </strong>
-                <span style={{ color: '#475569' }}>{medicalId?.conditions || 'Hypertension, Type-2 Diabetes'}</span>
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
+          </div>
+          <span style={{ fontSize: '0.625rem', fontWeight: 800, backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px' }}>
+            VERIFIED
+          </span>
+        </div>
       </div>
+
 
       {/* Timeline */}
       <Card style={{ marginBottom: '1.25rem' }}>
