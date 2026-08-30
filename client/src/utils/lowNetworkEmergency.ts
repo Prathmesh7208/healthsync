@@ -126,12 +126,14 @@ export const clearSyncedEmergency = (id: string) => {
 
 // 4. Direct 1-Tap Offline SMS & GSM Payload Formatter
 export const generateOfflineSmsLink = (
-  coords: { latitude: number; longitude: number },
+  coords?: { latitude?: number | string; longitude?: number | string },
   patientName = 'Patient',
   bloodGroup = 'O+'
 ): string => {
-  const latStr = coords.latitude.toFixed(5);
-  const lngStr = coords.longitude.toFixed(5);
+  const lat = Number(coords?.latitude) || 18.5204;
+  const lng = Number(coords?.longitude) || 73.8567;
+  const latStr = lat.toFixed(5);
+  const lngStr = lng.toFixed(5);
   const mapsUrl = `https://maps.google.com/?q=${latStr},${lngStr}`;
 
   const message = `EMERGENCY SOS: Medical assistance urgently required for ${patientName} (Blood: ${bloodGroup}). GPS: ${latStr}, ${lngStr} | Map: ${mapsUrl}`;
@@ -142,11 +144,13 @@ export const generateOfflineSmsLink = (
 
 export const generateEmergencyContactSmsLink = (
   phone: string,
-  coords: { latitude: number; longitude: number },
+  coords?: { latitude?: number | string; longitude?: number | string },
   patientName = 'Patient'
 ): string => {
-  const latStr = coords.latitude.toFixed(5);
-  const lngStr = coords.longitude.toFixed(5);
+  const lat = Number(coords?.latitude) || 18.5204;
+  const lng = Number(coords?.longitude) || 73.8567;
+  const latStr = lat.toFixed(5);
+  const lngStr = lng.toFixed(5);
   const mapsUrl = `https://maps.google.com/?q=${latStr},${lngStr}`;
 
   const message = `🚨 EMERGENCY SOS ALERT: ${patientName} has triggered a medical emergency! Live GPS: ${latStr}, ${lngStr}. Open Live Map: ${mapsUrl}`;

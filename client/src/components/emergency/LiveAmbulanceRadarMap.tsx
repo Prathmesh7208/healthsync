@@ -54,10 +54,10 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
   const [etaMinutes, setEtaMinutes] = useState(4);
 
   // Base coordinates (Defaults to Pune city center if GPS not available)
-  const pLat = patientLocation?.latitude || 18.5204;
-  const pLng = patientLocation?.longitude || 73.8567;
-  const hLat = hospitalLocation?.latitude || pLat + 0.024;
-  const hLng = hospitalLocation?.longitude || pLng + 0.028;
+  const pLat = Number(patientLocation?.latitude) || 18.5204;
+  const pLng = Number(patientLocation?.longitude) || 73.8567;
+  const hLat = Number(hospitalLocation?.latitude) || pLat + 0.024;
+  const hLng = Number(hospitalLocation?.longitude) || pLng + 0.028;
 
   // Real-time ambulance coordinates state
   const [ambCoords, setAmbCoords] = useState<[number, number]>([
@@ -65,9 +65,12 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
     hLng - (hLng - pLng) * 0.2,
   ]);
 
+  const safeAmbLat = Number(ambCoords?.[0]) || (hLat - 0.005);
+  const safeAmbLng = Number(ambCoords?.[1]) || (hLng - 0.005);
+
   // Official Google Maps Embed Directions URL
-  const googleMapsEmbedUrl = `https://maps.google.com/maps?saddr=${ambCoords[0]},${ambCoords[1]}&daddr=${pLat},${pLng}&hl=en&z=15&output=embed`;
-  const googleMapsNativeAppUrl = `https://www.google.com/maps/dir/?api=1&origin=${ambCoords[0]},${ambCoords[1]}&destination=${pLat},${pLng}&travelmode=driving`;
+  const googleMapsEmbedUrl = `https://maps.google.com/maps?saddr=${safeAmbLat},${safeAmbLng}&daddr=${pLat},${pLng}&hl=en&z=15&output=embed`;
+  const googleMapsNativeAppUrl = `https://www.google.com/maps/dir/?api=1&origin=${safeAmbLat},${safeAmbLng}&destination=${pLat},${pLng}&travelmode=driving`;
   const patientGoogleMapsPin = `https://maps.google.com/?q=${pLat},${pLng}`;
 
   const handleCopyPin = () => {

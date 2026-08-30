@@ -75,7 +75,19 @@ export const EmergencyTrackingPage: React.FC = () => {
   const [justCancelled, setJustCancelled] = useState(false);
 
   // Network Quality & Low Latency Mode State
-  const [netQuality, setNetQuality] = useState<NetworkQuality>(getNetworkQuality());
+  const [netQuality, setNetQuality] = useState<NetworkQuality>(() => {
+    try {
+      return getNetworkQuality();
+    } catch {
+      return {
+        online: true,
+        effectiveType: '4g',
+        rttMs: 50,
+        downlinkMb: 10,
+        isLowBandwidth: false,
+      };
+    }
+  });
 
   // Standalone SOS Trigger state
   const [triggeringSos, setTriggeringSos] = useState(false);
@@ -106,7 +118,13 @@ export const EmergencyTrackingPage: React.FC = () => {
 
   // Track Network Changes & Ping
   useEffect(() => {
-    const updateNet = () => setNetQuality(getNetworkQuality());
+    const updateNet = () => {
+      try {
+        setNetQuality(getNetworkQuality());
+      } catch {
+        // ignore
+      }
+    };
     window.addEventListener('online', updateNet);
     window.addEventListener('offline', updateNet);
 
@@ -436,8 +454,8 @@ export const EmergencyTrackingPage: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0.5rem 0.875rem',
-            backgroundColor: netQuality.isLowBandwidth ? '#FEF2F2' : '#F8FAFC',
-            border: `1px solid ${netQuality.isLowBandwidth ? '#FECACA' : '#E2E8F0'}`,
+            backgroundColor: netQuality?.isLowBandwidth ? '#FEF2F2' : '#F8FAFC',
+            border: `1px solid ${netQuality?.isLowBandwidth ? '#FECACA' : '#E2E8F0'}`,
             borderRadius: '12px',
             marginBottom: '1.25rem',
             fontSize: '0.75rem',
@@ -449,19 +467,19 @@ export const EmergencyTrackingPage: React.FC = () => {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                backgroundColor: !netQuality.online
+                backgroundColor: !netQuality?.online
                   ? '#DC2626'
-                  : netQuality.isLowBandwidth
+                  : netQuality?.isLowBandwidth
                   ? '#D97706'
                   : '#16A34A',
               }}
             />
             <span style={{ fontWeight: 700, color: '#0F172A' }}>
-              {!netQuality.online
+              {!netQuality?.online
                 ? '⚠️ Offline Mode (Instant GPS Cache Active)'
-                : netQuality.isLowBandwidth
-                ? `📶 Low Bandwidth Mode (${netQuality.effectiveType.toUpperCase()} • Ping ~${netQuality.rttMs}ms)`
-                : `⚡ Real-Time Satellite GPS Active (${netQuality.effectiveType.toUpperCase()})`}
+                : netQuality?.isLowBandwidth
+                ? `📶 Low Bandwidth Mode (${(netQuality?.effectiveType || '2g').toUpperCase()} • Ping ~${netQuality?.rttMs || 100}ms)`
+                : `⚡ Real-Time Satellite GPS Active (${(netQuality?.effectiveType || '4g').toUpperCase()})`}
             </span>
           </div>
 
@@ -832,8 +850,8 @@ export const EmergencyTrackingPage: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0.5rem 0.875rem',
-          backgroundColor: netQuality.isLowBandwidth ? '#FEF2F2' : '#F8FAFC',
-          border: `1px solid ${netQuality.isLowBandwidth ? '#FECACA' : '#E2E8F0'}`,
+          backgroundColor: netQuality?.isLowBandwidth ? '#FEF2F2' : '#F8FAFC',
+          border: `1px solid ${netQuality?.isLowBandwidth ? '#FECACA' : '#E2E8F0'}`,
           borderRadius: '12px',
           marginBottom: '1rem',
           fontSize: '0.75rem',
@@ -845,25 +863,25 @@ export const EmergencyTrackingPage: React.FC = () => {
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: !netQuality.online
+              backgroundColor: !netQuality?.online
                 ? '#DC2626'
-                : netQuality.isLowBandwidth
+                : netQuality?.isLowBandwidth
                 ? '#D97706'
                 : '#16A34A',
             }}
           />
           <span style={{ fontWeight: 700, color: '#0F172A' }}>
-            {!netQuality.online
+            {!netQuality?.online
               ? '⚠️ Offline Mode (Local GPS Active)'
-              : netQuality.isLowBandwidth
-              ? `📶 Low Bandwidth Mode (${netQuality.effectiveType.toUpperCase()})`
-              : `⚡ High Speed Network (${netQuality.effectiveType.toUpperCase()})`}
+              : netQuality?.isLowBandwidth
+              ? `📶 Low Bandwidth Mode (${(netQuality?.effectiveType || '2g').toUpperCase()})`
+              : `⚡ High Speed Network (${(netQuality?.effectiveType || '4g').toUpperCase()})`}
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ color: '#64748B', fontWeight: 600 }}>
-            {netQuality.online ? `Ping: ~${netQuality.rttMs}ms` : 'SMS/GSM Fallback'}
+            {netQuality?.online ? `Ping: ~${netQuality?.rttMs || 50}ms` : 'SMS/GSM Fallback'}
           </span>
         </div>
       </div>
