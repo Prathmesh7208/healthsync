@@ -53,18 +53,34 @@ export class SlotService {
     const dayOfWeek = this.getDayOfWeekEnum(targetDate.getDay());
     const dateOnly = new Date(targetDate.toISOString().split('T')[0]);
 
-    // 1. Fetch Doctor's schedule for this day of week & location
+    // 1. Fetch Doctor's custom schedule for this day of week & location
     const schedule = await prisma.doctorSchedule.findFirst({
       where: {
         doctorId,
         hospitalId,
         dayOfWeek,
-        isActive: true,
       },
     });
 
-    if (!schedule) {
+    // If explicit schedule exists and is disabled
+    if (schedule && !schedule.isActive) {
       return [];
+    }
+
+    // Default clinic hours if no explicit schedule defined:
+    // Mon-Sat: 09:00 - 17:00, 30 min slots. Sunday: Closed.
+    let startTime = '09:00';
+    let endTime = '17:00';
+    let duration = 30;
+
+    if (schedule) {
+      startTime = schedule.startTime;
+      endTime = schedule.endTime;
+      duration = schedule.slotDurationMinutes || 30;
+    } else {
+      if (dayOfWeek === DayOfWeek.SUNDAY) {
+        return []; // Closed on Sunday by default
+      }
     }
 
     // 2. Fetch breaks for this doctor on this day/date
@@ -75,6 +91,9 @@ export class SlotService {
         OR: [{ dayOfWeek }, { specificDate: dateOnly }],
       },
     });
+
+    // Default lunch break 13:00 - 14:00 if no breaks configured
+    const defaultLunchBreak = breaks.length === 0 ? [{ startTime: '13:00', endTime: '14:00' }] : [];
 
     // 3. Fetch existing appointments for this doctor on this date
     const existingAppointments = await prisma.appointment.findMany({
@@ -93,9 +112,8 @@ export class SlotService {
     const bookedTimes = new Set(existingAppointments.map((a) => a.startTime));
 
     // 4. Generate slots in intervals
-    const startMins = this.timeToMinutes(schedule.startTime);
-    const endMins = this.timeToMinutes(schedule.endTime);
-    const duration = schedule.slotDurationMinutes || 15;
+    const startMins = this.timeToMinutes(startTime);
+    const endMins = this.timeToMinutes(endTime);
 
     const slots: GeneratedSlot[] = [];
 
@@ -109,12 +127,18 @@ export class SlotService {
       const slotStart = this.minutesToTime(cur);
       const slotEnd = this.minutesToTime(cur + duration);
 
-      // Check if slot falls in a break
-      const isBreak = breaks.some((b) => {
-        const bStart = this.timeToMinutes(b.startTime);
-        const bEnd = this.timeToMinutes(b.endTime);
-        return cur >= bStart && cur < bEnd;
-      });
+      // Check if slot falls in custom or default break
+      const isBreak =
+        breaks.some((b) => {
+          const bStart = this.timeToMinutes(b.startTime);
+          const bEnd = this.timeToMinutes(b.endTime);
+          return cur >= bStart && cur < bEnd;
+        }) ||
+        defaultLunchBreak.some((b) => {
+          const bStart = this.timeToMinutes(b.startTime);
+          const bEnd = this.timeToMinutes(b.endTime);
+          return cur >= bStart && cur < bEnd;
+        });
 
       let status: SlotStatus = SlotStatus.AVAILABLE;
 

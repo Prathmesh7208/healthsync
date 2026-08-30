@@ -167,17 +167,24 @@ router.get('/:id/slots', async (req: Request, res: Response, next: NextFunction)
       return res.status(400).json({ error: { message: 'Query parameter "date" (YYYY-MM-DD) is required.' } });
     }
 
-    // Default to first affiliation if hospitalId not provided
+    // Default to first affiliation or default hospital if not provided
     let targetHospitalId = hospitalId;
     if (!targetHospitalId) {
       const aff = await prisma.doctorHospitalAffiliation.findFirst({
         where: { doctorId },
       });
-      if (!aff) {
-        throw new NotFoundError('Doctor affiliations');
+      if (aff) {
+        targetHospitalId = aff.hospitalId;
+      } else {
+        const defaultHospital = await prisma.hospital.findFirst();
+        if (defaultHospital) {
+          targetHospitalId = defaultHospital.id;
+        } else {
+          throw new NotFoundError('Hospital network');
+        }
       }
-      targetHospitalId = aff.hospitalId;
     }
+
 
     const targetDate = new Date(date);
     const slots = await SlotService.getSlotsForDate(doctorId, targetHospitalId, targetDate);
