@@ -6,10 +6,24 @@ import config from './config';
 import logger from './utils/logger';
 import errorHandler from './middleware/errorHandler';
 import { NotFoundError } from './utils/errors';
+import {
+  helmetSecurityMiddleware,
+  apiRateLimiter,
+  authRateLimiter,
+  emergencyRateLimiter,
+  sanitizeRequestPayload,
+  antiScraperDefense,
+} from './middleware/security';
 
 export const app = express();
 
-// Request ID attachment
+// 1. Enterprise Helmet Security Headers & WAF
+app.use(helmetSecurityMiddleware);
+
+// 2. Anti-Scraper & Bot Traps
+app.use(antiScraperDefense);
+
+// 3. Request ID attachment
 app.use((req: Request, res: Response, next: NextFunction) => {
   const reqId = (req.headers['x-request-id'] as string) || randomUUID();
   (req as any).id = reqId;
@@ -17,7 +31,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Request Logger
+// 4. Request Logger
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   res.on('finish', () => {
@@ -31,11 +45,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Security & Parsing Middleware
+// 5. CORS with Strict Origin Policies
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like curl, mobile apps) or any web origin
+      // Allow requests with no origin (mobile app / native API) or web requests
       callback(null, true);
     },
     credentials: true,
@@ -44,9 +58,14 @@ app.use(
   })
 );
 
+// 6. Request Body Parsing & Anti-Injection Sanitization
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+app.use(sanitizeRequestPayload);
+
+// 7. General API Rate Limiting (Anti-DDoS)
+app.use('/api', apiRateLimiter);
 
 import path from 'path';
 import authRoutes from './routes/auth.routes';
@@ -84,8 +103,8 @@ import ambulanceRoutes from './routes/ambulance.routes';
 import emergencyRoutes from './routes/emergency.routes';
 import adminRoutes from './routes/admin.routes';
 
-// Mount API Routes
-app.use('/api/v1/auth', authRoutes);
+// Mount API Routes with Dedicated Security Limiters
+app.use('/api/v1/auth', authRateLimiter, authRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/doctors/me', doctorDashboardRoutes);
 app.use('/api/v1/doctors/me', doctorAppointmentRoutes);
@@ -97,7 +116,7 @@ app.use('/api/v1/consultations', consultationRoutes);
 app.use('/api/v1/prescriptions', prescriptionRoutes);
 app.use('/api/v1/receptionist', receptionistRoutes);
 app.use('/api/v1/ambulance', ambulanceRoutes);
-app.use('/api/v1/emergencies', emergencyRoutes);
+app.use('/api/v1/emergencies', emergencyRateLimiter, emergencyRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // 404 Not Found Handler for unmatched routes
