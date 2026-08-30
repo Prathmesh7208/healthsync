@@ -127,15 +127,22 @@ export const LiveAmbulanceRadarMapComponent: React.FC<LiveAmbulanceRadarMapProps
   // 2. INITIALIZE GOOGLE MAPS ONCE ON MOUNT
   // =========================================================================
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
+    if (!mapContainerRef.current) return;
+    if (mapInstanceRef.current) return;
 
     try {
+      // Safely reset container _leaflet_id if already set by previous render
+      if ((mapContainerRef.current as any)._leaflet_id != null) {
+        (mapContainerRef.current as any)._leaflet_id = null;
+      }
+
       const map = L.map(mapContainerRef.current, {
         center: [(pLat + hLat) / 2, (pLng + hLng) / 2],
         zoom: 15,
         zoomControl: false,
         attributionControl: false,
       });
+
 
       // Google Maps Vector Layer
       const initialLayer = L.tileLayer(GOOGLE_MAPS_LAYERS[mapStyle].url, {
@@ -487,5 +494,89 @@ export const LiveAmbulanceRadarMapComponent: React.FC<LiveAmbulanceRadarMapProps
   );
 };
 
-export const LiveAmbulanceRadarMap = React.memo(LiveAmbulanceRadarMapComponent);
+class RadarMapErrorBoundary extends React.Component<
+  LiveAmbulanceRadarMapProps,
+  { hasError: boolean }
+> {
+
+  constructor(props: LiveAmbulanceRadarMapProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any) {
+    console.warn('Radar Map Boundary caught error:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            height: '420px',
+            width: '100%',
+            borderRadius: '16px',
+            backgroundColor: '#0F172A',
+            border: '2px solid #38BDF8',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+            padding: '1.5rem',
+            textAlign: 'center',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              border: '2px solid #38BDF8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '1rem',
+              fontSize: '28px',
+            }}
+          >
+            🚑
+          </div>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 800, margin: '0 0 0.375rem 0', color: '#F8FAFC' }}>
+            Live Emergency Dispatch Radar Active
+          </h3>
+          <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: '0 0 1rem 0', maxWidth: '360px' }}>
+            Unit {this.props.vehicleNumber || 'MH-12-EM-1080'} is en route to your GPS location with trauma response crew.
+          </p>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&origin=${this.props.patientLocation.latitude},${this.props.patientLocation.longitude}&travelmode=driving`}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              backgroundColor: '#4285F4',
+              color: '#FFFFFF',
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              fontWeight: 800,
+              fontSize: '0.8125rem',
+              textDecoration: 'none',
+            }}
+          >
+            Open in Google Maps App ↗
+          </a>
+        </div>
+      );
+    }
+    return <LiveAmbulanceRadarMapComponent {...this.props} />;
+  }
+}
+
+export const LiveAmbulanceRadarMap = React.memo(RadarMapErrorBoundary);
 export default LiveAmbulanceRadarMap;
+
