@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import {
   Navigation,
@@ -65,13 +65,26 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
     hLng - (hLng - pLng) * 0.2,
   ]);
 
-  const safeAmbLat = Number(ambCoords?.[0]) || (hLat - 0.005);
-  const safeAmbLng = Number(ambCoords?.[1]) || (hLng - 0.005);
+  // STABLE: Memoize Google Maps Directions Embed URL so iframe NEVER reloads or flutters!
+  const googleMapsEmbedUrl = useMemo(() => {
+    const originLat = (hLat - 0.005).toFixed(5);
+    const originLng = (hLng - 0.005).toFixed(5);
+    const destLat = pLat.toFixed(5);
+    const destLng = pLng.toFixed(5);
+    return `https://maps.google.com/maps?saddr=${originLat},${originLng}&daddr=${destLat},${destLng}&hl=en&z=15&output=embed`;
+  }, [hLat, hLng, pLat, pLng]);
 
-  // Official Google Maps Embed Directions URL
-  const googleMapsEmbedUrl = `https://maps.google.com/maps?saddr=${safeAmbLat},${safeAmbLng}&daddr=${pLat},${pLng}&hl=en&z=15&output=embed`;
-  const googleMapsNativeAppUrl = `https://www.google.com/maps/dir/?api=1&origin=${safeAmbLat},${safeAmbLng}&destination=${pLat},${pLng}&travelmode=driving`;
-  const patientGoogleMapsPin = `https://maps.google.com/?q=${pLat},${pLng}`;
+  const googleMapsNativeAppUrl = useMemo(() => {
+    const originLat = (hLat - 0.005).toFixed(5);
+    const originLng = (hLng - 0.005).toFixed(5);
+    const destLat = pLat.toFixed(5);
+    const destLng = pLng.toFixed(5);
+    return `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
+  }, [hLat, hLng, pLat, pLng]);
+
+  const patientGoogleMapsPin = useMemo(() => {
+    return `https://maps.google.com/?q=${pLat.toFixed(5)},${pLng.toFixed(5)}`;
+  }, [pLat, pLng]);
 
   const handleCopyPin = () => {
     navigator.clipboard.writeText(patientGoogleMapsPin);
@@ -159,13 +172,10 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
       const ambulanceIcon = L.divIcon({
         className: 'custom-ambulance-marker',
         html: `
-          <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%);">
+          <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%); transition: transform 0.5s ease-out;">
             <div style="position: absolute; width: 46px; height: 46px; border-radius: 50%; background: rgba(234, 179, 8, 0.3); animation: pulse 1s infinite;"></div>
             <div style="position: relative; width: 38px; height: 38px; border-radius: 50%; background: #0F172A; border: 2.5px solid #EAB308; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 179, 8, 0.6);">
               <span style="font-size: 20px;">🚑</span>
-            </div>
-            <div style="position: absolute; top: -18px; background: #0F172A; color: #FBBF24; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; border: 1px solid #FBBF24; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-              ${speed} km/h
             </div>
           </div>
         `,
@@ -253,7 +263,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
 
     const handleLocationUpdate = (data: any) => {
       if (data.emergencyId === emergencyId && data.latitude && data.longitude) {
-        const nextPos: [number, number] = [data.latitude, data.longitude];
+        const nextPos: [number, number] = [Number(data.latitude), Number(data.longitude)];
         setAmbCoords(nextPos);
         if (ambulanceMarkerRef.current) {
           ambulanceMarkerRef.current.setLatLng(nextPos);
@@ -289,7 +299,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
 
         return nextCoords;
       });
-    }, 2500);
+    }, 3000);
 
     return () => {
       socket.off('emergency:location_update', handleLocationUpdate);
@@ -348,13 +358,13 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
               boxShadow: '0 0 12px rgba(220, 38, 38, 0.5)',
             }}
           >
-            <Navigation size={18} color="#FFFFFF" className="animate-pulse" />
+            <Navigation size={18} color="#FFFFFF" />
           </div>
           <div>
             <div style={{ fontSize: '0.9375rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>Google Maps Emergency GPS</span>
               <span style={{ backgroundColor: '#22C55E', color: '#0F172A', padding: '1px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900 }}>
-                OFFICIAL SYSTEM
+                STABLE LIVE GPS
               </span>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '2px' }}>
@@ -462,18 +472,19 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         </div>
       </div>
 
-      {/* 2. Map Canvas Container */}
-      <div style={{ position: 'relative', height: '400px', width: '100%', backgroundColor: '#E2E8F0' }}>
-        {/* MODE A: Official Google Maps Live Embed Engine */}
+      {/* 2. Map Canvas Container (Stable & Flutter-Free) */}
+      <div style={{ position: 'relative', height: '420px', width: '100%', backgroundColor: '#E2E8F0', overflow: 'hidden' }}>
+        {/* MODE A: Stable Official Google Maps Live Embed Engine */}
         {viewMode === 'google_maps' ? (
           <iframe
+            key="stable-google-maps-frame"
             title="Google Maps Emergency Navigation"
             src={googleMapsEmbedUrl}
             width="100%"
             height="100%"
-            style={{ border: 0 }}
+            style={{ border: 0, display: 'block' }}
             allowFullScreen={false}
-            loading="lazy"
+            loading="eager"
             referrerPolicy="no-referrer-when-downgrade"
           />
         ) : (
@@ -649,7 +660,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
             border: '1px solid #334155',
           }}
         >
-          <Compass size={14} color="#38BDF8" className="animate-spin" />
+          <Compass size={14} color="#38BDF8" />
           <span>Ambulance En Route via Google Maps Route • Live Traffic: Clear</span>
         </div>
       </div>
