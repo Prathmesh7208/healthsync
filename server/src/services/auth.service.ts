@@ -214,6 +214,173 @@ export class AuthService {
   }
 
   /**
+   * Handle patient self-registration
+   */
+  static async handlePatientRegistration(data: {
+    phone: string;
+    password?: string;
+    fullName: string;
+    bloodGroup?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    allergies?: string;
+    address?: string;
+  }): Promise<{ token: string; refreshToken: string; user: any }> {
+    const normalizedPhone = data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '')}`;
+    const passwordHash = data.password ? await bcrypt.hash(data.password, 10) : undefined;
+
+    const user: any = await prisma.user.create({
+      data: {
+        phone: normalizedPhone,
+        password: passwordHash,
+        role: UserRole.PATIENT,
+        isActive: true,
+        patient: {
+          create: {
+            fullName: data.fullName.trim(),
+            bloodGroup: (data.bloodGroup as any) || 'UNKNOWN',
+            gender: (data.gender as any) || undefined,
+            dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+            knownAllergies: data.allergies || undefined,
+            addressLine1: data.address || undefined,
+            emergencyContactName: data.emergencyContactName || undefined,
+            emergencyContactPhone: data.emergencyContactPhone || undefined,
+          },
+        },
+      },
+      include: { patient: true },
+    });
+
+    const token = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user);
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        role: user.role,
+        languagePreference: user.languagePreference || 'EN',
+        profile: user.patient,
+      },
+    };
+  }
+
+  /**
+   * Handle receptionist self-registration
+   */
+  static async handleReceptionistRegistration(data: {
+    phone: string;
+    password: string;
+    fullName: string;
+    hospitalName?: string;
+    employeeId?: string;
+    shift?: string;
+  }): Promise<{ token: string; refreshToken: string; user: any }> {
+    const normalizedPhone = data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '')}`;
+    const passwordHash = await bcrypt.hash(data.password, 10);
+
+    // Find or connect to first available hospital
+    let hospital = await prisma.hospital.findFirst();
+    if (!hospital) {
+      hospital = await prisma.hospital.create({
+        data: {
+          name: data.hospitalName || 'HealthSync City Multispecialty Hospital',
+          address: 'Station Road, City Center',
+          city: 'Pune',
+          state: 'Maharashtra',
+          pinCode: '411001',
+          latitude: 18.5204,
+          longitude: 73.8567,
+          phone: '+919800000000',
+        },
+      });
+    }
+
+    const user: any = await prisma.user.create({
+      data: {
+        phone: normalizedPhone,
+        password: passwordHash,
+        role: UserRole.RECEPTIONIST,
+        isActive: true,
+        receptionist: {
+          create: {
+            hospitalId: hospital.id,
+          },
+        },
+      },
+      include: { receptionist: true },
+    });
+
+    const token = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user);
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        role: user.role,
+        languagePreference: user.languagePreference || 'EN',
+        profile: { ...user.receptionist, fullName: data.fullName.trim() },
+      },
+    };
+  }
+
+  /**
+   * Handle ambulance driver/operator self-registration
+   */
+  static async handleAmbulanceRegistration(data: {
+    phone: string;
+    password: string;
+    fullName: string;
+    vehicleNumber: string;
+    licenseNumber?: string;
+    ambulanceType?: string;
+    hospitalName?: string;
+  }): Promise<{ token: string; refreshToken: string; user: any }> {
+    const normalizedPhone = data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/\D/g, '')}`;
+    const passwordHash = await bcrypt.hash(data.password, 10);
+
+    const user: any = await prisma.user.create({
+      data: {
+        phone: normalizedPhone,
+        password: passwordHash,
+        role: UserRole.AMBULANCE_OPERATOR,
+        isActive: true,
+        ambulanceOperator: {
+          create: {
+            vehicleNumber: (data.vehicleNumber || 'MH-12-EM-1080').toUpperCase().trim(),
+            latitude: 18.5204,
+            longitude: 73.8567,
+          },
+        },
+      },
+      include: { ambulanceOperator: true },
+    });
+
+    const token = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user);
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        role: user.role,
+        languagePreference: user.languagePreference || 'EN',
+        profile: { ...user.ambulanceOperator, fullName: data.fullName.trim() },
+      },
+    };
+  }
+
+
+  /**
    * Handle credential-based login (doctors, receptionists, ambulance, admin, patients)
    */
   static async handleCredentialLogin(

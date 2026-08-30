@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './stores/authStore';
 import LoginPage from './pages/auth/LoginPage';
 import DoctorRegisterPage from './pages/auth/DoctorRegisterPage';
+import RegisterPortalPage from './pages/auth/RegisterPortalPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Layouts
@@ -93,7 +94,11 @@ export const App: React.FC = () => {
 
         {/* Public Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPortalPage />} />
+        <Route path="/patient/register" element={<RegisterPortalPage />} />
         <Route path="/doctor/register" element={<DoctorRegisterPage />} />
+        <Route path="/receptionist/register" element={<RegisterPortalPage />} />
+        <Route path="/ambulance/register" element={<RegisterPortalPage />} />
 
         {/* Admin Portal Routes (Protected) */}
         <Route

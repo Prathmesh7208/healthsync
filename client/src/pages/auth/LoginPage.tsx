@@ -665,42 +665,79 @@ export const LoginPage: React.FC = () => {
               {t.loginBtn}
             </Button>
 
-            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                Are you a Doctor?{' '}
+            <div style={{ marginTop: '1.25rem', padding: '0.875rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem' }}>
+                Don't have an account yet?
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', justifyContent: 'center' }}>
                 <a
-                  href="/doctor/register"
+                  href="/register?role=patient"
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate('/doctor/register');
+                    navigate('/register?role=patient');
                   }}
-                  style={{ color: 'var(--color-primary-600)', fontWeight: 700, textDecoration: 'none' }}
+                  style={{ fontSize: '0.75rem', color: '#0D9488', fontWeight: 800, textDecoration: 'none', backgroundColor: '#F0FDFA', padding: '3px 8px', borderRadius: '6px', border: '1px solid #CCFBF1' }}
                 >
-                  Register here →
+                  + Patient Sign Up
                 </a>
-              </span>
+                <a
+                  href="/register?role=doctor"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/register?role=doctor');
+                  }}
+                  style={{ fontSize: '0.75rem', color: '#2563EB', fontWeight: 800, textDecoration: 'none', backgroundColor: '#EFF6FF', padding: '3px 8px', borderRadius: '6px', border: '1px solid #DBEAFE' }}
+                >
+                  + Doctor Registration
+                </a>
+                <a
+                  href="/register?role=receptionist"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/register?role=receptionist');
+                  }}
+                  style={{ fontSize: '0.75rem', color: '#7C3AED', fontWeight: 800, textDecoration: 'none', backgroundColor: '#F5F3FF', padding: '3px 8px', borderRadius: '6px', border: '1px solid #EDE9FE' }}
+                >
+                  + Reception Desk
+                </a>
+                <a
+                  href="/register?role=ambulance"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/register?role=ambulance');
+                  }}
+                  style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 800, textDecoration: 'none', backgroundColor: '#FEF2F2', padding: '3px 8px', borderRadius: '6px', border: '1px solid #FECACA' }}
+                >
+                  + Ambulance Fleet
+                </a>
+              </div>
             </div>
           </form>
         )}
       </div>
 
-      {/* ⚡ 1-Click Evaluator & Demo Accounts */}
+      {/* ⚡ 1-Click Evaluator & Live Demo Credentials */}
       <div
         style={{
           width: '100%',
           maxWidth: '440px',
-          backgroundColor: '#F8FAFC',
-          border: '1px solid #E2E8F0',
+          backgroundColor: '#FFFFFF',
+          border: '1.5px solid #CBD5E1',
           borderRadius: '16px',
-          padding: '1rem',
+          padding: '1.25rem',
           marginTop: '1.25rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
           boxSizing: 'border-box',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.75rem', color: '#0F172A', fontWeight: 800, fontSize: '0.8125rem' }}>
-          <Sparkles size={15} color="#0D9488" />
-          <span>1-CLICK DEMO ACCOUNTS (INSTANT ACCESS)</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#0F172A', fontWeight: 900, fontSize: '0.8125rem' }}>
+            <Sparkles size={16} color="#0D9488" />
+            <span>1-CLICK DEMO ACCOUNTS (INSTANT LOGIN)</span>
+          </div>
+          <span style={{ fontSize: '0.625rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
+            READY TO TEST
+          </span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', width: '100%', boxSizing: 'border-box' }}>
@@ -710,9 +747,9 @@ export const LoginPage: React.FC = () => {
             disabled={loading}
             style={{
               padding: '0.625rem 0.5rem',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: '8px',
+              backgroundColor: '#F0FDFA',
+              border: '1px solid #99F6E4',
+              borderRadius: '10px',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
@@ -722,9 +759,9 @@ export const LoginPage: React.FC = () => {
               boxSizing: 'border-box',
             }}
           >
-            <UserCheck size={16} color="#0D9488" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Patient Demo</span>
-            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>OTP Auth</span>
+            <UserCheck size={18} color="#0D9488" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0F172A' }}>Patient</span>
+            <span style={{ fontSize: '0.625rem', color: '#0D9488', fontWeight: 700 }}>OTP: 123456</span>
           </button>
 
           <button
@@ -733,9 +770,9 @@ export const LoginPage: React.FC = () => {
             disabled={loading}
             style={{
               padding: '0.625rem 0.5rem',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: '8px',
+              backgroundColor: '#EFF6FF',
+              border: '1px solid #BFDBFE',
+              borderRadius: '10px',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
@@ -745,9 +782,9 @@ export const LoginPage: React.FC = () => {
               boxSizing: 'border-box',
             }}
           >
-            <Stethoscope size={16} color="#2563EB" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Doctor Demo</span>
-            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Dr. Priya</span>
+            <Stethoscope size={18} color="#2563EB" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0F172A' }}>Doctor</span>
+            <span style={{ fontSize: '0.625rem', color: '#2563EB', fontWeight: 700 }}>Dr. Priya Sharma</span>
           </button>
 
           <button
@@ -756,9 +793,9 @@ export const LoginPage: React.FC = () => {
             disabled={loading}
             style={{
               padding: '0.625rem 0.5rem',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: '8px',
+              backgroundColor: '#F5F3FF',
+              border: '1px solid #DDD6FE',
+              borderRadius: '10px',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
@@ -768,9 +805,9 @@ export const LoginPage: React.FC = () => {
               boxSizing: 'border-box',
             }}
           >
-            <Building2 size={16} color="#7C3AED" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Receptionist</span>
-            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Hospital Desk</span>
+            <Building2 size={18} color="#7C3AED" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0F172A' }}>Reception Desk</span>
+            <span style={{ fontSize: '0.625rem', color: '#7C3AED', fontWeight: 700 }}>Token Queue HUD</span>
           </button>
 
           <button
@@ -779,9 +816,9 @@ export const LoginPage: React.FC = () => {
             disabled={loading}
             style={{
               padding: '0.625rem 0.5rem',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: '8px',
+              backgroundColor: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: '10px',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
@@ -791,9 +828,9 @@ export const LoginPage: React.FC = () => {
               boxSizing: 'border-box',
             }}
           >
-            <Truck size={16} color="#DC2626" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Ambulance</span>
-            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>Operator HUD</span>
+            <Truck size={18} color="#DC2626" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0F172A' }}>Ambulance</span>
+            <span style={{ fontSize: '0.625rem', color: '#DC2626', fontWeight: 700 }}>MH-12-EM-1080</span>
           </button>
 
           <button
@@ -803,20 +840,20 @@ export const LoginPage: React.FC = () => {
             style={{
               gridColumn: 'span 2',
               padding: '0.625rem 0.5rem',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: '8px',
+              backgroundColor: '#ECFDF5',
+              border: '1px solid #A7F3D0',
+              borderRadius: '10px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.375rem',
+              gap: '0.5rem',
               boxSizing: 'border-box',
             }}
           >
-            <Shield size={16} color="#059669" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Super Admin Portal</span>
-            <span style={{ fontSize: '0.625rem', color: '#64748B' }}>• Full Management</span>
+            <Shield size={18} color="#059669" />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#065F46' }}>Super Admin Executive Portal</span>
+            <span style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 700 }}>• Full Hospital Control</span>
           </button>
         </div>
       </div>
@@ -828,15 +865,16 @@ export const LoginPage: React.FC = () => {
           alignItems: 'center',
           gap: '0.375rem',
           marginTop: '1.25rem',
-          color: 'var(--text-muted)',
+          color: '#64748B',
           fontSize: '0.75rem',
         }}
       >
-        <ShieldCheck size={16} color="var(--color-success-600)" />
-        <span>{t.secureAccess}</span>
+        <ShieldCheck size={16} color="#16A34A" />
+        <span>AES-256 GCM Zero-Trust Encrypted Healthcare Network</span>
       </div>
     </div>
   );
 };
 
 export default LoginPage;
+

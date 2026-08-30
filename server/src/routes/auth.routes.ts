@@ -131,6 +131,152 @@ router.post('/doctor/register', async (req: Request, res: Response, next: NextFu
 });
 
 /**
+ * POST /api/v1/auth/patient/register
+ */
+router.post('/patient/register', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      phone,
+      password,
+      fullName,
+      bloodGroup,
+      gender,
+      dateOfBirth,
+      emergencyContactName,
+      emergencyContactPhone,
+      allergies,
+      address,
+    } = req.body;
+
+    if (!phone || !fullName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone and full name are required for patient registration.',
+      });
+    }
+
+    const authResult = await AuthService.handlePatientRegistration({
+      phone,
+      password,
+      fullName,
+      bloodGroup,
+      gender,
+      dateOfBirth,
+      emergencyContactName,
+      emergencyContactPhone,
+      allergies,
+      address,
+    });
+
+    logAuditEvent(
+      authResult.user.id,
+      'PATIENT_REGISTERED',
+      'Patient',
+      authResult.user.id,
+      { fullName },
+      req.ip,
+      req.get('user-agent')
+    ).catch(() => {});
+
+    return res.status(201).json({
+      success: true,
+      message: 'Patient account registered successfully!',
+      data: authResult,
+    });
+  } catch (err: any) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/v1/auth/receptionist/register
+ */
+router.post('/receptionist/register', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, password, fullName, hospitalName, employeeId, shift } = req.body;
+
+    if (!phone || !password || !fullName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone, password, and full name are required for receptionist registration.',
+      });
+    }
+
+    const authResult = await AuthService.handleReceptionistRegistration({
+      phone,
+      password,
+      fullName,
+      hospitalName,
+      employeeId,
+      shift,
+    });
+
+    logAuditEvent(
+      authResult.user.id,
+      'RECEPTIONIST_REGISTERED',
+      'Receptionist',
+      authResult.user.id,
+      { fullName },
+      req.ip,
+      req.get('user-agent')
+    ).catch(() => {});
+
+    return res.status(201).json({
+      success: true,
+      message: 'Receptionist desk account registered successfully!',
+      data: authResult,
+    });
+  } catch (err: any) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/v1/auth/ambulance/register
+ */
+router.post('/ambulance/register', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, password, fullName, vehicleNumber, licenseNumber, ambulanceType, hospitalName } = req.body;
+
+    if (!phone || !password || !fullName || !vehicleNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone, password, pilot name, and ambulance vehicle number are required.',
+      });
+    }
+
+    const authResult = await AuthService.handleAmbulanceRegistration({
+      phone,
+      password,
+      fullName,
+      vehicleNumber,
+      licenseNumber,
+      ambulanceType,
+      hospitalName,
+    });
+
+    logAuditEvent(
+      authResult.user.id,
+      'AMBULANCE_REGISTERED',
+      'AmbulanceOperator',
+      authResult.user.id,
+      { vehicleNumber },
+      req.ip,
+      req.get('user-agent')
+    ).catch(() => {});
+
+    return res.status(201).json({
+      success: true,
+      message: 'Ambulance dispatch unit registered successfully!',
+      data: authResult,
+    });
+  } catch (err: any) {
+    next(err);
+  }
+});
+
+
+/**
  * POST /api/v1/auth/login (Staff / Credential Login)
  */
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
