@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -779,7 +779,22 @@ export const EmergencyTrackingPage: React.FC = () => {
   // =========================================================================
   // CASE 2: ACTIVE EMERGENCY SOS -> LIVE RADAR
   // =========================================================================
-  const currentStepIdx = STEPS.findIndex((s) => s.status === emergency?.status) || 3;
+  const stepFound = STEPS.findIndex((s) => s.status === emergency?.status);
+  const currentStepIdx = stepFound >= 0 ? stepFound : 3;
+
+  const patientLoc = useMemo(() => ({
+    latitude: Number(emergency?.latitude || emergency?.initialLatitude || 18.5204),
+    longitude: Number(emergency?.longitude || emergency?.initialLongitude || 73.8567),
+  }), [emergency?.latitude, emergency?.initialLatitude, emergency?.longitude, emergency?.initialLongitude]);
+
+  const hospitalLoc = useMemo(() => {
+    if (!emergency?.hospital) return undefined;
+    return {
+      latitude: Number(emergency.hospital.latitude || 18.5089),
+      longitude: Number(emergency.hospital.longitude || 73.8344),
+      name: emergency.hospital.name,
+    };
+  }, [emergency?.hospital]);
 
   return (
     <div className="container" style={{ maxWidth: '768px', padding: '1rem 1rem 3rem 1rem' }}>
@@ -1081,19 +1096,8 @@ export const EmergencyTrackingPage: React.FC = () => {
       <div style={{ marginBottom: '1.25rem' }}>
         <LiveAmbulanceRadarMap
           emergencyId={emergency?.id || 'active-emg'}
-          patientLocation={{
-            latitude: Number(emergency?.latitude || emergency?.initialLatitude || 18.5204),
-            longitude: Number(emergency?.longitude || emergency?.initialLongitude || 73.8567),
-          }}
-          hospitalLocation={
-            emergency?.hospital
-              ? {
-                  latitude: Number(emergency.hospital.latitude || 18.5089),
-                  longitude: Number(emergency.hospital.longitude || 73.8344),
-                  name: emergency.hospital.name,
-                }
-              : undefined
-          }
+          patientLocation={patientLoc}
+          hospitalLocation={hospitalLoc}
           vehicleNumber={emergency?.ambulanceOperator?.vehicleNumber || 'MH-12-EM-1080'}
           driverPhone={emergency?.ambulanceOperator?.user?.phone || '+919844400001'}
           status={emergency?.status}

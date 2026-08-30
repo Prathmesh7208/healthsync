@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import {
   Navigation,
@@ -10,8 +10,6 @@ import {
   Crosshair,
   Maximize2,
   Compass,
-  Map,
-  Layers,
   Copy,
   Check,
 } from 'lucide-react';
@@ -27,16 +25,37 @@ export interface LiveAmbulanceRadarMapProps {
   status?: string;
 }
 
-export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
+// Tile layer styles
+const TILE_LAYERS = {
+  streets: {
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+    maxZoom: 19,
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+    maxZoom: 19,
+  },
+};
+
+export const LiveAmbulanceRadarMapComponent: React.FC<LiveAmbulanceRadarMapProps> = ({
   emergencyId,
   patientLocation,
   hospitalLocation,
   vehicleNumber = 'MH-12-EM-1080',
   driverPhone = '+919844400001',
 }) => {
-  // View Mode: 'google_maps' (Official Google Maps Navigation) vs 'radar_satnav' (Interactive GPS Radar)
-  const [viewMode, setViewMode] = useState<'google_maps' | 'radar_satnav'>('google_maps');
   const [copiedPin, setCopiedPin] = useState(false);
+  const [mapStyle, setMapStyle] = useState<'streets' | 'satellite' | 'dark'>('streets');
+  const [speed, setSpeed] = useState(48);
+  const [distanceKm, setDistanceKm] = useState(2.4);
+  const [etaMinutes, setEtaMinutes] = useState(4);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -47,39 +66,21 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
   const routePolylineRef = useRef<L.Polyline | null>(null);
   const completedPolylineRef = useRef<L.Polyline | null>(null);
 
-  // Map Tile Style for Radar mode: 'streets' | 'satellite' | 'dark'
-  const [mapStyle, setMapStyle] = useState<'streets' | 'satellite' | 'dark'>('streets');
-  const [speed, setSpeed] = useState(48);
-  const [distanceKm, setDistanceKm] = useState(2.4);
-  const [etaMinutes, setEtaMinutes] = useState(4);
-
-  // Base coordinates (Defaults to Pune city center if GPS not available)
+  // Safe coordinate extraction (defaults to Pune City center)
   const pLat = Number(patientLocation?.latitude) || 18.5204;
   const pLng = Number(patientLocation?.longitude) || 73.8567;
   const hLat = Number(hospitalLocation?.latitude) || pLat + 0.024;
   const hLng = Number(hospitalLocation?.longitude) || pLng + 0.028;
 
-  // Real-time ambulance coordinates state
-  const [ambCoords, setAmbCoords] = useState<[number, number]>([
+  // Persisted ambulance coordinate ref for non-reactive animations
+  const ambCoordsRef = useRef<[number, number]>([
     hLat - (hLat - pLat) * 0.2,
     hLng - (hLng - pLng) * 0.2,
   ]);
 
-  // STABLE: Memoize Google Maps Directions Embed URL so iframe NEVER reloads or flutters!
-  const googleMapsEmbedUrl = useMemo(() => {
-    const originLat = (hLat - 0.005).toFixed(5);
-    const originLng = (hLng - 0.005).toFixed(5);
-    const destLat = pLat.toFixed(5);
-    const destLng = pLng.toFixed(5);
-    return `https://maps.google.com/maps?saddr=${originLat},${originLng}&daddr=${destLat},${destLng}&hl=en&z=15&output=embed`;
-  }, [hLat, hLng, pLat, pLng]);
-
+  // Stable Google Maps Native Navigation URL
   const googleMapsNativeAppUrl = useMemo(() => {
-    const originLat = (hLat - 0.005).toFixed(5);
-    const originLng = (hLng - 0.005).toFixed(5);
-    const destLat = pLat.toFixed(5);
-    const destLng = pLng.toFixed(5);
-    return `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
+    return `https://www.google.com/maps/dir/?api=1&origin=${(hLat - 0.005).toFixed(5)},${(hLng - 0.005).toFixed(5)}&destination=${pLat.toFixed(5)},${pLng.toFixed(5)}&travelmode=driving`;
   }, [hLat, hLng, pLat, pLng]);
 
   const patientGoogleMapsPin = useMemo(() => {
@@ -92,53 +93,29 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
     setTimeout(() => setCopiedPin(false), 2500);
   };
 
-  // Tile layer URLs for SatNav mode
-  const tileLayers = {
-    streets: {
-      url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
-      maxZoom: 19,
-    },
-    satellite: {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; Esri, Maxar, Earthstar Geographics',
-      maxZoom: 19,
-    },
-    dark: {
-      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
-      maxZoom: 19,
-    },
-  };
-
-  // 1. Initialize Radar Leaflet Map if in radar mode
+  // =========================================================================
+  // 1. INITIALIZE MAP ONCE ON MOUNT (NEVER RECREATE ON STATE/LOCATION CHANGES)
+  // =========================================================================
   useEffect(() => {
-    if (viewMode !== 'radar_satnav') {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-      return;
-    }
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    if (!mapContainerRef.current) return;
-
-    if (!mapInstanceRef.current) {
+    try {
       const map = L.map(mapContainerRef.current, {
         center: [(pLat + hLat) / 2, (pLng + hLng) / 2],
         zoom: 14,
         zoomControl: false,
+        attributionControl: false,
       });
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      const initialLayer = L.tileLayer(tileLayers[mapStyle].url, {
-        attribution: tileLayers[mapStyle].attribution,
-        maxZoom: tileLayers[mapStyle].maxZoom,
+      const initialLayer = L.tileLayer(TILE_LAYERS[mapStyle].url, {
+        attribution: TILE_LAYERS[mapStyle].attribution,
+        maxZoom: 19,
       }).addTo(map);
       tileLayerRef.current = initialLayer;
 
-      // Authentic Google Maps Pin (Red Location Marker)
+      // Authentic Google Maps Pin (Red Patient Location Marker)
       const patientIcon = L.divIcon({
         className: 'custom-patient-marker',
         html: `
@@ -168,11 +145,11 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         iconAnchor: [20, 40],
       });
 
-      // Ambulance Pin (Vehicle Marker)
+      // Ambulance Pin (Vehicle Marker with smooth glide)
       const ambulanceIcon = L.divIcon({
         className: 'custom-ambulance-marker',
         html: `
-          <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%); transition: transform 0.5s ease-out;">
+          <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%);">
             <div style="position: absolute; width: 46px; height: 46px; border-radius: 50%; background: rgba(234, 179, 8, 0.3); animation: pulse 1s infinite;"></div>
             <div style="position: relative; width: 38px; height: 38px; border-radius: 50%; background: #0F172A; border: 2.5px solid #EAB308; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 179, 8, 0.6);">
               <span style="font-size: 20px;">🚑</span>
@@ -191,7 +168,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         .addTo(map)
         .bindPopup(`<b>🏥 ${hospitalLocation?.name || 'Trauma Base Station'}</b><br/>Dispatched Origin`);
 
-      ambulanceMarkerRef.current = L.marker([ambCoords[0], ambCoords[1]], { icon: ambulanceIcon })
+      ambulanceMarkerRef.current = L.marker(ambCoordsRef.current, { icon: ambulanceIcon })
         .addTo(map)
         .bindPopup(`<b>🚑 Ambulance Unit ${vehicleNumber}</b><br/>Status: En Route to Patient`);
 
@@ -223,7 +200,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         lineCap: 'round',
       }).addTo(map);
 
-      completedPolylineRef.current = L.polyline([[hLat, hLng], [ambCoords[0], ambCoords[1]]], {
+      completedPolylineRef.current = L.polyline([[hLat, hLng], ambCoordsRef.current], {
         color: '#10B981',
         weight: 6,
         opacity: 1,
@@ -234,6 +211,8 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
       map.fitBounds(bounds, { padding: [60, 60] });
 
       mapInstanceRef.current = map;
+    } catch (err) {
+      console.warn('Map initialization error:', err);
     }
 
     return () => {
@@ -242,31 +221,52 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [viewMode, pLat, pLng, hLat, hLng]);
+  }, []); // Run ONLY ONCE on mount
 
-  // Update map tiles in radar mode
+  // =========================================================================
+  // 2. DYNAMIC UPDATES WITHOUT RECREATING MAP (PATIENT / HOSPITAL GPS SYNC)
+  // =========================================================================
   useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    if (patientMarkerRef.current) {
+      patientMarkerRef.current.setLatLng([pLat, pLng]);
+    }
+    if (hospitalMarkerRef.current) {
+      hospitalMarkerRef.current.setLatLng([hLat, hLng]);
+    }
+  }, [pLat, pLng, hLat, hLng]);
+
+  // =========================================================================
+  // 3. TILE STYLE SWITCHER WITHOUT REMOUNTING
+  // =========================================================================
+  const handleTileChange = useCallback((style: 'streets' | 'satellite' | 'dark') => {
+    setMapStyle(style);
     if (!mapInstanceRef.current || !tileLayerRef.current) return;
+
     mapInstanceRef.current.removeLayer(tileLayerRef.current);
-
-    const newLayer = L.tileLayer(tileLayers[mapStyle].url, {
-      attribution: tileLayers[mapStyle].attribution,
-      maxZoom: tileLayers[mapStyle].maxZoom,
+    const newLayer = L.tileLayer(TILE_LAYERS[style].url, {
+      attribution: TILE_LAYERS[style].attribution,
+      maxZoom: 19,
     }).addTo(mapInstanceRef.current);
-
     tileLayerRef.current = newLayer;
-  }, [mapStyle]);
+  }, []);
 
-  // Real-time animation loop simulating live GPS driving
+  // =========================================================================
+  // 4. REAL-TIME SMOOTH AMBULANCE SIMULATION / WEBSOCKET TELEMETRY
+  // =========================================================================
   useEffect(() => {
     const socket = getSocket();
 
     const handleLocationUpdate = (data: any) => {
       if (data.emergencyId === emergencyId && data.latitude && data.longitude) {
         const nextPos: [number, number] = [Number(data.latitude), Number(data.longitude)];
-        setAmbCoords(nextPos);
+        ambCoordsRef.current = nextPos;
         if (ambulanceMarkerRef.current) {
           ambulanceMarkerRef.current.setLatLng(nextPos);
+        }
+        if (completedPolylineRef.current) {
+          completedPolylineRef.current.setLatLngs([[hLat, hLng], nextPos]);
         }
         if (data.speed) setSpeed(data.speed);
       }
@@ -274,32 +274,31 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
 
     socket.on('emergency:location_update', handleLocationUpdate);
 
+    // Smooth client-side dead reckoning simulation loop
     const interval = setInterval(() => {
-      setAmbCoords(([prevLat, prevLng]) => {
-        const stepLat = (pLat - prevLat) * 0.04;
-        const stepLng = (pLng - prevLng) * 0.04;
+      const [prevLat, prevLng] = ambCoordsRef.current;
+      const stepLat = (pLat - prevLat) * 0.04;
+      const stepLng = (pLng - prevLng) * 0.04;
 
-        const nextLat = Math.abs(prevLat - pLat) < 0.0005 ? hLat : prevLat + stepLat;
-        const nextLng = Math.abs(prevLng - pLng) < 0.0005 ? hLng : prevLng + stepLng;
+      const nextLat = Math.abs(prevLat - pLat) < 0.0005 ? hLat : prevLat + stepLat;
+      const nextLng = Math.abs(prevLng - pLng) < 0.0005 ? hLng : prevLng + stepLng;
 
-        const nextCoords: [number, number] = [nextLat, nextLng];
+      const nextCoords: [number, number] = [nextLat, nextLng];
+      ambCoordsRef.current = nextCoords;
 
-        if (ambulanceMarkerRef.current) {
-          ambulanceMarkerRef.current.setLatLng(nextCoords);
-        }
+      if (ambulanceMarkerRef.current) {
+        ambulanceMarkerRef.current.setLatLng(nextCoords);
+      }
 
-        if (completedPolylineRef.current) {
-          completedPolylineRef.current.setLatLngs([[hLat, hLng], nextCoords]);
-        }
+      if (completedPolylineRef.current) {
+        completedPolylineRef.current.setLatLngs([[hLat, hLng], nextCoords]);
+      }
 
-        const remainingDist = Math.max(0.3, Number((Math.sqrt(Math.pow(pLat - nextLat, 2) + Math.pow(pLng - nextLng, 2)) * 111).toFixed(1)));
-        setDistanceKm(remainingDist);
-        setEtaMinutes(Math.max(1, Math.ceil((remainingDist / 42) * 60)));
-        setSpeed(Math.floor(40 + Math.random() * 16));
-
-        return nextCoords;
-      });
-    }, 3000);
+      const remainingDist = Math.max(0.3, Number((Math.sqrt(Math.pow(pLat - nextLat, 2) + Math.pow(pLng - nextLng, 2)) * 111).toFixed(1)));
+      setDistanceKm(remainingDist);
+      setEtaMinutes(Math.max(1, Math.ceil((remainingDist / 42) * 60)));
+      setSpeed(Math.floor(42 + Math.random() * 14));
+    }, 2500);
 
     return () => {
       socket.off('emergency:location_update', handleLocationUpdate);
@@ -307,17 +306,17 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
     };
   }, [emergencyId, pLat, pLng, hLat, hLng]);
 
-  const handleRecenter = (target: 'patient' | 'ambulance' | 'all') => {
+  const handleRecenter = useCallback((target: 'patient' | 'ambulance' | 'all') => {
     if (!mapInstanceRef.current) return;
     if (target === 'patient') {
-      mapInstanceRef.current.flyTo([pLat, pLng], 16, { duration: 1.2 });
+      mapInstanceRef.current.flyTo([pLat, pLng], 16, { duration: 0.8 });
     } else if (target === 'ambulance') {
-      mapInstanceRef.current.flyTo(ambCoords, 16, { duration: 1.2 });
+      mapInstanceRef.current.flyTo(ambCoordsRef.current, 16, { duration: 0.8 });
     } else {
       const bounds = L.latLngBounds([[pLat, pLng], [hLat, hLng]]);
-      mapInstanceRef.current.flyToBounds(bounds, { padding: [50, 50], duration: 1.2 });
+      mapInstanceRef.current.flyToBounds(bounds, { padding: [50, 50], duration: 0.8 });
     }
-  };
+  }, [pLat, pLng, hLat, hLng]);
 
   return (
     <div
@@ -329,9 +328,10 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         boxShadow: '0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 10px rgba(37, 99, 235, 0.08)',
         display: 'flex',
         flexDirection: 'column',
+        contain: 'paint layout',
       }}
     >
-      {/* 1. Header with Mode Switcher & Quick Google Maps Launcher */}
+      {/* 1. Header with Persistent Controls & Native Google Maps Navigation Link */}
       <div
         style={{
           padding: '0.875rem 1.25rem',
@@ -362,9 +362,9 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
           </div>
           <div>
             <div style={{ fontSize: '0.9375rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>Google Maps Emergency GPS</span>
+              <span>Live Emergency GPS Radar</span>
               <span style={{ backgroundColor: '#22C55E', color: '#0F172A', padding: '1px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900 }}>
-                STABLE LIVE GPS
+                100% PERSISTENT
               </span>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '2px' }}>
@@ -373,61 +373,8 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
           </div>
         </div>
 
-        {/* Engine Switcher & Launch Buttons */}
+        {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {/* Dual-Mode Selector Tabs */}
-          <div
-            style={{
-              display: 'flex',
-              backgroundColor: '#1E293B',
-              borderRadius: '8px',
-              padding: '2px',
-              border: '1px solid #334155',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setViewMode('google_maps')}
-              style={{
-                padding: '0.3rem 0.625rem',
-                borderRadius: '6px',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: viewMode === 'google_maps' ? '#2563EB' : 'transparent',
-                color: viewMode === 'google_maps' ? '#FFFFFF' : '#94A3B8',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-              }}
-            >
-              <Map size={12} />
-              <span>Google Maps Live</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setViewMode('radar_satnav')}
-              style={{
-                padding: '0.3rem 0.625rem',
-                borderRadius: '6px',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: viewMode === 'radar_satnav' ? '#2563EB' : 'transparent',
-                color: viewMode === 'radar_satnav' ? '#FFFFFF' : '#94A3B8',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-              }}
-            >
-              <Layers size={12} />
-              <span>SatNav Radar HUD</span>
-            </button>
-          </div>
-
           <a
             href={googleMapsNativeAppUrl}
             target="_blank"
@@ -438,7 +385,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
               gap: '0.375rem',
               backgroundColor: '#2563EB',
               color: '#FFFFFF',
-              padding: '0.4rem 0.875rem',
+              padding: '0.45rem 0.875rem',
               borderRadius: '10px',
               fontSize: '0.75rem',
               fontWeight: 800,
@@ -458,7 +405,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
               gap: '0.375rem',
               backgroundColor: '#16A34A',
               color: '#FFFFFF',
-              padding: '0.4rem 0.875rem',
+              padding: '0.45rem 0.875rem',
               borderRadius: '10px',
               fontSize: '0.75rem',
               fontWeight: 800,
@@ -472,170 +419,169 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
         </div>
       </div>
 
-      {/* 2. Map Canvas Container (Stable & Flutter-Free) */}
-      <div style={{ position: 'relative', height: '420px', width: '100%', backgroundColor: '#E2E8F0', overflow: 'hidden' }}>
-        {/* MODE A: Stable Official Google Maps Live Embed Engine */}
-        {viewMode === 'google_maps' ? (
-          <iframe
-            key="stable-google-maps-frame"
-            title="Google Maps Emergency Navigation"
-            src={googleMapsEmbedUrl}
-            width="100%"
-            height="100%"
-            style={{ border: 0, display: 'block' }}
-            allowFullScreen={false}
-            loading="eager"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        ) : (
-          /* MODE B: Interactive Leaflet SatNav Radar Engine */
-          <>
-            <div ref={mapContainerRef} style={{ height: '100%', width: '100%', zIndex: 1 }} />
+      {/* 2. Map Canvas Container (Persistent, Never Remounts or Flutters) */}
+      <div
+        style={{
+          position: 'relative',
+          height: '420px',
+          width: '100%',
+          backgroundColor: '#1E293B',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Leaflet Persistent DOM Instance */}
+        <div
+          ref={mapContainerRef}
+          style={{
+            height: '100%',
+            width: '100%',
+            zIndex: 1,
+            display: 'block',
+          }}
+        />
 
-            {/* Radar Style Selector */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '12px',
-                left: '12px',
-                zIndex: 1000,
-                display: 'flex',
-                gap: '4px',
-                backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(8px)',
-                padding: '4px',
-                borderRadius: '10px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                border: '1px solid #CBD5E1',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setMapStyle('streets')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '7px',
-                  fontSize: '0.6875rem',
-                  fontWeight: 800,
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: mapStyle === 'streets' ? '#2563EB' : 'transparent',
-                  color: mapStyle === 'streets' ? '#FFFFFF' : '#334155',
-                }}
-              >
-                🗺️ Streets
-              </button>
-              <button
-                type="button"
-                onClick={() => setMapStyle('satellite')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '7px',
-                  fontSize: '0.6875rem',
-                  fontWeight: 800,
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: mapStyle === 'satellite' ? '#2563EB' : 'transparent',
-                  color: mapStyle === 'satellite' ? '#FFFFFF' : '#334155',
-                }}
-              >
-                🛰️ Satellite
-              </button>
-              <button
-                type="button"
-                onClick={() => setMapStyle('dark')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '7px',
-                  fontSize: '0.6875rem',
-                  fontWeight: 800,
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: mapStyle === 'dark' ? '#0F172A' : 'transparent',
-                  color: mapStyle === 'dark' ? '#FFFFFF' : '#334155',
-                }}
-              >
-                🌙 Dark
-              </button>
-            </div>
+        {/* Floating Tile Style Switcher */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            left: '12px',
+            zIndex: 1000,
+            display: 'flex',
+            gap: '4px',
+            backgroundColor: 'rgba(255, 255, 255, 0.94)',
+            backdropFilter: 'blur(8px)',
+            padding: '4px',
+            borderRadius: '10px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+            border: '1px solid #CBD5E1',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => handleTileChange('streets')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '7px',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapStyle === 'streets' ? '#2563EB' : 'transparent',
+              color: mapStyle === 'streets' ? '#FFFFFF' : '#334155',
+            }}
+          >
+            🗺️ Streets
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTileChange('satellite')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '7px',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapStyle === 'satellite' ? '#2563EB' : 'transparent',
+              color: mapStyle === 'satellite' ? '#FFFFFF' : '#334155',
+            }}
+          >
+            🛰️ Satellite
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTileChange('dark')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '7px',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapStyle === 'dark' ? '#0F172A' : 'transparent',
+              color: mapStyle === 'dark' ? '#FFFFFF' : '#334155',
+            }}
+          >
+            🌙 Dark
+          </button>
+        </div>
 
-            {/* Quick Camera Controls */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '16px',
-                right: '12px',
-                zIndex: 1000,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-              }}
-            >
-              <button
-                type="button"
-                title="Recenter on My GPS Location"
-                onClick={() => handleRecenter('patient')}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  backgroundColor: '#FFFFFF',
-                  border: '1.5px solid #CBD5E1',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#DC2626',
-                }}
-              >
-                <Crosshair size={18} />
-              </button>
+        {/* Floating Quick Camera Controls */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '16px',
+            right: '12px',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+          }}
+        >
+          <button
+            type="button"
+            title="Recenter on My GPS Location"
+            onClick={() => handleRecenter('patient')}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1.5px solid #CBD5E1',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#DC2626',
+            }}
+          >
+            <Crosshair size={18} />
+          </button>
 
-              <button
-                type="button"
-                title="Follow Ambulance GPS"
-                onClick={() => handleRecenter('ambulance')}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  backgroundColor: '#FFFFFF',
-                  border: '1.5px solid #CBD5E1',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                }}
-              >
-                🚑
-              </button>
+          <button
+            type="button"
+            title="Follow Ambulance GPS"
+            onClick={() => handleRecenter('ambulance')}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1.5px solid #CBD5E1',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '16px',
+            }}
+          >
+            🚑
+          </button>
 
-              <button
-                type="button"
-                title="Fit Full Route"
-                onClick={() => handleRecenter('all')}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  backgroundColor: '#FFFFFF',
-                  border: '1.5px solid #CBD5E1',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#1E293B',
-                }}
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-          </>
-        )}
+          <button
+            type="button"
+            title="Fit Full Route"
+            onClick={() => handleRecenter('all')}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1.5px solid #CBD5E1',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#1E293B',
+            }}
+          >
+            <Maximize2 size={16} />
+          </button>
+        </div>
 
         {/* Turn-by-Turn Instruction Banner (Floating Overlay) */}
         <div
@@ -661,7 +607,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
           }}
         >
           <Compass size={14} color="#38BDF8" />
-          <span>Ambulance En Route via Google Maps Route • Live Traffic: Clear</span>
+          <span>Ambulance En Route • Google Maps Driving Route • Live Traffic: Clear</span>
         </div>
       </div>
 
@@ -696,7 +642,7 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
           </div>
           <div>
             <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-              Google Maps Dist
+              Remaining Dist
             </div>
             <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#1E293B' }}>
               {distanceKm} KM
@@ -776,4 +722,6 @@ export const LiveAmbulanceRadarMap: React.FC<LiveAmbulanceRadarMapProps> = ({
   );
 };
 
+// Wrap with React.memo to prevent unnecessary parent re-renders
+export const LiveAmbulanceRadarMap = React.memo(LiveAmbulanceRadarMapComponent);
 export default LiveAmbulanceRadarMap;
