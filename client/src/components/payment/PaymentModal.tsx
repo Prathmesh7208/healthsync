@@ -249,51 +249,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {method === 'UPI' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  {/* Dynamic Visual UPI QR Code */}
+                  {/* Dynamic Real Scan-Ready UPI QR Code */}
                   <div
                     style={{
-                      width: '100px',
-                      height: '100px',
+                      width: '110px',
+                      height: '110px',
                       backgroundColor: '#FFFFFF',
-                      border: '1px solid #CBD5E1',
-                      borderRadius: '8px',
-                      padding: '6px',
+                      border: '1.5px solid #CBD5E1',
+                      borderRadius: '10px',
+                      padding: '4px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       position: 'relative',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
                     }}
                   >
-                    <svg viewBox="0 0 100 100" width="100%" height="100%">
-                      {/* Stylized QR Matrix */}
-                      <rect x="5" y="5" width="25" height="25" fill="#0F172A" />
-                      <rect x="9" y="9" width="17" height="17" fill="#FFFFFF" />
-                      <rect x="13" y="13" width="9" height="9" fill="#1A56DB" />
-
-                      <rect x="70" y="5" width="25" height="25" fill="#0F172A" />
-                      <rect x="74" y="9" width="17" height="17" fill="#FFFFFF" />
-                      <rect x="78" y="13" width="9" height="9" fill="#1A56DB" />
-
-                      <rect x="5" y="70" width="25" height="25" fill="#0F172A" />
-                      <rect x="9" y="74" width="17" height="17" fill="#FFFFFF" />
-                      <rect x="13" y="78" width="9" height="9" fill="#1A56DB" />
-
-                      <rect x="35" y="10" width="10" height="10" fill="#0F172A" />
-                      <rect x="50" y="20" width="15" height="10" fill="#0F172A" />
-                      <rect x="35" y="35" width="30" height="30" fill="#0F172A" />
-                      <rect x="42" y="42" width="16" height="16" fill="#1A56DB" />
-                      <rect x="70" y="45" width="10" height="20" fill="#0F172A" />
-                      <rect x="45" y="70" width="20" height="10" fill="#0F172A" />
-                      <rect x="75" y="75" width="15" height="15" fill="#0F172A" />
-                    </svg>
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                        `upi://pay?pa=healthsync.pay@icici&pn=HealthSync%20Healthcare&am=${amount}&cu=INR`
+                      )}`}
+                      alt="UPI QR Code"
+                      style={{ width: '100%', height: '100%', borderRadius: '6px' }}
+                    />
                   </div>
 
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0F172A' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0F172A' }}>
                       Scan QR with Any UPI App
                     </div>
                     <div style={{ fontSize: '0.6875rem', color: '#64748B', marginTop: '2px' }}>
-                      Google Pay, PhonePe, Paytm, BHIM, CRED
+                      GPay, PhonePe, Paytm, BHIM, CRED
                     </div>
                     <div
                       style={{
@@ -308,7 +294,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         padding: '4px 8px',
                       }}
                     >
-                      <span style={{ fontFamily: 'monospace', color: '#334155' }}>healthsync.pay@icici</span>
+                      <span style={{ fontFamily: 'monospace', color: '#334155', fontWeight: 700 }}>healthsync.pay@icici</span>
                       <button
                         type="button"
                         onClick={handleCopyUpi}
@@ -319,6 +305,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     </div>
                   </div>
                 </div>
+
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input

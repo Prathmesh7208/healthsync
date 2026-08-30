@@ -53,8 +53,9 @@ import DoctorManagementPage from './pages/admin/DoctorManagementPage';
 import HospitalManagementPage from './pages/admin/HospitalManagementPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 
-// Real-time Notifications
+// Real-time Notifications & PWA Install Engine
 import NotificationToastContainer from './components/notifications/NotificationToastContainer';
+import PWAInstallBanner from './components/ui/PWAInstallBanner';
 
 export const App: React.FC = () => {
   const { initAuth, isAuthenticated, user } = useAuthStore();
@@ -66,6 +67,8 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <NotificationToastContainer />
+      <PWAInstallBanner />
+
       <Routes>
         {/* Root Redirect based on authentication & role */}
         <Route

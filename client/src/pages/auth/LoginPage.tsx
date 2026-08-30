@@ -18,8 +18,9 @@ import useAuthStore, { Language } from '../../stores/authStore';
 import CountryCodeSelector from '../../components/auth/CountryCodeSelector';
 import OTPInput from '../../components/auth/OTPInput';
 import Button from '../../components/ui/Button';
-
 import Logo from '../../components/ui/Logo';
+import GuidedTourModal from '../../components/ui/GuidedTourModal';
+
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -49,6 +50,8 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [tourOpen, setTourOpen] = useState(false);
+
 
   // Auto-redirect if already logged in
   useEffect(() => {
@@ -351,10 +354,37 @@ export const LoginPage: React.FC = () => {
         >
           {t.tagline}
         </p>
+
+        {/* 1-Tap Interactive Guided Onboarding Tour Button */}
+        <button
+          type="button"
+          onClick={() => setTourOpen(true)}
+          style={{
+            marginTop: '0.75rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            backgroundColor: '#0D9488',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '999px',
+            padding: '0.45rem 1rem',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            boxShadow: '0 2px 10px rgba(13, 148, 136, 0.3)',
+          }}
+        >
+          <Sparkles size={14} />
+          <span>Take 1-Min Interactive Ecosystem Tour (4 Roles)</span>
+        </button>
+
+        <GuidedTourModal isOpen={tourOpen} onClose={() => setTourOpen(false)} />
       </div>
 
       {/* Main Login Card */}
       <div
+
         className="hs-card"
         style={{
           width: '100%',

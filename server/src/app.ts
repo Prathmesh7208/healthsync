@@ -78,19 +78,42 @@ import reminderRoutes from './routes/reminder.routes';
 // Static file serving for uploads
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 
-// Health Check & Root Endpoints
-app.get(['/health', '/api/v1/health', '/'], (_req: Request, res: Response) => {
+// Health Check & Root Endpoints with Real-Time Database Latency Ping
+import { prisma } from './utils/prisma';
+
+app.get(['/health', '/api/v1/health', '/'], async (_req: Request, res: Response) => {
+  let dbStatus = 'connected';
+  let dbLatencyMs = 0;
+  try {
+    const start = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    dbLatencyMs = Date.now() - start;
+  } catch (err: any) {
+    dbStatus = 'disconnected';
+  }
+
+  const memoryUsage = process.memoryUsage();
   res.status(200).json({
     status: 'ok',
-    timestamp: new Date().toISOString(),
     service: 'HealthSync Backend Engine',
     version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+    database: {
+      status: dbStatus,
+      latencyMs: dbLatencyMs,
+    },
+    memory: {
+      rssMb: Math.round(memoryUsage.rss / 1024 / 1024),
+      heapUsedMb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+    },
   });
 });
 
 app.head(['/health', '/api/v1/health', '/'], (_req: Request, res: Response) => {
   res.status(200).end();
 });
+
 
 import doctorDashboardRoutes from './routes/doctorDashboard.routes';
 import doctorAppointmentRoutes from './routes/doctorAppointment.routes';

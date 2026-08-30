@@ -16,6 +16,9 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { generatePrescriptionPdf } from '../../services/prescriptionPdf';
+import VideoConsultationModal from '../../components/consultation/VideoConsultationModal';
+import { Video } from 'lucide-react';
+
 
 interface PrescriptionRow {
   medicineName: string;
@@ -60,6 +63,8 @@ export const ConsultationPage: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+
 
   const commonSymptoms = [
     'Fever',
@@ -311,6 +316,15 @@ export const ConsultationPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
+            style={{ backgroundColor: '#0F172A', color: '#FFFFFF', borderColor: '#0F172A' }}
+            leftIcon={<Video size={14} color="#38BDF8" />}
+            onClick={() => setVideoModalOpen(true)}
+          >
+            Start HD Video Room
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             leftIcon={<Download size={14} />}
             onClick={handleDownloadPdf}
           >
@@ -329,7 +343,16 @@ export const ConsultationPage: React.FC = () => {
             Finalize & Complete Consultation
           </Button>
         </div>
+
+        <VideoConsultationModal
+          isOpen={videoModalOpen}
+          onClose={() => setVideoModalOpen(false)}
+          patientName={patient?.fullName || 'Patient'}
+          doctorName={appointment?.doctor?.fullName || 'Dr. Priya Sharma'}
+          appointmentId={appointmentId || 'apt-live'}
+        />
       </div>
+
 
       {/* Main Grid: Patient Info (Left) + Clinical Form (Right) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 340px) 1fr', gap: '1.5rem', alignItems: 'start' }}>

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { UserPlus, Clock, Stethoscope, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Clock, Stethoscope, CheckCircle2, Megaphone } from 'lucide-react';
 import useAuthStore from '../../stores/authStore';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
+import { speakTokenCall } from '../../utils/audioAlert';
+
 
 export const QueueManagementPage: React.FC = () => {
   const { token } = useAuthStore();
@@ -173,24 +175,50 @@ export const QueueManagementPage: React.FC = () => {
                 No patients currently waiting.
               </div>
             ) : (
-              queueData.waiting.map((apt: any, idx: number) => (
-                <Card key={apt.id}>
-                  <Card.Body style={{ padding: '0.875rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-primary-600)' }}>
-                        #{idx + 1}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{apt.startTime}</span>
-                    </div>
-                    <h4 style={{ margin: '0.25rem 0', fontSize: '0.9375rem', fontWeight: 700 }}>
-                      {apt.patient?.fullName || 'Patient'}
-                    </h4>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {apt.reasonForVisit || 'Regular consultation'}
-                    </div>
-                  </Card.Body>
-                </Card>
-              ))
+              queueData.waiting.map((apt: any, idx: number) => {
+                const currentDoc = doctors.find((d) => d.id === selectedDoctorId);
+                return (
+                  <Card key={apt.id}>
+                    <Card.Body style={{ padding: '0.875rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-primary-600)' }}>
+                          #{apt.tokenNumber || idx + 1}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{apt.startTime}</span>
+                      </div>
+                      <h4 style={{ margin: '0.25rem 0', fontSize: '0.9375rem', fontWeight: 700 }}>
+                        {apt.patient?.fullName || 'Patient'}
+                      </h4>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                        {apt.reasonForVisit || 'Regular consultation'}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => speakTokenCall(apt.tokenNumber || idx + 1, currentDoc ? `Dr. ${currentDoc.fullName}` : undefined)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.375rem',
+                          backgroundColor: '#EFF6FF',
+                          color: '#1D4ED8',
+                          border: '1px solid #BFDBFE',
+                          borderRadius: '6px',
+                          padding: '0.375rem',
+                          fontSize: '0.6875rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Megaphone size={12} />
+                        <span>Call Token #{apt.tokenNumber || idx + 1}</span>
+                      </button>
+                    </Card.Body>
+                  </Card>
+                );
+              })
+
             )}
           </div>
         </div>
